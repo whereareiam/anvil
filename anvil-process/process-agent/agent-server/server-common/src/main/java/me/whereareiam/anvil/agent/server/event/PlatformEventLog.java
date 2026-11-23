@@ -57,9 +57,9 @@ public final class PlatformEventLog implements PlayerEvents {
 	 */
 	public synchronized @NotNull AgentPlayerEventsResponse after(long after) {
 		List<AgentPlayerEvent> later = events.stream()
-				.filter(event -> event.getPosition() > after)
+				.filter(event -> event.position() > after)
 				.collect(Collectors.toList());
-		boolean truncated = !events.isEmpty() && after < events.getFirst().getPosition() - 1;
+		boolean truncated = !events.isEmpty() && after < events.getFirst().position() - 1;
 
 		return AgentPlayerEventsResponse.builder().generation(generation).proxy(proxy).truncated(truncated).events(later).build();
 	}

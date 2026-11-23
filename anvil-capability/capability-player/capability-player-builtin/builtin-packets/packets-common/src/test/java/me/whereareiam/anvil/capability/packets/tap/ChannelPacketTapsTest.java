@@ -83,9 +83,9 @@ class ChannelPacketTapsTest {
 		var recorded = recording.stop();
 
 		assertEquals(List.of(new TapRequest(1, true, Set.of(), Set.of(), true)), opened);
-		assertEquals(new RecordingHeader(RecordingHeader.FORMAT, 774, "1.21.11", "Alice"), recorded.getHeader());
-		assertEquals(1, recorded.getFrames().size());
-		assertEquals("system_chat", recorded.getFrames().getFirst().name().orElseThrow());
+		assertEquals(new RecordingHeader(RecordingHeader.FORMAT, 774, "1.21.11", "Alice"), recorded.header());
+		assertEquals(1, recorded.frames().size());
+		assertEquals("system_chat", recorded.frames().getFirst().name().orElseThrow());
 		assertEquals(List.of(1), closed);
 	}
 

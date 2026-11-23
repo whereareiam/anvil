@@ -44,8 +44,8 @@ public final class DefaultScenarioFactory implements ScenarioFactory {
 	 * Yggdrasil stand-in, reachable where the workbench runs the processes.
 	 */
 	private void exposeSessionServers(AnvilScenario scenario) {
-		Stream.concat(scenario.getServers().stream(), scenario.getProxies().stream())
-				.map(MinecraftProcess::getSessionServer)
+		Stream.concat(scenario.servers().stream(), scenario.proxies().stream())
+				.map(MinecraftProcess::sessionServer)
 				.filter(server -> server != null && server.getHost() != null && server.getPort() > 0)
 				.filter(server -> server.getHost().equals("localhost")
 						|| server.getHost().startsWith("127.")
@@ -65,7 +65,7 @@ public final class DefaultScenarioFactory implements ScenarioFactory {
 		RequirementCheck.require(scenario, defaultExecutionProviderId, workbench.facts());
 		exposeSessionServers(scenario);
 		var plan = platforms.plan(scenario);
-		players.prepare(plan.getScenario());
+		players.prepare(plan.scenario());
 
 		// Processes with the engine lifetime already run; the scenario's own are prepared against them.
 		ProcessLease lease = ProcessLease.take(plan, retained, execution);
@@ -78,7 +78,7 @@ public final class DefaultScenarioFactory implements ScenarioFactory {
 		ProcessGroup processes;
 		try {
 			capabilities = ProcessComposition.discover(own, agents, platforms);
-			composer = PlayerComposition.create(players.scenarioLibraries(plan.getScenario()));
+			composer = PlayerComposition.create(players.scenarioLibraries(plan.scenario()));
 			processes = lease.join(execution.prepare(own, agents, capabilities, observer, lease.addresses()));
 		} catch (RuntimeException | Error failure) {
 			try {
@@ -92,9 +92,9 @@ public final class DefaultScenarioFactory implements ScenarioFactory {
 		try {
 			processes = capabilities.bind(processes);
 			lease.announce(observer);
-			var manager = players.open(plan.getScenario(), processes, composer, execution.preservesClientAddress(plan));
+			var manager = players.open(plan.scenario(), processes, composer, execution.preservesClientAddress(plan));
 
-			return new RunningScenario(plan.getScenario(), processes, manager);
+			return new RunningScenario(plan.scenario(), processes, manager);
 		} catch (RuntimeException | Error failure) {
 			try {
 				processes.finish(false);

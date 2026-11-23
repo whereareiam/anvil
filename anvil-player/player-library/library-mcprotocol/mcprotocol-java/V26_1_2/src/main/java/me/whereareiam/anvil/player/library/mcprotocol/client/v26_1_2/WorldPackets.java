@@ -48,6 +48,6 @@ public final class WorldPackets extends WorldTranslation {
 		if (clock == null)
 			throw new IllegalStateException("The server sent the world clock " + id + ", which its configuration did not list");
 
-		return clock.getKey();
+		return clock.key();
 	}
 }

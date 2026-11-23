@@ -52,29 +52,29 @@ public final class JavaCommandsExtension implements WorkerExtension<Object> {
 	}
 
 	private static CommandTree tree(ClientboundCommands commands) {
-		List<CommandTreeNode> nodes = commands.getNodes().stream()
+		List<CommandTreeNode> nodes = commands.nodes().stream()
 				.map(JavaCommandsExtension::node)
 				.toList();
 
-		return new CommandTree(nodes, commands.getRootIndex());
+		return new CommandTree(nodes, commands.rootIndex());
 	}
 	private static CommandTreeNode node(CommandNode node) {
 		return CommandTreeNode.builder()
 				.type(type(node))
-				.name(node.getName())
-				.children(node.getChildren())
-				.redirect(node.getRedirect())
-				.executable(node.isExecutable())
-				.restricted(node.isRestricted())
-				.parser(node.getParser())
-				.stringMode(stringMode(node.getStringMode()))
-				.min(node.getMin())
-				.max(node.getMax())
+				.name(node.name())
+				.children(node.children())
+				.redirect(node.redirect())
+				.executable(node.executable())
+				.restricted(node.restricted())
+				.parser(node.parser())
+				.stringMode(stringMode(node.stringMode()))
+				.min(node.min())
+				.max(node.max())
 				.build();
 	}
 
 	private static CommandNodeType type(CommandNode node) {
-		return switch (node.getType()) {
+		return switch (node.type()) {
 			case ROOT -> CommandNodeType.ROOT;
 			case LITERAL -> CommandNodeType.LITERAL;
 			case ARGUMENT -> CommandNodeType.ARGUMENT;

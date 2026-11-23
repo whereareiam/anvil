@@ -45,7 +45,7 @@ class NeoForgeServerSystemTest {
 	@TestFactory
 	Stream<DynamicTest> runsEveryNeoForgeRelease() {
 		return PlatformSelection.select(CompatibilityScenarioFactory.neoForgeScenarios()).stream()
-				.map(scenario -> DynamicTest.dynamicTest(scenario.getName(), () -> verify(scenario)));
+				.map(scenario -> DynamicTest.dynamicTest(scenario.name(), () -> verify(scenario)));
 	}
 
 	private void verify(AnvilScenario scenario) {
@@ -60,7 +60,7 @@ class NeoForgeServerSystemTest {
 
 			session.connect();
 			session.connected(Duration.ofSeconds(30));
-			assertEquals("Alice", arrivals.joined(alice, Duration.ofSeconds(10)).getProfile().getUsername());
+			assertEquals("Alice", arrivals.joined(alice, Duration.ofSeconds(10)).profile().username());
 
 			assertTrue(dispatch.execute("tellraw Alice [\"anvil:\",{\"text\":\"neoforge\",\"color\":\"gold\","
 					+ "\"bold\":true,\"insertion\":\"neoforge\"}]"));
@@ -73,7 +73,7 @@ class NeoForgeServerSystemTest {
 			Worlds worlds = context.processes().server("server").capability(Worlds.class);
 			World world = alice.capability(World.class);
 			// NeoForge lists its levels in an order of its own after the main world, which changed in 26.1.
-			List<String> keys = worlds.worlds().stream().map(ServerWorld::getKey).toList();
+			List<String> keys = worlds.worlds().stream().map(ServerWorld::key).toList();
 			assertEquals("minecraft:overworld", keys.getFirst());
 			assertEquals(Set.of("minecraft:overworld", "minecraft:the_nether", "minecraft:the_end"), Set.copyOf(keys));
 			assertEquals(Optional.of("minecraft:overworld"), world.dimension());
@@ -82,7 +82,7 @@ class NeoForgeServerSystemTest {
 			worlds.send(alice, WorldLocation.builder().world("minecraft:the_nether").x(0.5).y(140).z(0.5).build());
 			changes.changed(alice, "minecraft:the_nether", Duration.ofSeconds(10));
 			dimensions.entered("minecraft:the_nether", Duration.ofSeconds(10));
-			assertEquals("minecraft:the_nether", worlds.location(alice).orElseThrow().getWorld());
+			assertEquals("minecraft:the_nether", worlds.location(alice).orElseThrow().world());
 			assertThrows(UnsupportedOperationException.class,
 					() -> worlds.create(WorldCreation.builder().key("anvil_neoforge").build()));
 			assertThrows(UnsupportedOperationException.class, () -> worlds.load("anvil_neoforge"));

@@ -52,8 +52,8 @@ public final class JavaCookiesExtension implements WorkerExtension<Object> {
 		protocol.require(FEATURE, PACKETS);
 
 		ClientCookies cookies = new ClientCookies(player);
-		operations.register(CookiesChannel.STORE, stored -> cookies.store(stored.getKey(), stored.getPayload()));
-		operations.register(CookiesChannel.REMOVE, key -> cookies.remove(key.getKey()));
+		operations.register(CookiesChannel.STORE, stored -> cookies.store(stored.key(), stored.payload()));
+		operations.register(CookiesChannel.REMOVE, key -> cookies.remove(key.key()));
 
 		Subscription connections = player.bindConnection(() -> {
 			cookies.opened();
@@ -61,9 +61,9 @@ public final class JavaCookiesExtension implements WorkerExtension<Object> {
 		});
 		Subscription binding = Subscription.all(
 				protocol.listen(ClientboundCookieRequest.class, request -> protocol.send(
-						new ServerboundCookieResponse(request.getKey(), cookies.requested(request.getKey())))),
+						new ServerboundCookieResponse(request.key(), cookies.requested(request.key())))),
 				protocol.listen(ClientboundStoreCookie.class, store ->
-						cookies.serverStored(store.getKey(), store.getPayload())),
+						cookies.serverStored(store.key(), store.payload())),
 				connections
 		);
 

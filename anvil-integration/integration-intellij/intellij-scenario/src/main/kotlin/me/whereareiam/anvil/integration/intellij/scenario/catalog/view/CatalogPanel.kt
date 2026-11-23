@@ -108,9 +108,9 @@ class CatalogPanel(project: Project) : ToolWindowPanel(BorderLayout()), UiDataPr
 		val scenario = tree.selectedScenario()
 		sink[ScenarioSource.DATA_KEY] = source
 		sink[ScenarioDataKeys.SCENARIO] = scenario
-		sink[ScenarioDataKeys.PROCESS] = tree.selectedProcess()?.name
+		sink[ScenarioDataKeys.PROCESS] = tree.selectedProcess()?.name()
 		sink[ScenarioDataKeys.SESSION] = controller.activeSession()
-		if (source != null && scenario != null) sink[CommonDataKeys.NAVIGATABLE] = DefinitionLink(scenario.definition)
+		if (source != null && scenario != null) sink[CommonDataKeys.NAVIGATABLE] = DefinitionLink(scenario.definition())
 	}
 
 	private fun bindInteractions() {

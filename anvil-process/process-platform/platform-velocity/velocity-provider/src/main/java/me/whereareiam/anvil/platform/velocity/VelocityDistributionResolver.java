@@ -19,20 +19,20 @@ final class VelocityDistributionResolver {
 	private final ObjectMapper mapper = new ObjectMapper();
 
 	ResolvedDistribution resolve(MinecraftProxy process, PlatformContext context) throws IOException {
-		var distribution = process.getDistribution();
+		var distribution = process.distribution();
 		if (distribution.isLocal()) {
-			Path jar = distribution.getLocalJar().toAbsolutePath().normalize();
+			Path jar = distribution.localJar().toAbsolutePath().normalize();
 			if (!Files.isRegularFile(jar)) {
 				throw new PlatformException("Velocity JAR does not exist: " + jar);
 			}
 
-			return ResolvedDistribution.builder().jar(context.getArtifactSource().store(jar)).description("local Velocity").build();
+			return ResolvedDistribution.builder().jar(context.artifactSource().store(jar)).description("local Velocity").build();
 		}
 
-		String version = required(distribution.getVersion(), "Velocity version");
-		String build = required(distribution.getBuild(), "Velocity build");
+		String version = required(distribution.version(), "Velocity version");
+		String build = required(distribution.build(), "Velocity build");
 		URI metadata = URI.create("https://fill.papermc.io/v3/projects/velocity/versions/" + version + "/builds");
-		JsonNode selected = selectBuild(mapper.readTree(context.getArtifactSource().read(metadata)), build);
+		JsonNode selected = selectBuild(mapper.readTree(context.artifactSource().read(metadata)), build);
 		JsonNode download = selected.path("downloads").path("server:default");
 
 		String name = required(download.path("name").asText(), "artifact filename");
@@ -42,9 +42,9 @@ final class VelocityDistributionResolver {
 
 		String checksum = required(download.path("checksums").path("sha256").asText(), "artifact SHA-256");
 		URI url = URI.create(required(download.path("url").asText(), "artifact URL"));
-		Path destination = context.getCacheDirectory().resolve("distributions/velocity")
+		Path destination = context.cacheDirectory().resolve("distributions/velocity")
 				.resolve(version).resolve(selected.path("id").asText()).resolve(name);
-		Path jar = context.getArtifactSource().obtain(url, destination, checksum);
+		Path jar = context.artifactSource().obtain(url, destination, checksum);
 
 		return ResolvedDistribution.builder().jar(jar)
 				.description("Velocity " + version + " build " + selected.path("id").asText()).build();

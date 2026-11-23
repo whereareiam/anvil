@@ -23,7 +23,7 @@ class NbtCompoundTest {
 
 	@Test
 	void keepsTheOrderItsEntriesWerePutIn() {
-		assertEquals(List.of("source", "page", "options", "nested"), List.copyOf(PAYLOAD.getEntries().keySet()));
+		assertEquals(List.of("source", "page", "options", "nested"), List.copyOf(PAYLOAD.entries().keySet()));
 	}
 
 	@Test
@@ -54,7 +54,7 @@ class NbtCompoundTest {
 				.with("page", new NbtString("two"))
 				.with("remember", NbtByte.of(true));
 
-		assertEquals(List.of("source", "page", "options", "nested", "remember"), List.copyOf(changed.getEntries().keySet()));
+		assertEquals(List.of("source", "page", "options", "nested", "remember"), List.copyOf(changed.entries().keySet()));
 		assertEquals(Optional.of(new NbtString("two")), changed.string("page"));
 		assertEquals(Optional.of(new NbtByte((byte) 1)), changed.find("remember", NbtByte.class));
 		assertEquals(Optional.of(new NbtInt(2)), PAYLOAD.number("page"));
@@ -70,7 +70,7 @@ class NbtCompoundTest {
 		entries.put("page", new NbtInt(3));
 
 		assertEquals(Optional.of(new NbtInt(2)), compound.number("page"));
-		assertThrows(UnsupportedOperationException.class, () -> compound.getEntries().put("page", new NbtInt(4)));
+		assertThrows(UnsupportedOperationException.class, () -> compound.entries().put("page", new NbtInt(4)));
 	}
 
 	@Test

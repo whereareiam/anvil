@@ -76,7 +76,7 @@ class JavaMovementExtensionTest {
 				.horizontalCollision(false)
 				.build()), player.sent());
 		assertEquals(new ViewRotation(90, -15), player.viewRotation());
-		assertEquals(POSITION, operations.call(MovementChannel.STATE, null).getPosition());
+		assertEquals(POSITION, operations.call(MovementChannel.STATE, null).position());
 	}
 
 	@Test

@@ -87,18 +87,18 @@ final class EngineOperations {
 			case Hello hello -> greet(hello);
 			case ReadFacts ignored -> settings.restrict(workbench.facts());
 			case Expose expose -> {
-				exposures.expose(expose.getPort());
+				exposures.expose(expose.port());
 				yield new Done();
 			}
 		};
 	}
 
 	private Greeting greet(Hello hello) {
-		if (hello.getVersion() != WireProtocol.VERSION)
+		if (hello.version() != WireProtocol.VERSION)
 			throw new IllegalStateException("This workbench speaks protocol " + WireProtocol.VERSION + ", but the engine speaks "
-					+ hello.getVersion() + "; run the same Anvil version on both");
+					+ hello.version() + "; run the same Anvil version on both");
 
-		return new Greeting(settings.getName(), workbench.workDirectory(), workbench.cacheDirectory(),
+		return new Greeting(settings.name(), workbench.workDirectory(), workbench.cacheDirectory(),
 				workbench.executions().entrySet().stream().map(entry -> offered(entry.getKey(), entry.getValue())).toList());
 	}
 
@@ -112,24 +112,24 @@ final class EngineOperations {
 
 	private Object store(StoreRequest<?> request) {
 		return switch (request) {
-			case FindStored find -> new StoredFile(uploads.find(find.getSha256(), find.getName()));
+			case FindStored find -> new StoredFile(uploads.find(find.sha256(), find.name()));
 		};
 	}
 
 	private Object launch(LaunchRequest<?> request) throws Exception {
 		return switch (request) {
 			case Launch launch -> {
-				Process process = workbench.launch(launch.getLaunch());
+				Process process = workbench.launch(launch.launch());
 				yield new Handle(handles.register(owner, process, process::destroyForcibly));
 			}
 			case AwaitLaunched await -> {
-				Process process = handles.get(owner, await.getHandle(), Process.class);
-				if (await.getTimeoutMillis() < 0) yield new LaunchedExit(process.waitFor());
-				yield new LaunchedExit(process.waitFor(await.getTimeoutMillis(), TimeUnit.MILLISECONDS) ? process.exitValue() : null);
+				Process process = handles.get(owner, await.handle(), Process.class);
+				if (await.timeoutMillis() < 0) yield new LaunchedExit(process.waitFor());
+				yield new LaunchedExit(process.waitFor(await.timeoutMillis(), TimeUnit.MILLISECONDS) ? process.exitValue() : null);
 			}
 			case DestroyLaunched destroy -> {
-				Process process = handles.get(owner, destroy.getHandle(), Process.class);
-				if (destroy.isForce()) process.destroyForcibly();
+				Process process = handles.get(owner, destroy.handle(), Process.class);
+				if (destroy.force()) process.destroyForcibly();
 				else process.destroy();
 				yield new Done();
 			}

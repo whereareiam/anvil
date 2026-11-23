@@ -34,7 +34,7 @@ class PlayerConnectionRoutingSystemTest {
 	void velocitySeesTheAnnouncedVirtualHostAndTheChosenSourceAddress() {
 		AnvilScenario original = CompatibilityScenarioFactory.proxyScenario(Platforms.VELOCITY, Platforms.PAPER,
 				MinecraftVersion.parse("1.21.11"));
-		var proxy = original.getProxies().getFirst().toBuilder()
+		var proxy = original.proxies().getFirst().toBuilder()
 				.setting("advanced.login-ratelimit", "0")
 				.setting("enable-player-address-logging", "true")
 				.setting("forced-hosts.\"" + FORCED_HOST + "\"", "[\"game\"]")

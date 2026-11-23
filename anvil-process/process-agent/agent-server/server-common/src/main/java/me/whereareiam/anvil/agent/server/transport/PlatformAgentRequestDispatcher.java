@@ -1,5 +1,7 @@
 package me.whereareiam.anvil.agent.server.transport;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +35,11 @@ import java.util.Set;
 final class PlatformAgentRequestDispatcher {
 	private final PlatformAgent platformAgent;
 	private final Map<String, TypedAgentOperation<?, ?>> operations = new LinkedHashMap<>();
-	private final ObjectMapper mapper = new ObjectMapper();
+	// Agent payloads read through fluent accessors, which are no JavaBean getters: their fields are their members.
+	private final ObjectMapper mapper = new ObjectMapper()
+			.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
+			.setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
+			.setVisibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE);
 	private final PlatformEventLog events;
 
 	/**
@@ -50,7 +56,7 @@ final class PlatformAgentRequestDispatcher {
 			@NotNull Collection<AgentOperationProvider> providers
 	) {
 		this.platformAgent = platformAgent;
-		this.events = new PlatformEventLog(platformAgent.info().getRole() == AgentRole.PROXY);
+		this.events = new PlatformEventLog(platformAgent.info().role() == AgentRole.PROXY);
 		register(new TypedAgentOperation<>(AgentOperations.PING, new PingHandler(), mapper));
 		register(new TypedAgentOperation<>(AgentOperations.COMMAND, new CommandHandler(), mapper));
 		register(new TypedAgentOperation<>(AgentOperations.PLAYER_EVENTS, new PlayerEventsHandler(events), mapper));
@@ -110,9 +116,9 @@ final class PlatformAgentRequestDispatcher {
 		public <Q, R> void register(@NotNull AgentOperation<Q, R> operation, @NotNull AgentOperationHandler<Q, R> handler) {
 			if (!active || Thread.currentThread() != owner)
 				throw new IllegalStateException("Agent operations can only be registered during provider installation");
-			if (!operation.getName().startsWith(namespace + ".") || operation.getName().length() == namespace.length() + 1)
+			if (!operation.name().startsWith(namespace + ".") || operation.name().length() == namespace.length() + 1)
 				throw new IllegalArgumentException("Agent operation must belong to namespace '" + namespace + "': "
-						+ operation.getName());
+						+ operation.name());
 			PlatformAgentRequestDispatcher.this.register(new TypedAgentOperation<>(operation, handler, mapper));
 		}
 	}

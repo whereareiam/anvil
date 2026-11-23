@@ -77,11 +77,11 @@ class ChannelInventoryWatchTest {
 		channel.publish(InventoryChannel.CHANGED, screen(1, "Shop"));
 
 		IllegalStateException failure = assertThrows(IllegalStateException.class, () -> watch.screen("with a Buy button",
-				snapshot -> snapshot.getItems().contains(BUY), TIMEOUT));
+				snapshot -> snapshot.items().contains(BUY), TIMEOUT));
 		channel.meanwhile(() -> channel.publish(InventoryChannel.CHANGED, screen(1, "Shop", BUY)));
 
-		assertEquals(1, watch.screen("with a Buy button", snapshot -> snapshot.getItems().contains(BUY), TIMEOUT)
-				.snapshot().getScreen());
+		assertEquals(1, watch.screen("with a Buy button", snapshot -> snapshot.items().contains(BUY), TIMEOUT)
+				.snapshot().screen());
 		assertEquals("Player did not see a screen with a Buy button", failure.getMessage());
 	}
 
@@ -112,9 +112,9 @@ class ChannelInventoryWatchTest {
 		InventoryWatch late = inventory.watch();
 		channel.publish(InventoryChannel.CHANGED, screen(2, "Shop", BUY));
 
-		assertEquals(1, early.screen("Shop", TIMEOUT).snapshot().getScreen());
-		assertEquals(2, late.screen("Shop", TIMEOUT).snapshot().getScreen());
-		assertEquals(2, early.screen("Shop", TIMEOUT).snapshot().getScreen());
+		assertEquals(1, early.screen("Shop", TIMEOUT).snapshot().screen());
+		assertEquals(2, late.screen("Shop", TIMEOUT).snapshot().screen());
+		assertEquals(2, early.screen("Shop", TIMEOUT).snapshot().screen());
 	}
 
 	private static InventorySnapshot screen(int screen, String title, InventoryItem... items) {

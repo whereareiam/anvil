@@ -36,7 +36,7 @@ final class ChannelMovement implements Movement {
 
 	@Override
 	public @NotNull Optional<Position> position() {
-		return Optional.ofNullable(state(channel).getPosition());
+		return Optional.ofNullable(state(channel).position());
 	}
 
 	@Override

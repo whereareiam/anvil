@@ -32,26 +32,26 @@ class PlatformRestartSystemTest {
 	@TestFactory
 	Stream<DynamicTest> restartsEveryPlatformScenario() {
 		return PlatformSelection.select(CompatibilityScenarioFactory.platformScenarios()).stream()
-				.map(scenario -> DynamicTest.dynamicTest(scenario.getName(), () -> verify(scenario)));
+				.map(scenario -> DynamicTest.dynamicTest(scenario.name(), () -> verify(scenario)));
 	}
 
 	private void verify(AnvilScenario original) throws Exception {
-		AnvilScenario scenario = original.toBuilder().clearProxies().proxies(original.getProxies().stream()
-				.map(proxy -> proxy.toBuilder().setting(proxy.getPlatform().equals(Platforms.VELOCITY)
+		AnvilScenario scenario = original.toBuilder().clearProxies().proxies(original.proxies().stream()
+				.map(proxy -> proxy.toBuilder().setting(proxy.platform().equals(Platforms.VELOCITY)
 						? "advanced.login-ratelimit" : "connection_throttle", "0").build()).toList()).build();
 		try (ScenarioEngine engine = AnvilLauncher.create(EngineOptions.builder().eulaAccepted(true).build());
 		     ScenarioContext context = engine.start(scenario)) {
 			var alice = context.players().create("Alice");
 			Session session = alice.capability(Session.class);
-			String destination = scenario.getProxies().isEmpty() ? "server" : "lobby";
+			String destination = scenario.proxies().isEmpty() ? "server" : "lobby";
 			var probe = context.processes().server(destination).capability(FixtureAgentProbeProvider.Probe.class);
 			Players players = context.processes().server(destination).capability(Players.class);
 			PlayerWatch arrivals = players.watch();
 			session.connect();
 			session.connected(Duration.ofSeconds(30));
-			var identity = arrivals.joined(alice).getProfile();
+			var identity = arrivals.joined(alice).profile();
 
-			var before = context.processes().get(scenario.getEntrypoint());
+			var before = context.processes().get(scenario.entrypoint());
 			var dispatch = before.capability(Dispatch.class);
 			for (var process : context.processes().all())
 				if (!process.name().equals(before.name()))
@@ -69,11 +69,11 @@ class PlatformRestartSystemTest {
 			session.disconnected();
 			session.rejoin();
 			session.connected(Duration.ofSeconds(30));
-			assertEquals(identity.getUniqueId(), arrivals.joined(alice).getProfile().getUniqueId());
+			assertEquals(identity.uniqueId(), arrivals.joined(alice).profile().uniqueId());
 			assertSame(players, context.processes().server(destination).capability(Players.class));
 			assertEquals("external:after", probe.echo("after"));
 
-			if (!scenario.getProxies().isEmpty()) {
+			if (!scenario.proxies().isEmpty()) {
 				session.disconnect();
 				session.disconnected();
 				var proxy = context.processes().proxy("proxy");

@@ -16,16 +16,16 @@ import java.util.List;
 final class LocalWorkerLauncher implements ProtocolWorkerLauncher {
 	@Override
 	public @NotNull Process launch(@NotNull WorkerLaunch launch) throws IOException {
-		List<Path> classpath = new ArrayList<>(launch.getClosure());
-		classpath.addAll(launch.getEngineEntries());
+		List<Path> classpath = new ArrayList<>(launch.closure());
+		classpath.addAll(launch.engineEntries());
 
 		List<String> command = new ArrayList<>();
 		command.add(Path.of(System.getProperty("java.home"), "bin", "java").toString());
-		command.addAll(launch.getJvmArguments());
+		command.addAll(launch.jvmArguments());
 		command.add("-cp");
 		command.add(String.join(File.pathSeparator, classpath.stream().map(Path::toString).toList()));
-		command.add(launch.getMainClass());
-		command.addAll(launch.getArguments());
+		command.add(launch.mainClass());
+		command.addAll(launch.arguments());
 
 		return new ProcessBuilder(command).start();
 	}

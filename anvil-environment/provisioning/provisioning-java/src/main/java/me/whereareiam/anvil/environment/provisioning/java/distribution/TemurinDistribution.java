@@ -19,7 +19,7 @@ public final class TemurinDistribution implements JavaDistributionDescriptor {
 
 	@Override
 	public boolean matches(@NotNull JavaInstallation installation) {
-		return installation.getVendor().contains("Adoptium");
+		return installation.vendor().contains("Adoptium");
 	}
 
 }

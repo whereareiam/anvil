@@ -42,8 +42,8 @@ public final class TestEntity {
 			@NotNull Vector at
 	) {
 		LivingBody body = new LivingBody(world.rules(), world.reader(), ZOMBIE, attributes, effects);
-		body.setSpeed(0.1F);
-		body.setPosition(at);
+		body.speed(0.1F);
+		body.position(at);
 		return new LivingSimulation(body);
 	}
 
@@ -53,6 +53,6 @@ public final class TestEntity {
 	public static void settle(@NotNull LivingSimulation entity) {
 		for (int tick = 0; tick < 5; tick++) entity.tick();
 
-		assertTrue(entity.body().isOnGround(), "the entity stands on the ground");
+		assertTrue(entity.body().onGround(), "the entity stands on the ground");
 	}
 }

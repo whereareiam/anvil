@@ -38,14 +38,14 @@ class YggdrasilMockTest {
 	@Test
 	void verifiesALoginOnceAfterTheProfileReportedItWithItsOwnToken() throws Exception {
 		SessionIdentity alice = yggdrasil.register("Alice");
-		String verification = alice.getSessionServer() + "/hasJoined?username=Alice&serverId=hash&ip=127.0.0.1";
+		String verification = alice.sessionServer() + "/hasJoined?username=Alice&serverId=hash&ip=127.0.0.1";
 
 		assertEquals(204, get(verification).statusCode());
 		assertEquals(403, join(alice, "another-token", "hash").statusCode());
 		assertEquals(204, get(verification).statusCode());
 
-		assertEquals(204, join(alice, alice.getAccessToken(), "hash").statusCode());
-		assertEquals(204, get(alice.getSessionServer() + "/hasJoined?username=Alice&serverId=other").statusCode());
+		assertEquals(204, join(alice, alice.accessToken(), "hash").statusCode());
+		assertEquals(204, get(alice.sessionServer() + "/hasJoined?username=Alice&serverId=other").statusCode());
 		HttpResponse<String> verified = get(verification);
 		assertEquals(200, verified.statusCode());
 		assertTrue(verified.body().contains("\"name\":\"Alice\""), verified.body());
@@ -59,10 +59,10 @@ class YggdrasilMockTest {
 
 		SessionIdentity alicia = yggdrasil.rename(uniqueId, "Alicia");
 
-		assertEquals("Alicia", alicia.getUsername());
-		assertEquals(uniqueId, alicia.getUniqueId());
-		assertEquals(alice.getAccessToken(), alicia.getAccessToken());
-		assertEquals(alice.getSessionServer(), alicia.getSessionServer());
+		assertEquals("Alicia", alicia.username());
+		assertEquals(uniqueId, alicia.uniqueId());
+		assertEquals(alice.accessToken(), alicia.accessToken());
+		assertEquals(alice.sessionServer(), alicia.sessionServer());
 		assertEquals(404, get(yggdrasil.profileLookup() + "Alice").statusCode());
 		HttpResponse<String> found = get(yggdrasil.profileLookup() + "aLICIA");
 		assertEquals(200, found.statusCode());
@@ -72,12 +72,12 @@ class YggdrasilMockTest {
 	@Test
 	void verifiesALoginOnlyUnderTheProfilesCurrentName() throws Exception {
 		SessionIdentity alice = yggdrasil.register("Alice");
-		assertEquals(204, join(alice, alice.getAccessToken(), "hash").statusCode());
+		assertEquals(204, join(alice, alice.accessToken(), "hash").statusCode());
 
-		SessionIdentity alicia = yggdrasil.rename(alice.getUniqueId(), "Alicia");
+		SessionIdentity alicia = yggdrasil.rename(alice.uniqueId(), "Alicia");
 
-		assertEquals(204, get(alice.getSessionServer() + "/hasJoined?username=Alice&serverId=hash").statusCode());
-		HttpResponse<String> verified = get(alicia.getSessionServer() + "/hasJoined?username=ALICIA&serverId=hash");
+		assertEquals(204, get(alice.sessionServer() + "/hasJoined?username=Alice&serverId=hash").statusCode());
+		HttpResponse<String> verified = get(alicia.sessionServer() + "/hasJoined?username=ALICIA&serverId=hash");
 		assertEquals(200, verified.statusCode());
 		assertTrue(verified.body().contains("\"name\":\"Alicia\""), verified.body());
 	}
@@ -87,8 +87,8 @@ class YggdrasilMockTest {
 		SessionIdentity alice = yggdrasil.register("Alice");
 		yggdrasil.register("Bob");
 
-		assertEquals("ALICE", yggdrasil.rename(alice.getUniqueId(), "ALICE").getUsername());
-		assertThrows(IllegalArgumentException.class, () -> yggdrasil.rename(alice.getUniqueId(), "bob"));
+		assertEquals("ALICE", yggdrasil.rename(alice.uniqueId(), "ALICE").username());
+		assertThrows(IllegalArgumentException.class, () -> yggdrasil.rename(alice.uniqueId(), "bob"));
 		assertThrows(IllegalArgumentException.class, () -> yggdrasil.rename(UUID.randomUUID(), "Carol"));
 	}
 
@@ -108,8 +108,8 @@ class YggdrasilMockTest {
 
 	private HttpResponse<String> join(SessionIdentity identity, String token, String serverId) throws Exception {
 		String body = "{\"accessToken\":\"" + token + "\",\"selectedProfile\":\""
-				+ identity.getUniqueId().toString().replace("-", "") + "\",\"serverId\":\"" + serverId + "\"}";
-		return client.send(HttpRequest.newBuilder(URI.create(identity.getSessionServer() + "/join"))
+				+ identity.uniqueId().toString().replace("-", "") + "\",\"serverId\":\"" + serverId + "\"}";
+		return client.send(HttpRequest.newBuilder(URI.create(identity.sessionServer() + "/join"))
 				.POST(HttpRequest.BodyPublishers.ofString(body)).build(), HttpResponse.BodyHandlers.ofString());
 	}
 }

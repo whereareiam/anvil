@@ -32,7 +32,7 @@ public final class AttributeSupplier {
 	 */
 	public static @NotNull AttributeSupplier living() {
 		Map<Attribute, Double> bases = new LinkedHashMap<>();
-		for (Attribute attribute : LivingAttributes.all()) bases.put(attribute, attribute.getDefaultValue());
+		for (Attribute attribute : LivingAttributes.all()) bases.put(attribute, attribute.defaultValue());
 
 		return new AttributeSupplier(bases);
 	}
@@ -44,7 +44,7 @@ public final class AttributeSupplier {
 	 * @return a supplier with it
 	 */
 	public @NotNull AttributeSupplier with(@NotNull Attribute attribute) {
-		return bases.containsKey(attribute) ? this : with(attribute, attribute.getDefaultValue());
+		return bases.containsKey(attribute) ? this : with(attribute, attribute.defaultValue());
 	}
 
 	/**
@@ -76,6 +76,6 @@ public final class AttributeSupplier {
 	 * @return the attribute, or empty for one this kind of entity does not have
 	 */
 	public @NotNull Optional<Attribute> byKey(@NotNull String key) {
-		return bases.keySet().stream().filter(attribute -> attribute.getKey().equals(key)).findFirst();
+		return bases.keySet().stream().filter(attribute -> attribute.key().equals(key)).findFirst();
 	}
 }

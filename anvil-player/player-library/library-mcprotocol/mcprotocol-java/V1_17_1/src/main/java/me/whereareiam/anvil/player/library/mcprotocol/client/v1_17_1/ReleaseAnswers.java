@@ -25,7 +25,7 @@ final class ReleaseAnswers implements ClientAnswers {
 
 	@Override
 	public @NotNull Packet clientInformation(@NotNull ClientSettings settings) {
-		return new ClientSettingsPacket(settings.getLocale(), settings.getViewDistance(), ChatVisibility.FULL,
+		return new ClientSettingsPacket(settings.locale(), settings.viewDistance(), ChatVisibility.FULL,
 				CHAT_COLORS, Arrays.asList(SkinPart.values()), HandPreference.RIGHT_HAND, TEXT_FILTERING);
 	}
 

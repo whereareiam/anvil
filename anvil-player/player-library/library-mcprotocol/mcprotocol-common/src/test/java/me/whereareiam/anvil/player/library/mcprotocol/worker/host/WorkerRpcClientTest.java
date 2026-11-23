@@ -35,9 +35,9 @@ class WorkerRpcClientTest {
 			var arguments = JsonNodeFactory.instance.objectNode().put("value", 7);
 			var request = executor.submit(() -> client.request("example.action", "player", arguments, TIMEOUT));
 			var sent = codec.decodeRequest(reader.readLine());
-			assertEquals("player", sent.getPlayer());
-			assertEquals(7, sent.getArguments().path("value").asInt());
-			client.accept(WorkerResponse.builder().id(sent.getId()).success(true)
+			assertEquals("player", sent.player());
+			assertEquals(7, sent.arguments().path("value").asInt());
+			client.accept(WorkerResponse.builder().id(sent.id()).success(true)
 					.result(JsonNodeFactory.instance.objectNode().put("accepted", true)).build());
 			assertTrue(request.get().path("accepted").asBoolean());
 

@@ -13,7 +13,7 @@ public final class CommandHandler implements AgentOperationHandler<AgentCommandR
 	@Override
 	public @NotNull AgentCommandResponse execute(@NotNull PlatformAgent platform, @NotNull AgentCommandRequest request) {
 		return AgentCommandResponse.builder()
-				.accepted(platform.executeCommand(request.getCommand()))
+				.accepted(platform.executeCommand(request.command()))
 				.build();
 	}
 }

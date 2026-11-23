@@ -57,7 +57,7 @@ class PlayerChannelEventIsolationTest {
 				});
 				if (badSchema)
 					aliceChannel.subscribe(
-							new EventDescriptor<>(EventWorkerExtension.CHANGED.getId(), SlotSelection.class),
+							new EventDescriptor<>(EventWorkerExtension.CHANGED.id(), SlotSelection.class),
 							ignored -> fail("schema must reject this event")
 					);
 				else
@@ -71,7 +71,7 @@ class PlayerChannelEventIsolationTest {
 				IllegalStateException failure = assertThrows(IllegalStateException.class,
 						() -> aliceChannel.await(() -> false, "observe a value", Duration.ofSeconds(3)));
 				assertTrue(failure.getMessage().contains("Alice"));
-				assertTrue(failure.getMessage().contains(EventWorkerExtension.CHANGED.getId()));
+				assertTrue(failure.getMessage().contains(EventWorkerExtension.CHANGED.id()));
 				assertInstanceOf(IllegalArgumentException.class, failure.getCause());
 
 				proceed.countDown();
@@ -175,7 +175,7 @@ class PlayerChannelEventIsolationTest {
 	private ProtocolRelease release(String version) {
 		MinecraftVersion parsed = MinecraftVersion.parse(version);
 		return McProtocolReleaseCatalog.load(null).releases().stream()
-				.filter(candidate -> candidate.getMinecraftVersions().contains(parsed))
+				.filter(candidate -> candidate.minecraftVersions().contains(parsed))
 				.findFirst()
 				.orElseThrow();
 	}

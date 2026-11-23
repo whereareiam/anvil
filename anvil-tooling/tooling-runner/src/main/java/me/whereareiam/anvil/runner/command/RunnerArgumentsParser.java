@@ -24,7 +24,7 @@ public final class RunnerArgumentsParser {
 
 			int equals = argument.indexOf('=');
 			String name = argument.substring(2, equals < 0 ? argument.length() : equals);
-			RunnerOption option = RunnerOption.fromName(name);
+			RunnerOption option = RunnerOption.fromToken(name);
 			String value = equals < 0 ? "true" : argument.substring(equals + 1);
 			if (options.putIfAbsent(option, value) != null) throw new IllegalArgumentException("Duplicate option: --" + name);
 		}
@@ -50,7 +50,7 @@ public final class RunnerArgumentsParser {
 	private static String optional(Map<RunnerOption, String> options, RunnerOption option) {
 		String value = options.get(option);
 		if (value != null && value.isBlank()) {
-			throw new IllegalArgumentException("--" + option.getName() + "=<value> must not be blank");
+			throw new IllegalArgumentException("--" + option.token() + "=<value> must not be blank");
 		}
 
 		return value;

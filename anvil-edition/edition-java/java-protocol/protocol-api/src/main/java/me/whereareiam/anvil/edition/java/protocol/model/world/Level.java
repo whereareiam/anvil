@@ -30,7 +30,7 @@ public class Level {
 	 * @return the lowest height, a multiple of 16
 	 */
 	public int minY() {
-		return type.getMinY();
+		return type.minY();
 	}
 
 	/**
@@ -39,7 +39,7 @@ public class Level {
 	 * @return the section count
 	 */
 	public int sectionCount() {
-		return type.getHeight() >> 4;
+		return type.height() >> 4;
 	}
 
 	/**
@@ -49,6 +49,6 @@ public class Level {
 	 * @return whether it lies from the lowest height up to below the lowest height plus the level's height
 	 */
 	public boolean contains(int y) {
-		return y >= type.getMinY() && y < type.getMinY() + type.getHeight();
+		return y >= type.minY() && y < type.minY() + type.height();
 	}
 }

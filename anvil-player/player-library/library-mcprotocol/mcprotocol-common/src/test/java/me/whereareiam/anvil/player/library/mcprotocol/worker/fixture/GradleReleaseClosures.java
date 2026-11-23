@@ -30,9 +30,9 @@ public final class GradleReleaseClosures {
 	 * @throws IllegalStateException when the test JVM was not started by the module's Gradle test task
 	 */
 	public static @NotNull List<Path> of(@NotNull ProtocolRelease release) {
-		String files = closures().getProperty(release.getLibraryVersion(), "");
+		String files = closures().getProperty(release.libraryVersion(), "");
 		if (files.isBlank())
-			throw new IllegalStateException("No Gradle-resolved closure for MCProtocolLib " + release.getLibraryVersion()
+			throw new IllegalStateException("No Gradle-resolved closure for MCProtocolLib " + release.libraryVersion()
 					+ "; run the tests through the mcprotocol-common Gradle test task");
 
 		return Arrays.stream(files.split(Pattern.quote(File.pathSeparator))).map(Path::of).toList();

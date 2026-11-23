@@ -9,7 +9,7 @@ import java.util.Locale;
  * The colour of a text's shadow, from Minecraft 1.21.4, as alpha, red, green and blue.
  *
  * <pre>{@code
- * assertEquals(new ShadowColor(0x80000000), span.getStyle().getShadowColor());
+ * assertEquals(new ShadowColor(0x80000000), span.style().shadowColor());
  * }</pre>
  */
 @Value

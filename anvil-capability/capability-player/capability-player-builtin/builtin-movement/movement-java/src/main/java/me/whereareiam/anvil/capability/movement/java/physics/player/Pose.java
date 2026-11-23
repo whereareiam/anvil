@@ -29,7 +29,7 @@ public final class Pose {
 	 */
 	public Pose(@NotNull PlayerBody body) {
 		this.body = body;
-		this.collisions = new Collisions(body.getLevel());
+		this.collisions = new Collisions(body.level());
 	}
 
 	/**
@@ -38,7 +38,7 @@ public final class Pose {
 	 */
 	public void refresh() {
 		EntityDimensions scaled = stance.dimensions.scale(scale());
-		if (!scaled.equals(body.getDimensions())) body.setDimensions(scaled);
+		if (!scaled.equals(body.dimensions())) body.dimensions(scaled);
 	}
 
 	/**
@@ -47,13 +47,13 @@ public final class Pose {
 	public void update() {
 		if (!canFit(Stance.SWIMMING)) return;
 
-		Stance wanted = body.getKeys().isSneak() && !body.getServer().isFlying() ? Stance.CROUCHING : Stance.STANDING;
+		Stance wanted = body.keys().sneak() && !body.server().flying() ? Stance.CROUCHING : Stance.STANDING;
 		stance = choose(wanted);
 		refresh();
 	}
 
 	private @NotNull Stance choose(@NotNull Stance wanted) {
-		if (body.isSpectator() || canFit(wanted)) return wanted;
+		if (body.spectator() || canFit(wanted)) return wanted;
 
 		return canFit(Stance.CROUCHING) ? Stance.CROUCHING : Stance.SWIMMING;
 	}
@@ -97,12 +97,12 @@ public final class Pose {
 	private boolean canFit(@NotNull Stance wanted) {
 		float scale = scale();
 		EntityDimensions dimensions = wanted.dimensions;
-		Box box = Box.at(body.getPosition(), dimensions.getWidth() * scale, dimensions.getHeight() * scale).deflate(1.0E-7);
+		Box box = Box.at(body.position(), dimensions.width() * scale, dimensions.height() * scale).deflate(1.0E-7);
 		return collisions.noCollision(box, body.context());
 	}
 
 	private float scale() {
-		return (float) body.getAttributes().value(LivingAttributes.SCALE);
+		return (float) body.attributes().value(LivingAttributes.SCALE);
 	}
 
 	/**

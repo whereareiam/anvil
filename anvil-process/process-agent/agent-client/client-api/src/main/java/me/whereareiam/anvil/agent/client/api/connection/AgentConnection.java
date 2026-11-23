@@ -35,7 +35,7 @@ public interface AgentConnection extends AutoCloseable {
 	 * @throws AgentException when communication or the remote operation fails
 	 */
 	default <Q, R> @Nullable R request(@NotNull AgentOperation<Q, R> operation, @Nullable Q request) {
-		return request(operation.getName(), request, operation.getResponseType());
+		return request(operation.name(), request, operation.responseType());
 	}
 
 	/**

@@ -76,7 +76,7 @@ public final class JavaInventoryExtension implements WorkerExtension<Object> {
 		ObservedScreen screen = new ObservedScreen(new Items(JavaItemData.shipped().find(protocol.protocolNumber()).orElse(null)));
 		HeldSlot held = new HeldSlot(protocol);
 		operations.register(InventoryChannel.SELECT, selection -> {
-			held.select(selection.getSlot());
+			held.select(selection.slot());
 			return null;
 		});
 		operations.register(InventoryChannel.CLICK, action -> {
@@ -87,31 +87,31 @@ public final class JavaInventoryExtension implements WorkerExtension<Object> {
 		Subscription listening = Subscription.all(
 				protocol.listen(ClientboundLogin.class, ignored -> held.joined()),
 				protocol.listen(ClientboundRespawn.class, ignored -> held.respawned()),
-				protocol.listen(ClientboundSetHeldSlot.class, selection -> held.selectedByServer(selection.getSlot())),
+				protocol.listen(ClientboundSetHeldSlot.class, selection -> held.selectedByServer(selection.slot())),
 				protocol.listen(ClientboundOpenScreen.class, open ->
-						screen.open(open.getContainerId(), open.getMenuType(), open.getTitle())),
+						screen.open(open.containerId(), open.menuType(), open.title())),
 				protocol.listen(ClientboundContainerClose.class, ignored -> publish(player, screen.close())),
 				protocol.listen(ClientboundContainerSetContent.class, content -> publish(player,
-						screen.fill(content.getContainerId(), content.getStateId(), content.getItems()))),
+						screen.fill(content.containerId(), content.stateId(), content.items()))),
 				protocol.listen(ClientboundContainerSetSlot.class, slot -> publish(player,
-						screen.set(slot.getContainerId(), slot.getStateId(), slot.getSlot(), slot.getItem()))),
+						screen.set(slot.containerId(), slot.stateId(), slot.slot(), slot.item()))),
 				protocol.listen(ClientboundSetPlayerInventory.class, slot ->
-						publish(player, screen.setInventory(slot.getSlot(), slot.getItem())))
+						publish(player, screen.setInventory(slot.slot(), slot.item())))
 		);
 
 		return listening::close;
 	}
 
 	private static ServerboundContainerClick click(ObservedScreen screen, InventoryAction action) {
-		if (action.getClick() == InventoryClick.HOTBAR_SWAP && !swapButton(action.getButton()))
-			throw new IllegalArgumentException("Invalid hotbar button: " + action.getButton());
+		if (action.click() == InventoryClick.HOTBAR_SWAP && !swapButton(action.button()))
+			throw new IllegalArgumentException("Invalid hotbar button: " + action.button());
 
-		int slot = action.getSlot();
-		return switch (action.getClick()) {
+		int slot = action.slot();
+		return switch (action.click()) {
 			case LEFT -> screen.click(slot, ClickType.PICKUP, ClickType.PRIMARY_BUTTON);
 			case RIGHT -> screen.click(slot, ClickType.PICKUP, ClickType.SECONDARY_BUTTON);
 			case SHIFT_LEFT -> screen.click(slot, ClickType.QUICK_MOVE, ClickType.PRIMARY_BUTTON);
-			case HOTBAR_SWAP -> screen.click(slot, ClickType.SWAP, action.getButton());
+			case HOTBAR_SWAP -> screen.click(slot, ClickType.SWAP, action.button());
 			case DROP_ONE -> screen.click(slot, ClickType.THROW, ClickType.PRIMARY_BUTTON);
 			case DROP_STACK -> screen.click(slot, ClickType.THROW, ClickType.SECONDARY_BUTTON);
 		};
@@ -142,8 +142,8 @@ public final class JavaInventoryExtension implements WorkerExtension<Object> {
 
 			return InventoryItem.builder()
 					.slot(slot)
-					.type(new ItemType(registry == null ? null : registry.key(stack.getId()).orElse(null), stack.getId()))
-					.amount(stack.getCount())
+					.type(new ItemType(registry == null ? null : registry.key(stack.id()).orElse(null), stack.id()))
+					.amount(stack.count())
 					.display(display(stack))
 					.build();
 		}
@@ -152,9 +152,9 @@ public final class JavaInventoryExtension implements WorkerExtension<Object> {
 		 * Names the item as the client does: by its custom name, else by its item name.
 		 */
 		private static ItemDisplay display(ItemStack stack) {
-			ItemDisplay.ItemDisplayBuilder display = ItemDisplay.builder().lore(stack.getLore());
-			if (stack.getCustomName() != null) return display.name(stack.getCustomName()).nameSource(ItemNameSource.CUSTOM).build();
-			if (stack.getItemName() != null) return display.name(stack.getItemName()).nameSource(ItemNameSource.ITEM).build();
+			ItemDisplay.ItemDisplayBuilder display = ItemDisplay.builder().lore(stack.lore());
+			if (stack.customName() != null) return display.name(stack.customName()).nameSource(ItemNameSource.CUSTOM).build();
+			if (stack.itemName() != null) return display.name(stack.itemName()).nameSource(ItemNameSource.ITEM).build();
 
 			return display.build();
 		}

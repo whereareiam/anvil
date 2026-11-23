@@ -22,7 +22,7 @@ import java.util.function.Consumer;
  * MCProtocolLib releases this Anvil version can run: the built-in release data shipped as
  * {@value #RESOURCE}, plus optional user-supplied releases in the same schema.
  *
- * <p>User-supplied releases are {@link ProtocolRelease#isAdditional() additional} and therefore untested. A
+ * <p>User-supplied releases are {@link ProtocolRelease#additional() additional} and therefore untested. A
  * user-supplied release whose version equals a built-in release with identical content is ignored with an
  * info line; one with different content is refused. Each Minecraft version belongs to at most one release
  * across both sources.</p>
@@ -55,9 +55,9 @@ public final class McProtocolReleaseCatalog {
 			@NotNull Consumer<String> notices
 	) {
 		Map<String, ReleaseDefinition> combined = new LinkedHashMap<>();
-		builtIn.forEach(definition -> combined.put(definition.getRelease().getLibraryVersion(), definition));
+		builtIn.forEach(definition -> combined.put(definition.release().libraryVersion(), definition));
 		for (ReleaseDefinition definition : additional) {
-			String version = definition.getRelease().getLibraryVersion();
+			String version = definition.release().libraryVersion();
 			ReleaseDefinition existing = combined.get(version);
 			if (existing == null) {
 				combined.put(version, definition);
@@ -73,16 +73,16 @@ public final class McProtocolReleaseCatalog {
 
 		Map<MinecraftVersion, String> owners = new LinkedHashMap<>();
 		for (ReleaseDefinition definition : combined.values())
-			for (MinecraftVersion minecraft : definition.getRelease().getMinecraftVersions()) {
-				String previous = owners.putIfAbsent(minecraft, definition.getRelease().getLibraryVersion());
+			for (MinecraftVersion minecraft : definition.release().minecraftVersions()) {
+				String previous = owners.putIfAbsent(minecraft, definition.release().libraryVersion());
 				if (previous != null)
 					throw new IllegalArgumentException("MCProtocolLib releases " + previous + " and "
-							+ definition.getRelease().getLibraryVersion() + " both list Minecraft " + minecraft);
+							+ definition.release().libraryVersion() + " both list Minecraft " + minecraft);
 			}
 
 		combined.values().stream()
-				.sorted(Comparator.comparing(definition -> definition.getRelease().version()))
-				.forEach(definition -> definitions.put(definition.getRelease().getLibraryVersion(), definition));
+				.sorted(Comparator.comparing(definition -> definition.release().version()))
+				.forEach(definition -> definitions.put(definition.release().libraryVersion(), definition));
 	}
 
 	/**
@@ -112,7 +112,7 @@ public final class McProtocolReleaseCatalog {
 	 * @return immutable releases
 	 */
 	public @NotNull List<ProtocolRelease> releases() {
-		return definitions.values().stream().map(ReleaseDefinition::getRelease).toList();
+		return definitions.values().stream().map(ReleaseDefinition::release).toList();
 	}
 
 	/**
@@ -124,7 +124,7 @@ public final class McProtocolReleaseCatalog {
 	 */
 	public @NotNull ReleaseDefinition require(@NotNull MinecraftVersion version) {
 		return definitions.values().stream()
-				.filter(definition -> definition.getRelease().getMinecraftVersions().contains(version))
+				.filter(definition -> definition.release().minecraftVersions().contains(version))
 				.findFirst()
 				.orElseThrow(() -> new IllegalArgumentException("No MCProtocolLib release speaks Minecraft " + version
 						+ ". Known releases: " + definitions.keySet()));
@@ -141,6 +141,6 @@ public final class McProtocolReleaseCatalog {
 	}
 
 	private static ReleaseDefinition asBuiltIn(ReleaseDefinition definition) {
-		return definition.toBuilder().release(definition.getRelease().toBuilder().additional(false).build()).build();
+		return definition.toBuilder().release(definition.release().toBuilder().additional(false).build()).build();
 	}
 }

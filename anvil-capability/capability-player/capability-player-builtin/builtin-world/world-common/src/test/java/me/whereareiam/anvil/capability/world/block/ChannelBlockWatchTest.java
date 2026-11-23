@@ -48,8 +48,8 @@ class ChannelBlockWatchTest {
 		try (BlockWatch watch = blocks.watch(BlockArea.of(FLOOR, DOOR))) {
 			changed(1, reading(DOOR, 1, STONE), reading(DOOR, 0, AIR));
 
-			assertEquals(1, watch.changed(DOOR, BlockQuery.any()).getState());
-			assertEquals(0, watch.changed(DOOR, BlockQuery.any()).getState());
+			assertEquals(1, watch.changed(DOOR, BlockQuery.any()).state());
+			assertEquals(0, watch.changed(DOOR, BlockQuery.any()).state());
 			assertEquals(List.of(), watch.unread());
 		}
 	}
@@ -63,8 +63,8 @@ class ChannelBlockWatchTest {
 
 			List<BlockChange> unread = watch.unread();
 			assertEquals(1, unread.size());
-			assertEquals(OVERWORLD, unread.getFirst().getLevel());
-			assertEquals(FLOOR, unread.getFirst().getBlock().getPosition());
+			assertEquals(OVERWORLD, unread.getFirst().level());
+			assertEquals(FLOOR, unread.getFirst().block().position());
 		}
 	}
 
@@ -120,7 +120,7 @@ class ChannelBlockWatchTest {
 			changed(1, reading(DOOR, 99999, null));
 
 			assertThrows(UnknownBlockNameException.class, () -> watch.changed(DOOR, BlockQuery.named("stone")));
-			assertEquals(99999, watch.changed(DOOR, BlockQuery.state(99999)).getState());
+			assertEquals(99999, watch.changed(DOOR, BlockQuery.state(99999)).state());
 		}
 	}
 

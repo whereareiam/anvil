@@ -53,7 +53,7 @@ public final class ProofOfPatienceScenarios {
 						.category("Proof of Patience")
 						.tag("authentication").tag("reconnect")
 						.build())
-				.entrypoint(authentication.getName())
+				.entrypoint(authentication.name())
 				.server(authentication)
 				.manual(manual)
 				.build();

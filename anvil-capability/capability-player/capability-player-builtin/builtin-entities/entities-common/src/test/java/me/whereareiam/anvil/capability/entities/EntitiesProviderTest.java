@@ -18,8 +18,8 @@ class EntitiesProviderTest {
 		EntitiesProvider provider = new EntitiesProvider();
 
 		assertEquals("me.whereareiam.anvil.entities", EntitiesChannel.ID);
-		assertEquals(EntitiesChannel.ID, provider.descriptor().getId());
-		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
+		assertEquals(EntitiesChannel.ID, provider.descriptor().id());
+		assertTrue(provider.descriptor().requiredCapabilities().isEmpty());
 		assertEquals(Set.of(JavaProtocol.class), provider.requiredProtocols());
 		assertEquals(Entities.class, provider.capability());
 	}
@@ -29,7 +29,7 @@ class EntitiesProviderTest {
 		TestProtocolChannel channel = new TestProtocolChannel(Set.of(EntitiesChannel.ID));
 		Entities entities = new EntitiesProvider().create(new TestProtocolPlayerCapabilityContext(channel));
 
-		assertEquals(List.of(EntitiesChannel.CHANGED.getId()), channel.subscriptions());
+		assertEquals(List.of(EntitiesChannel.CHANGED.id()), channel.subscriptions());
 		assertTrue(channel.requests().isEmpty());
 		assertTrue(entities.watch().unread().isEmpty());
 	}

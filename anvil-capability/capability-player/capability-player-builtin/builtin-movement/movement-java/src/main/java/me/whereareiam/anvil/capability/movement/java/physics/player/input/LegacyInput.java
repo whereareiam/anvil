@@ -31,12 +31,12 @@ public final class LegacyInput implements KeyInput {
 	public void read(@NotNull MovementInput keys) {
 		if (sprintTriggerTime > 0) sprintTriggerTime--;
 
-		boolean wasSneaking = body.getKeys().isSneak();
+		boolean wasSneaking = body.keys().sneak();
 		boolean hadEnoughImpulse = enoughImpulseToStartSprinting();
-		body.setCrouching(KeyInput.crouches(body, pose, wasSneaking));
-		body.setKeys(keys);
-		forwardImpulse = KeyInput.impulse(keys.isForward(), keys.isBackward());
-		leftImpulse = KeyInput.impulse(keys.isLeft(), keys.isRight());
+		body.crouching(KeyInput.crouches(body, pose, wasSneaking));
+		body.keys(keys);
+		forwardImpulse = KeyInput.impulse(keys.forward(), keys.backward());
+		leftImpulse = KeyInput.impulse(keys.left(), keys.right());
 		if (KeyInput.movesSlowly(body, pose, fluids)) {
 			float sneaking = KeyInput.sneakingSpeed(body);
 			leftImpulse *= sneaking;
@@ -45,10 +45,10 @@ public final class LegacyInput implements KeyInput {
 		if (wasSneaking) sprintTriggerTime = 0;
 
 		boolean canStart = canStartSprinting();
-		boolean doubleTap = (body.isOnGround() || body.isUnderWater()) && !wasSneaking && !hadEnoughImpulse;
-		if (doubleTap && canStart) pressForward(keys.isSprint());
-		if ((!fluids.isTouchingWater() || body.isUnderWater()) && canStart && keys.isSprint()) body.setSprinting(true);
-		if (body.isSprinting() && shouldStopSprinting()) body.setSprinting(false);
+		boolean doubleTap = (body.onGround() || body.underWater()) && !wasSneaking && !hadEnoughImpulse;
+		if (doubleTap && canStart) pressForward(keys.sprint());
+		if ((!fluids.touchingWater() || body.underWater()) && canStart && keys.sprint()) body.sprinting(true);
+		if (body.sprinting() && shouldStopSprinting()) body.sprinting(false);
 	}
 
 	/**
@@ -61,17 +61,17 @@ public final class LegacyInput implements KeyInput {
 			return;
 		}
 
-		body.setSprinting(true);
+		body.sprinting(true);
 	}
 
 	private boolean canStartSprinting() {
-		return !body.isSprinting() && enoughImpulseToStartSprinting() && KeyInput.sprintingPossible(body, fluids, true);
+		return !body.sprinting() && enoughImpulseToStartSprinting() && KeyInput.sprintingPossible(body, fluids, true);
 	}
 
 	private boolean shouldStopSprinting() {
-		boolean exhausted = !(forwardImpulse > 1.0E-5F) || !body.getServer().hasEnoughFood();
+		boolean exhausted = !(forwardImpulse > 1.0E-5F) || !body.server().hasEnoughFood();
 		return exhausted
-				|| body.isHorizontalCollision() && !body.isMinorHorizontalCollision()
+				|| body.horizontalCollision() && !body.minorHorizontalCollision()
 				|| KeyInput.inShallowWater(body, fluids);
 	}
 
@@ -79,7 +79,7 @@ public final class LegacyInput implements KeyInput {
 	 * {@code hasEnoughImpulseToStartSprinting}: any forward impulse under water, else at least {@code 0.8}.
 	 */
 	private boolean enoughImpulseToStartSprinting() {
-		return body.isUnderWater() ? forwardImpulse > 1.0E-5F : (double) forwardImpulse >= 0.8;
+		return body.underWater() ? forwardImpulse > 1.0E-5F : (double) forwardImpulse >= 0.8;
 	}
 
 	/**
@@ -87,8 +87,8 @@ public final class LegacyInput implements KeyInput {
 	 */
 	@Override
 	public void apply() {
-		body.setXxa(leftImpulse);
-		body.setZza(forwardImpulse);
-		body.setJumping(body.getKeys().isJump());
+		body.xxa(leftImpulse);
+		body.zza(forwardImpulse);
+		body.jumping(body.keys().jump());
 	}
 }

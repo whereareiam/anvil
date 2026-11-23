@@ -140,7 +140,7 @@ public final class ToolWindowController implements Disposable {
 	}
 
 	@NotNull Content addSession(@NotNull EnvironmentSession session) {
-		String name = session.getScenario().getDisplayName();
+		String name = session.getScenario().displayName();
 		int count = nameCounts.merge(name, 1, Integer::sum);
 		var panel = new EnvironmentTab(project, session);
 		panel.consolePresentation().start();
@@ -164,7 +164,7 @@ public final class ToolWindowController implements Disposable {
 	private void updateTab(@NotNull SessionTab entry) {
 		if (disposed || contents.isDisposed() || !tabs.containsKey(entry.session.getId())) return;
 
-		if (!entry.failureObserved && entry.session.getSnapshot().getState() == SessionState.FAILED) {
+		if (!entry.failureObserved && entry.session.getSnapshot().state() == SessionState.FAILED) {
 			entry.failureObserved = true;
 			failed(entry);
 		}
@@ -182,10 +182,10 @@ public final class ToolWindowController implements Disposable {
 		}
 		if (inView) return;
 
-		String failure = entry.session.getSnapshot().getFailure();
+		String failure = entry.session.getSnapshot().failure();
 		ScenarioNotifications.error(
 				project,
-				"“" + entry.session.getScenario().getDisplayName() + "” failed",
+				"“" + entry.session.getScenario().displayName() + "” failed",
 				failure == null ? "Open its console for details." : failure,
 				ScenarioNotifications.action("Show Console", () -> window.show(() -> select(entry.session, true))));
 	}
@@ -211,12 +211,12 @@ public final class ToolWindowController implements Disposable {
 				&& handler.isProcessTerminated()
 				&& exitCode != null
 				&& exitCode == 0
-				&& session.getSnapshot().getState() == SessionState.STOPPED
-				&& session.getSnapshot().getFailure() == null;
+				&& session.getSnapshot().state() == SessionState.STOPPED
+				&& session.getSnapshot().failure() == null;
 	}
 
 	private static @NotNull String title(@NotNull EnvironmentSession session, int count) {
-		return session.getScenario().getDisplayName() + (count > 1 ? " (" + count + ")" : "");
+		return session.getScenario().displayName() + (count > 1 ? " (" + count + ")" : "");
 	}
 
 	@Override

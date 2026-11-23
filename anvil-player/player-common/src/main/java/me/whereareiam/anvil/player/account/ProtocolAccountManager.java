@@ -80,7 +80,7 @@ public final class ProtocolAccountManager implements AccountManager {
 		if (accountIds.isEmpty()) throw new IllegalArgumentException("Account pool must contain at least one account");
 		Map<String, List<AuthenticationAccount>> available = new LinkedHashMap<>();
 		for (AuthenticationAccount account : list())
-			available.computeIfAbsent(account.getAccountId(), id -> new ArrayList<>()).add(account);
+			available.computeIfAbsent(account.accountId(), id -> new ArrayList<>()).add(account);
 		List<AuthenticationAccount> selected = new ArrayList<>();
 		Set<String> unique = new LinkedHashSet<>();
 		for (String accountId : accountIds) {
@@ -89,7 +89,7 @@ public final class ProtocolAccountManager implements AccountManager {
 			if (stored == null) throw new IllegalArgumentException("Unknown account: " + accountId);
 			if (stored.size() > 1)
 				throw new IllegalArgumentException("Account '" + accountId + "' is stored by several protocol libraries "
-						+ stored.stream().map(AuthenticationAccount::getLibraryId).toList()
+						+ stored.stream().map(AuthenticationAccount::libraryId).toList()
 						+ "; a pool leases one account per ID, so store each pooled ID in one library only");
 
 			selected.add(stored.getFirst());

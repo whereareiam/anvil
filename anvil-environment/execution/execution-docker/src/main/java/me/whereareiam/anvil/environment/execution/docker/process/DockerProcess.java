@@ -40,7 +40,7 @@ final class DockerProcess implements ProcessExecution {
 	}
 
 	@Override
-	public boolean isAlive() {
+	public boolean alive() {
 		return !attachment.exited().isDone();
 	}
 
@@ -65,12 +65,12 @@ final class DockerProcess implements ProcessExecution {
 	public void terminate(boolean force) {
 		// Docker refuses to stop a paused container.
 		thaw();
-		if (isAlive()) container.stop(force);
+		if (alive()) container.stop(force);
 	}
 
 	@Override
 	public @NotNull RunningContainer.CommandResult execute(@NotNull Duration timeout, @NotNull String... command) {
-		if (!isAlive()) throw new IllegalStateException("The container is not running");
+		if (!alive()) throw new IllegalStateException("The container is not running");
 		if (frozen) throw new IllegalStateException("The container is frozen; thaw it to run a command in it");
 
 		return container.execute(timeout, command);
@@ -78,7 +78,7 @@ final class DockerProcess implements ProcessExecution {
 
 	@Override
 	public synchronized void freeze() {
-		if (frozen || !isAlive()) return;
+		if (frozen || !alive()) return;
 
 		container.pause();
 		frozen = true;

@@ -37,7 +37,7 @@ class ConnectionPacketsTest {
 	void recordsTheLevelOfEachLoginForTheConnectionsOtherTranslations() {
 		ClientboundLogin login = (ClientboundLogin) packets.decode(login(overworld()));
 
-		assertEquals(Optional.of(new Level(login.getDimension(), login.getDimensionType())), level.current());
+		assertEquals(Optional.of(new Level(login.dimension(), login.dimensionType())), level.current());
 	}
 
 	@Test
@@ -77,7 +77,7 @@ class ConnectionPacketsTest {
 		assertEquals(DimensionType.withEffects("example:plain", "minecraft:overworld", 0, 256),
 				((ClientboundLogin) packets.decode(new ClientboundLoginPacket(42, false, GameMode.SURVIVAL, GameMode.SURVIVAL,
 						1, new String[]{"example:plain"}, codec, plain, "example:plain", 0, 20, 10, 10, false, true, false,
-						false))).getDimensionType());
+						false))).dimensionType());
 	}
 
 	@Test
@@ -87,15 +87,15 @@ class ConnectionPacketsTest {
 		ClientboundRespawn respawn = (ClientboundRespawn) packets.decode(new ClientboundRespawnPacket(nether(),
 				"minecraft:the_nether", 0, GameMode.SPECTATOR, GameMode.UNKNOWN, false, false, false));
 
-		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.CREATIVE, login.getGameMode());
-		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.SPECTATOR, respawn.getGameMode());
+		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.CREATIVE, login.gameMode());
+		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.SPECTATOR, respawn.gameMode());
 	}
 
 	@Test
 	void readsFastLavaFromTheUltrawarmFlagOfTheType() {
-		assertFalse(((ClientboundLogin) packets.decode(login(overworld()))).getDimensionType().isFastLava());
+		assertFalse(((ClientboundLogin) packets.decode(login(overworld()))).dimensionType().fastLava());
 		assertTrue(((ClientboundRespawn) packets.decode(new ClientboundRespawnPacket(nether(), "minecraft:the_nether",
-				0, GameMode.SURVIVAL, GameMode.SURVIVAL, false, false, false))).getDimensionType().isFastLava());
+				0, GameMode.SURVIVAL, GameMode.SURVIVAL, false, false, false))).dimensionType().fastLava());
 	}
 
 	@Test
@@ -122,8 +122,8 @@ class ConnectionPacketsTest {
 
 	@Test
 	void carriesWhetherTheClientShowsTheDeathScreen() {
-		assertTrue(((ClientboundLogin) packets.decode(login(overworld()))).isShowDeathScreen());
-		assertFalse(((ClientboundLogin) packets.decode(login(overworld()).withEnableRespawnScreen(false))).isShowDeathScreen());
+		assertTrue(((ClientboundLogin) packets.decode(login(overworld()))).showDeathScreen());
+		assertFalse(((ClientboundLogin) packets.decode(login(overworld()).withEnableRespawnScreen(false))).showDeathScreen());
 	}
 
 	private static ClientboundLoginPacket login(CompoundTag dimension) {

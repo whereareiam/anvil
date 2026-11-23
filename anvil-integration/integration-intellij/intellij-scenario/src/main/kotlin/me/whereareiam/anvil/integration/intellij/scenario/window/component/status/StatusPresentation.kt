@@ -94,16 +94,16 @@ object StatusPresentation {
 
 	@JvmStatic fun processSummary(scenario: ScenarioDescriptor, snapshot: SessionSnapshot): String {
 		val total = processCount(scenario, snapshot)
-		if (snapshot.state == SessionState.FAILED || snapshot.state == SessionState.STOPPING) return "$total configured"
+		if (snapshot.state() == SessionState.FAILED || snapshot.state() == SessionState.STOPPING) return "$total configured"
 
-		val running = if (snapshot.state == SessionState.STOPPED) 0 else runningCount(snapshot)
+		val running = if (snapshot.state() == SessionState.STOPPED) 0 else runningCount(snapshot)
 		return "$running of $total running"
 	}
 
-	private fun runningCount(snapshot: SessionSnapshot) = snapshot.processes.count { it.state == ProcessState.READY }
+	private fun runningCount(snapshot: SessionSnapshot) = snapshot.processes().count { it.state() == ProcessState.READY }
 
 	private fun processCount(scenario: ScenarioDescriptor, snapshot: SessionSnapshot) =
-		maxOf(scenario.processes.size, snapshot.processes.size)
+		maxOf(scenario.processes().size, snapshot.processes().size)
 
 	enum class Tone {
 		NEUTRAL,

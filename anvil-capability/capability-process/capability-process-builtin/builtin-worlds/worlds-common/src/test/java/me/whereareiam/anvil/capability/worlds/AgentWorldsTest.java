@@ -75,8 +75,8 @@ class AgentWorldsTest {
 
 	@Test
 	void locatesAPlayerByAnyProfileItsClientWasGranted() {
-		server.placements.put(forwarded.getUniqueId(), NETHER_SPAWN);
-		server.placements.put(bob.getUniqueId(), OVERWORLD_SPAWN);
+		server.placements.put(forwarded.uniqueId(), NETHER_SPAWN);
+		server.placements.put(bob.uniqueId(), OVERWORLD_SPAWN);
 
 		assertEquals(Optional.of(location(NETHER_SPAWN)), worlds.location(alice));
 		assertEquals(Optional.empty(), worlds.location(player("Carol")));
@@ -84,21 +84,21 @@ class AgentWorldsTest {
 
 	@Test
 	void sendsAPlayerToAWorldsSpawnOrToALocationUnderTheUuidTheServerKnows() {
-		server.placements.put(forwarded.getUniqueId(), OVERWORLD_SPAWN);
+		server.placements.put(forwarded.uniqueId(), OVERWORLD_SPAWN);
 
 		worlds.send(alice, "the_nether");
 		worlds.send(alice, WorldLocation.builder().world("arena").x(1).y(81).z(2).yaw(90).pitch(10).build());
 
 		assertEquals(List.of(
-				AgentTransfer.builder().uniqueId(forwarded.getUniqueId()).location(NETHER_SPAWN).build(),
-				AgentTransfer.builder().uniqueId(forwarded.getUniqueId()).location(AgentLocation.builder()
+				AgentTransfer.builder().uniqueId(forwarded.uniqueId()).location(NETHER_SPAWN).build(),
+				AgentTransfer.builder().uniqueId(forwarded.uniqueId()).location(AgentLocation.builder()
 						.world("minecraft:arena").x(1).y(81).z(2).yaw(90).pitch(10).build()).build()
 		), server.transfers);
 	}
 
 	@Test
 	void refusesToSendToAWorldTheServerHasNotLoadedOrAPlayerItDoesNotHave() {
-		server.placements.put(forwarded.getUniqueId(), OVERWORLD_SPAWN);
+		server.placements.put(forwarded.uniqueId(), OVERWORLD_SPAWN);
 
 		assertEquals("'lobby' has not loaded the world 'minecraft:the_end'; it has [minecraft:overworld, "
 				+ "minecraft:the_nether, minecraft:arena]", assertThrows(IllegalArgumentException.class,
@@ -110,7 +110,7 @@ class AgentWorldsTest {
 
 	@Test
 	void failsWhenTheServerRefusedTheTransfer() {
-		server.placements.put(forwarded.getUniqueId(), OVERWORLD_SPAWN);
+		server.placements.put(forwarded.uniqueId(), OVERWORLD_SPAWN);
 		server.refuse = true;
 
 		assertEquals("'lobby' refused to move player 'Alice' to 'minecraft:arena'",
@@ -332,8 +332,8 @@ class AgentWorldsTest {
 		assertEquals("'lobby' loaded the world 'minecraft:dungeon', which it must not do",
 				assertThrows(IllegalStateException.class, () -> events.neverLoaded("dungeon", WAIT)).getMessage());
 		WorldEvent loaded = events.loaded("minecraft:dungeon", WAIT);
-		assertEquals(List.of("minecraft:dungeon", WorldEventType.LOADED), List.of(loaded.getWorld(), loaded.getType()));
-		assertEquals(WorldEventType.UNLOADED, events.unloaded("dungeon", WAIT).getType());
+		assertEquals(List.of("minecraft:dungeon", WorldEventType.LOADED), List.of(loaded.world(), loaded.type()));
+		assertEquals(WorldEventType.UNLOADED, events.unloaded("dungeon", WAIT).type());
 		assertEquals(List.of(), events.unread());
 	}
 
@@ -351,29 +351,29 @@ class AgentWorldsTest {
 
 	@Test
 	void watchesOnlyChangesSinceItForTheMatchingPlayer() {
-		server.log.record(forwarded.getUniqueId(), "Alice", "minecraft:overworld", "minecraft:arena");
+		server.log.record(forwarded.uniqueId(), "Alice", "minecraft:overworld", "minecraft:arena");
 		WorldChangeWatch changes = worlds.watch();
 
-		server.log.record(bob.getUniqueId(), "Bob", "minecraft:overworld", "minecraft:arena");
+		server.log.record(bob.uniqueId(), "Bob", "minecraft:overworld", "minecraft:arena");
 		assertThrows(IllegalStateException.class, () -> changes.changed(alice, "arena", WAIT));
 
-		server.log.record(forwarded.getUniqueId(), "Alice", "minecraft:arena", "minecraft:the_nether");
+		server.log.record(forwarded.uniqueId(), "Alice", "minecraft:arena", "minecraft:the_nether");
 		WorldChange change = changes.changed(alice, "minecraft:the_nether", WAIT);
-		assertEquals(forwarded, change.getProfile());
-		assertEquals("minecraft:arena", change.getFrom());
+		assertEquals(forwarded, change.profile());
+		assertEquals("minecraft:arena", change.from());
 		assertEquals(List.of(), changes.unread());
 	}
 
 	@Test
 	void keepsTheChangesOfARestartedServerFollowedByThoseOfItsNewProcess() {
 		WorldChangeWatch changes = worlds.watch();
-		server.log.record(forwarded.getUniqueId(), "Alice", "minecraft:overworld", "minecraft:arena");
-		assertEquals("minecraft:arena", changes.changed(alice, WAIT).getTo());
+		server.log.record(forwarded.uniqueId(), "Alice", "minecraft:overworld", "minecraft:arena");
+		assertEquals("minecraft:arena", changes.changed(alice, WAIT).to());
 
 		server.log = new WorldChangeLog();
-		server.log.record(forwarded.getUniqueId(), "Alice", "minecraft:overworld", "minecraft:the_nether");
+		server.log.record(forwarded.uniqueId(), "Alice", "minecraft:overworld", "minecraft:the_nether");
 
-		assertEquals("minecraft:the_nether", changes.changed(alice, WAIT).getTo());
+		assertEquals("minecraft:the_nether", changes.changed(alice, WAIT).to());
 	}
 
 	@Test
@@ -384,7 +384,7 @@ class AgentWorldsTest {
 		changes.neverChanged(alice, WAIT);
 		assertFalse(arena.met());
 
-		server.log.record(forwarded.getUniqueId(), "Alice", "minecraft:overworld", "minecraft:arena");
+		server.log.record(forwarded.uniqueId(), "Alice", "minecraft:overworld", "minecraft:arena");
 		assertTrue(arena.met());
 		assertEquals("'lobby' moved player 'Alice' from 'minecraft:overworld' to 'minecraft:arena', which it must not do",
 				assertThrows(IllegalStateException.class, () -> changes.neverChanged(alice, WAIT)).getMessage());
@@ -395,8 +395,8 @@ class AgentWorldsTest {
 	}
 
 	private static WorldLocation location(AgentLocation location) {
-		return WorldLocation.builder().world(location.getWorld()).x(location.getX()).y(location.getY()).z(location.getZ())
-				.yaw(location.getYaw()).pitch(location.getPitch()).build();
+		return WorldLocation.builder().world(location.world()).x(location.x()).y(location.y()).z(location.z())
+				.yaw(location.yaw()).pitch(location.pitch()).build();
 	}
 
 	private static AgentLocation location(String world, double x, double y, double z) {
@@ -431,7 +431,7 @@ class AgentWorldsTest {
 		public <Q, R> @Nullable R request(@NotNull ChannelOperation<Q, R> operation, @Nullable Q request) {
 			if (stopped) throw new ChannelUnavailableException("The server stopped", new IllegalStateException("closed"));
 
-			Object response = switch (operation.getId()) {
+			Object response = switch (operation.id()) {
 				case "me.whereareiam.anvil.worlds.worlds" -> AgentWorldList.builder().worlds(List.copyOf(loaded)).build();
 				case "me.whereareiam.anvil.worlds.placements" -> AgentPlacements.builder()
 						.placements(placements.entrySet().stream()
@@ -448,7 +448,7 @@ class AgentWorldsTest {
 				case "me.whereareiam.anvil.worlds.events" -> events.since((AgentLogRequest) request);
 				case "me.whereareiam.anvil.worlds.create" -> {
 					requests.add(request);
-					if (outcome.getWorld() != null) loaded.add(outcome.getWorld());
+					if (outcome.world() != null) loaded.add(outcome.world());
 					yield outcome;
 				}
 				case "me.whereareiam.anvil.worlds.delete" -> {
@@ -456,19 +456,19 @@ class AgentWorldsTest {
 					AgentWorldOutcome deletion = deletions.poll();
 					if (deletion == null) yield outcome;
 
-					if (deletion.getRefusal() == null && deletion.getUnsupported() == null)
-						loaded.removeIf(world -> world.getKey().equals(request));
+					if (deletion.refusal() == null && deletion.unsupported() == null)
+						loaded.removeIf(world -> world.key().equals(request));
 					yield deletion;
 				}
 				case "me.whereareiam.anvil.worlds.load", "me.whereareiam.anvil.worlds.unload" -> {
 					requests.add(request);
 					yield outcome;
 				}
-				default -> throw new AssertionError("Unknown operation " + operation.getId());
+				default -> throw new AssertionError("Unknown operation " + operation.id());
 			};
-			assertEquals(WorldsOperations.NAMESPACE, operation.getId().substring(0, operation.getId().lastIndexOf('.')));
+			assertEquals(WorldsOperations.NAMESPACE, operation.id().substring(0, operation.id().lastIndexOf('.')));
 
-			return operation.getResponseType().cast(response);
+			return operation.responseType().cast(response);
 		}
 	}
 

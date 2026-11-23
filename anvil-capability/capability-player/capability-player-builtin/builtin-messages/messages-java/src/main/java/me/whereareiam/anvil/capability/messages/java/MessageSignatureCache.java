@@ -32,10 +32,10 @@ final class MessageSignatureCache {
 	 * @return the signature, or {@code null} when the cache holds none at that index
 	 */
 	@Nullable MessageSignature unpack(@NotNull PackedMessageSignature packed) {
-		if (packed.getSignature() != null) return packed.getSignature();
-		if (packed.getCacheIndex() >= CAPACITY) return null;
+		if (packed.signature() != null) return packed.signature();
+		if (packed.cacheIndex() >= CAPACITY) return null;
 
-		return entries[packed.getCacheIndex()];
+		return entries[packed.cacheIndex()];
 	}
 
 	/**

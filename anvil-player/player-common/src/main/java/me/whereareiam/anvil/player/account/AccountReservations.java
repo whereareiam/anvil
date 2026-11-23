@@ -44,7 +44,7 @@ public final class AccountReservations {
 	 * @return unclaimed lease, or null when the account is already reserved
 	 */
 	@Nullable AccountLease lease(@NotNull AuthenticationAccount account, @NotNull Consumer<AccountLease> onSettled) {
-		if (!reserve(account.getAccountId())) return null;
+		if (!reserve(account.accountId())) return null;
 
 		return new Lease(account, onSettled);
 	}
@@ -86,7 +86,7 @@ public final class AccountReservations {
 				settled = claimed;
 			}
 
-			unreserve(account.getAccountId());
+			unreserve(account.accountId());
 			if (!settled) onSettled.accept(this);
 		}
 	}

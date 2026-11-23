@@ -76,14 +76,14 @@ final class WorkerRpcClient {
 	}
 
 	synchronized void accept(@NotNull WorkerResponse response) {
-		CompletableFuture<JsonNode> future = pending.remove(response.getId());
+		CompletableFuture<JsonNode> future = pending.remove(response.id());
 		if (future == null) return;
-		if (response.isSuccess()) {
-			future.complete(response.getResult());
+		if (response.success()) {
+			future.complete(response.result());
 			return;
 		}
 
-		future.completeExceptionally(new IllegalStateException(response.getError()));
+		future.completeExceptionally(new IllegalStateException(response.error()));
 	}
 
 	synchronized void fail(@NotNull Throwable cause) {

@@ -147,8 +147,8 @@ public class EnvironmentTabPlatformTest extends ScenarioPlatformTestCase {
 												SwingTestSupport.find(panel, PlayersPanel.class),
 												javax.swing.JComboBox.class)
 										.getSelectedItem())
-						.getDefinition()
-						.getDisplayName());
+						.definition()
+						.displayName());
 	}
 
 	public void testContributedObservationUpdatesDoNotResetEnvironmentTextSelection() {
@@ -252,7 +252,7 @@ public class EnvironmentTabPlatformTest extends ScenarioPlatformTestCase {
 		assertFalse(SwingTestSupport.actionEnabled(panel, "Start Server"));
 		assertTrue(SwingTestSupport.actionEnabled(panel, "Stop Server"));
 		assertTrue(SwingTestSupport.actionEnabled(panel, "Restart Server"));
-		var stopped = run.getSnapshot().getProcesses().getFirst().toBuilder().state(ProcessState.STOPPED).build();
+		var stopped = run.getSnapshot().processes().getFirst().toBuilder().state(ProcessState.STOPPED).build();
 
 				EnvironmentSessionFixture.update(run, run.getSnapshot().toBuilder().processes(List.of(stopped)).build());
 		UIUtil.dispatchAllInvocationEvents();
@@ -276,7 +276,7 @@ public class EnvironmentTabPlatformTest extends ScenarioPlatformTestCase {
 		var scenario =
 				ScenarioFixtures.scenario().toBuilder()
 						.clearProcesses()
-						.process(ScenarioFixtures.scenario().getProcesses().getFirst())
+						.process(ScenarioFixtures.scenario().processes().getFirst())
 						.build();
 		var run =
 				EnvironmentSessionFixture.create(
@@ -293,7 +293,7 @@ public class EnvironmentTabPlatformTest extends ScenarioPlatformTestCase {
 		EnvironmentSession run = createRun();
 		EnvironmentTab panel = panel(run);
 		JTree tree = SwingTestSupport.find(panel, JTree.class);
-		var onlyServer = run.getSnapshot().getProcesses().getFirst();
+		var onlyServer = run.getSnapshot().processes().getFirst();
 
 				EnvironmentSessionFixture.update(run, run.getSnapshot().toBuilder().processes(List.of(onlyServer)).build());
 		UIUtil.dispatchAllInvocationEvents();
@@ -370,8 +370,8 @@ public class EnvironmentTabPlatformTest extends ScenarioPlatformTestCase {
 		var scenario =
 				base.toBuilder()
 						.clearProcesses()
-						.process(base.getProcesses().getFirst().toBuilder().distribution(distribution).build())
-						.process(base.getProcesses().getLast())
+						.process(base.processes().getFirst().toBuilder().distribution(distribution).build())
+						.process(base.processes().getLast())
 						.build();
 		var run =
 				EnvironmentSessionFixture.create(
@@ -412,7 +412,7 @@ public class EnvironmentTabPlatformTest extends ScenarioPlatformTestCase {
 
 				EnvironmentSessionFixture.update(run,
 				run.getSnapshot().toBuilder()
-						.processes(List.of(run.getSnapshot().getProcesses().getFirst()))
+						.processes(List.of(run.getSnapshot().processes().getFirst()))
 						.build());
 		EnvironmentTab panel = panel(run);
 		int narrow = widthWithoutLabelRoom(panel);
@@ -591,9 +591,9 @@ public class EnvironmentTabPlatformTest extends ScenarioPlatformTestCase {
 					EnvironmentSessionFixture.update(run,
 					SessionSnapshot.builder()
 							.state(SessionState.RUNNING)
-							.scenario(scenario.getName())
-							.displayName(scenario.getDisplayName())
-							.definition(scenario.getDefinition())
+							.scenario(scenario.name())
+							.displayName(scenario.displayName())
+							.definition(scenario.definition())
 							.entrypoint("proxy")
 							.processes(
 									List.of(

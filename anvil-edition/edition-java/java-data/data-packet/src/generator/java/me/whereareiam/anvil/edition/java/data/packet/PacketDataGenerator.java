@@ -53,20 +53,20 @@ public final class PacketDataGenerator {
 	 * @throws IllegalStateException when a protocol file breaks the expected shape
 	 */
 	public static void generate(@NotNull GenerationRequest request) throws IOException {
-		Path output = clean(request.getOutput());
+		Path output = clean(request.output());
 		Set<Integer> protocols = new TreeSet<>();
-		for (GenerationRequest.PinnedProtocol pinned : request.getProtocols()) {
-			PacketRegistry registry = registry(request.getRelease(), pinned);
-			try (OutputStream file = Files.newOutputStream(output.resolve(JavaPacketData.registryResource(pinned.getProtocol())))) {
+		for (GenerationRequest.PinnedProtocol pinned : request.protocols()) {
+			PacketRegistry registry = registry(request.release(), pinned);
+			try (OutputStream file = Files.newOutputStream(output.resolve(JavaPacketData.registryResource(pinned.protocol())))) {
 				PacketDataCodec.writeRegistry(registry, file);
 			}
-			protocols.add(pinned.getProtocol());
+			protocols.add(pinned.protocol());
 		}
 
 		Map<Integer, String> missing = new TreeMap<>();
-		GenerationRequest.Release release = request.getRelease();
-		for (int protocol : request.getMissing())
-			missing.put(protocol, release.getRepository() + " " + release.getVersion() + " has no protocol file for it");
+		GenerationRequest.Release release = request.release();
+		for (int protocol : request.missing())
+			missing.put(protocol, release.repository() + " " + release.version() + " has no protocol file for it");
 		try (OutputStream file = Files.newOutputStream(output.resolve(JavaPacketData.indexResource()))) {
 			PacketDataCodec.writeIndex(new JavaPacketData(protocols, missing), file);
 		}
@@ -74,17 +74,17 @@ public final class PacketDataGenerator {
 
 	private static PacketRegistry registry(GenerationRequest.Release release, GenerationRequest.PinnedProtocol pinned)
 			throws IOException {
-		GenerationRequest.PinnedFile file = pinned.getFiles().getPackets();
-		String context = "minecraft-data " + file.getPath() + " for protocol " + pinned.getProtocol();
+		GenerationRequest.PinnedFile file = pinned.files().packets();
+		String context = "minecraft-data " + file.path() + " for protocol " + pinned.protocol();
 		PacketDataSource source = PacketDataSource.builder()
-				.repository(release.getRepository())
-				.version(release.getVersion())
-				.commit(release.getCommit())
-				.protocol(file.getPath())
+				.repository(release.repository())
+				.version(release.version())
+				.commit(release.commit())
+				.protocol(file.path())
 				.build();
 
-		return new PacketRegistry(pinned.getProtocol(), source,
-				PacketMappings.clientbound(context, JSON.readTree(file.getFile().toFile())));
+		return new PacketRegistry(pinned.protocol(), source,
+				PacketMappings.clientbound(context, JSON.readTree(file.file().toFile())));
 	}
 
 	/**

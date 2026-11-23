@@ -58,30 +58,30 @@ final class ManagedProcessGroup implements ProcessGroup {
 
 	void prepare() {
 		preparation.open();
-		for (ProcessSpec process : plan.getProcesses())
-			sessions.computeIfAbsent(executionOf(process), id -> executions.get(id).open(plan.getContext()));
+		for (ProcessSpec process : plan.processes())
+			sessions.computeIfAbsent(executionOf(process), id -> executions.get(id).open(plan.context()));
 
 		ProcessScheduler tasks = new ProcessScheduler(
-				plan.getProcessScheduling().getParallelism(),
-				plan.getProcessScheduling().getStartupMemoryMegabytes()
+				plan.processScheduling().parallelism(),
+				plan.processScheduling().startupMemoryMegabytes()
 		);
-		tasks.run(plan.getProcesses(), process -> {
-			ProcessTarget target = sessions.get(executionOf(process)).prepare(process.getRequest());
-			targets.put(process.getRequest().getName(), target);
+		tasks.run(plan.processes(), process -> {
+			ProcessTarget target = sessions.get(executionOf(process)).prepare(process.request());
+			targets.put(process.request().name(), target);
 		});
 
 		for (ProcessSpec process : orderedProcesses()) {
-			String name = process.getRequest().getName();
+			String name = process.request().name();
 			Map<String, InetSocketAddress> peers = peersOf(process);
 			processes.register(new ProcessSlot(process, targets.get(name), preparation, peers, addressesOf(process, peers),
-					plan.getProcessTimeouts().getStartup(), plan.getProcessTimeouts().getShutdown(), observer));
+					plan.processTimeouts().startup(), plan.processTimeouts().shutdown(), observer));
 		}
 
-		tasks.run(plan.getProcesses(), process -> processes.prepare(process.getRequest().getName()));
+		tasks.run(plan.processes(), process -> processes.prepare(process.request().name()));
 	}
 
 	private String executionOf(ProcessSpec process) {
-		return process.getExecutionProviderId() == null ? plan.getExecutionProviderId() : process.getExecutionProviderId();
+		return process.executionProviderId() == null ? plan.executionProviderId() : process.executionProviderId();
 	}
 
 	/**
@@ -89,10 +89,10 @@ final class ManagedProcessGroup implements ProcessGroup {
 	 * execution session, else at the other's host address, together with the running peers outside the plan.
 	 */
 	private Map<String, InetSocketAddress> peersOf(ProcessSpec reader) {
-		Map<String, InetSocketAddress> peers = new LinkedHashMap<>(plan.getPeers());
-		for (ProcessSpec process : plan.getProcesses()) {
-			ProcessTarget target = targets.get(process.getRequest().getName());
-			peers.put(process.getRequest().getName(), sameSession(reader, process) ? target.peerAddress() : target.address());
+		Map<String, InetSocketAddress> peers = new LinkedHashMap<>(plan.peers());
+		for (ProcessSpec process : plan.processes()) {
+			ProcessTarget target = targets.get(process.request().name());
+			peers.put(process.request().name(), sameSession(reader, process) ? target.peerAddress() : target.address());
 		}
 
 		return Map.copyOf(peers);
@@ -100,9 +100,9 @@ final class ManagedProcessGroup implements ProcessGroup {
 
 	private ProcessAddresses addressesOf(ProcessSpec reader, Map<String, InetSocketAddress> peers) {
 		Map<String, Map<String, InetSocketAddress>> listeners = new LinkedHashMap<>();
-		for (ProcessSpec process : plan.getProcesses()) {
-			ProcessTarget target = targets.get(process.getRequest().getName());
-			listeners.put(process.getRequest().getName(), sameSession(reader, process) ? target.peerListeners() : target.listeners());
+		for (ProcessSpec process : plan.processes()) {
+			ProcessTarget target = targets.get(process.request().name());
+			listeners.put(process.request().name(), sameSession(reader, process) ? target.peerListeners() : target.listeners());
 		}
 
 		return ProcessAddresses.of(peers, listeners);
@@ -118,11 +118,11 @@ final class ManagedProcessGroup implements ProcessGroup {
 			if (closed) throw new IllegalStateException("Cannot start a finalized process group");
 		}
 		ProcessScheduler tasks = new ProcessScheduler(
-				plan.getProcessScheduling().getParallelism(),
-				plan.getProcessScheduling().getStartupMemoryMegabytes()
+				plan.processScheduling().parallelism(),
+				plan.processScheduling().startupMemoryMegabytes()
 		);
 		for (List<ProcessSpec> layer : startupOrder)
-			tasks.start(layer, process -> processes.start(process.getRequest().getName()));
+			tasks.start(layer, process -> processes.start(process.request().name()));
 	}
 
 	@Override
@@ -138,9 +138,9 @@ final class ManagedProcessGroup implements ProcessGroup {
 
 		List<Throwable> failures = new ArrayList<>();
 		attempt(() -> processes.stop(startupOrder.stream()
-				.map(layer -> layer.stream().map(process -> process.getRequest().getName()).toList()).toList()), failures);
+				.map(layer -> layer.stream().map(process -> process.request().name()).toList()).toList()), failures);
 		for (ProcessSpec process : orderedProcesses().reversed()) {
-			ProcessTarget target = targets.remove(process.getRequest().getName());
+			ProcessTarget target = targets.remove(process.request().name());
 			if (target != null) attempt(target::close, failures);
 		}
 		for (ExecutionSession session : List.copyOf(sessions.values()).reversed()) attempt(session::close, failures);

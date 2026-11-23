@@ -35,18 +35,18 @@ public final class ScenarioValidator {
 	 */
 	public void validate(@NotNull AnvilScenario scenario, boolean eulaAccepted) {
 		validateDeclaration(scenario);
-		validateTimeout("Startup", scenario.getProcessTimeouts().getStartup());
-		validateTimeout("Shutdown", scenario.getProcessTimeouts().getShutdown());
+		validateTimeout("Startup", scenario.processTimeouts().startup());
+		validateTimeout("Shutdown", scenario.processTimeouts().shutdown());
 		validateBinding(scenario);
 		validateEula(scenario, eulaAccepted);
 		validateProcessReferences(scenario);
 	}
 
 	private void validateDeclaration(@NotNull AnvilScenario scenario) {
-		if (blank(scenario.getName()))
+		if (blank(scenario.name()))
 			throw new ScenarioValidationException("Scenario name must not be blank");
-		if (scenario.getServers().isEmpty() && scenario.getProxies().isEmpty() && scenario.getRemotes().isEmpty())
-			throw new ScenarioValidationException("Scenario '" + scenario.getName() + "' has no servers, proxies or remotes");
+		if (scenario.servers().isEmpty() && scenario.proxies().isEmpty() && scenario.remotes().isEmpty())
+			throw new ScenarioValidationException("Scenario '" + scenario.name() + "' has no servers, proxies or remotes");
 	}
 
 	private void validateTimeout(String name, @Nullable Duration timeout) {
@@ -56,49 +56,49 @@ public final class ScenarioValidator {
 
 	private void validateBinding(@NotNull AnvilScenario scenario) {
 		try {
-			if (InetAddress.getByName(scenario.getNetworkPolicy().getBindAddress()).isLoopbackAddress()) return;
+			if (InetAddress.getByName(scenario.networkPolicy().bindAddress()).isLoopbackAddress()) return;
 		} catch (UnknownHostException failure) {
 			throw new ScenarioValidationException(
-					"Invalid scenario bind address: " + scenario.getNetworkPolicy().getBindAddress(),
+					"Invalid scenario bind address: " + scenario.networkPolicy().bindAddress(),
 					failure
 			);
 		}
-		if (!scenario.isManual() || !scenario.getNetworkPolicy().isAllowLanBinding())
+		if (!scenario.manual() || !scenario.networkPolicy().allowLanBinding())
 			throw new ScenarioValidationException("Non-loopback binding requires a manual scenario and allowLanBinding=true");
 	}
 
 	private void validateEula(@NotNull AnvilScenario scenario, boolean eulaAccepted) {
-		if (!eulaAccepted && !scenario.getServers().isEmpty())
+		if (!eulaAccepted && !scenario.servers().isEmpty())
 			throw new ScenarioValidationException("Mojang EULA acceptance is required before starting servers");
 	}
 
 	private void validateProcessReferences(@NotNull AnvilScenario scenario) {
-		String entrypoint = scenario.getEntrypoint();
+		String entrypoint = scenario.entrypoint();
 		if (blank(entrypoint))
-			throw new ScenarioValidationException("Scenario '" + scenario.getName() + "' must declare an entrypoint");
+			throw new ScenarioValidationException("Scenario '" + scenario.name() + "' must declare an entrypoint");
 
 		Set<String> serverNames = new HashSet<>();
-		for (MinecraftServer server : scenario.getServers())
-			registerProcessName(server.getName(), serverNames);
-		scenario.getServers().forEach(this::validateListeners);
-		scenario.getProxies().forEach(this::validateListeners);
+		for (MinecraftServer server : scenario.servers())
+			registerProcessName(server.name(), serverNames);
+		scenario.servers().forEach(this::validateListeners);
+		scenario.proxies().forEach(this::validateListeners);
 
 		Set<String> targetNames = new HashSet<>(serverNames);
-		for (MinecraftProxy proxy : scenario.getProxies())
-			registerProcessName(proxy.getName(), targetNames);
-		for (RemoteEndpoint remote : scenario.getRemotes()) {
-			registerRemoteName(remote.getName(), targetNames);
+		for (MinecraftProxy proxy : scenario.proxies())
+			registerProcessName(proxy.name(), targetNames);
+		for (RemoteEndpoint remote : scenario.remotes()) {
+			registerRemoteName(remote.name(), targetNames);
 			validateRemote(remote);
 		}
 		Set<String> names = new HashSet<>(targetNames);
-		for (ContainerProcess container : scenario.getContainers())
+		for (ContainerProcess container : scenario.containers())
 			validateContainer(container, names);
 
 		if (!targetNames.contains(entrypoint))
 			throw new ScenarioValidationException("Scenario entrypoint '" + entrypoint
 					+ "' does not reference a server, proxy or remote");
 
-		for (MinecraftProxy proxy : scenario.getProxies())
+		for (MinecraftProxy proxy : scenario.proxies())
 			validateProxyRoutes(proxy, serverNames);
 		validateLifetimes(scenario);
 	}
@@ -108,15 +108,15 @@ public final class ScenarioValidator {
 	 */
 	private void validateLifetimes(@NotNull AnvilScenario scenario) {
 		Set<String> scenarioServers = new HashSet<>();
-		for (MinecraftServer server : scenario.getServers())
-			if (server.getLifetime() == ProcessLifetime.SCENARIO) scenarioServers.add(server.getName());
+		for (MinecraftServer server : scenario.servers())
+			if (server.lifetime() == ProcessLifetime.SCENARIO) scenarioServers.add(server.name());
 
-		for (MinecraftProxy proxy : scenario.getProxies()) {
-			if (proxy.getLifetime() != ProcessLifetime.ENGINE) continue;
+		for (MinecraftProxy proxy : scenario.proxies()) {
+			if (proxy.lifetime() != ProcessLifetime.ENGINE) continue;
 
-			for (String server : proxy.getServers())
+			for (String server : proxy.servers())
 				if (scenarioServers.contains(server))
-					throw new ScenarioValidationException("Proxy '" + proxy.getName() + "' keeps running for the engine, so its server '"
+					throw new ScenarioValidationException("Proxy '" + proxy.name() + "' keeps running for the engine, so its server '"
 							+ server + "' must declare the engine lifetime as well");
 		}
 	}
@@ -139,27 +139,27 @@ public final class ScenarioValidator {
 	 * A container is a process the other processes reach by its name.
 	 */
 	private void validateContainer(@NotNull ContainerProcess container, @NotNull Set<String> names) {
-		String name = container.getName();
+		String name = container.name();
 		if (!NAME.matcher(name).matches())
 			throw new ScenarioValidationException("Container name '" + name
 					+ "' must be lowercase letters, digits and dashes, starting with a letter or digit");
 		if (!names.add(name))
 			throw new ScenarioValidationException("Container '" + name + "' shares its name with another process or remote");
-		if (blank(container.getImage()))
+		if (blank(container.image()))
 			throw new ScenarioValidationException("Container '" + name + "' needs an image");
-		if (container.getPorts().isEmpty())
+		if (container.ports().isEmpty())
 			throw new ScenarioValidationException("Container '" + name + "' needs at least one port");
-		if (container.getMemoryMegabytes() < 1)
+		if (container.memoryMegabytes() < 1)
 			throw new ScenarioValidationException("Container '" + name + "' needs a positive memory");
 
 		Set<Integer> ports = new HashSet<>();
-		for (int port : container.getPorts())
+		for (int port : container.ports())
 			if (port < 1 || port > 65535 || !ports.add(port))
 				throw new ScenarioValidationException("Container '" + name + "' declares port " + port + " twice or outside 1-65535");
 
-		if (container.getReadyLog() == null) return;
+		if (container.readyLog() == null) return;
 		try {
-			Pattern.compile(container.getReadyLog());
+			Pattern.compile(container.readyLog());
 		} catch (PatternSyntaxException invalid) {
 			throw new ScenarioValidationException("Container '" + name + "' has an invalid ready log pattern", invalid);
 		}
@@ -170,12 +170,12 @@ public final class ScenarioValidator {
 	 */
 	private void validateListeners(@NotNull MinecraftProcess process) {
 		Set<String> listeners = new HashSet<>();
-		for (String listener : process.getListeners()) {
+		for (String listener : process.listeners()) {
 			if (!NAME.matcher(listener).matches())
-				throw new ScenarioValidationException("Listener '" + listener + "' of process '" + process.getName()
+				throw new ScenarioValidationException("Listener '" + listener + "' of process '" + process.name()
 						+ "' must be lowercase letters, digits and dashes, starting with a letter or digit");
 			if (!listeners.add(listener))
-				throw new ScenarioValidationException("Process '" + process.getName() + "' declares listener '" + listener + "' twice");
+				throw new ScenarioValidationException("Process '" + process.name() + "' declares listener '" + listener + "' twice");
 		}
 	}
 
@@ -193,24 +193,24 @@ public final class ScenarioValidator {
 	}
 
 	private void validateProxyRoutes(@NotNull MinecraftProxy proxy, @NotNull Set<String> serverNames) {
-		if (proxy.getServers().isEmpty())
-			throw new ScenarioValidationException("Proxy '" + proxy.getName() + "' has no registered servers");
+		if (proxy.servers().isEmpty())
+			throw new ScenarioValidationException("Proxy '" + proxy.name() + "' has no registered servers");
 
 		Set<String> registered = new HashSet<>();
-		for (String server : proxy.getServers()) {
+		for (String server : proxy.servers()) {
 			if (!registered.add(server))
-				throw new ScenarioValidationException("Proxy '" + proxy.getName() + "' registers server '"
+				throw new ScenarioValidationException("Proxy '" + proxy.name() + "' registers server '"
 						+ server + "' more than once");
 			if (!serverNames.contains(server))
-				throw new ScenarioValidationException("Proxy '" + proxy.getName() + "' references missing server '"
+				throw new ScenarioValidationException("Proxy '" + proxy.name() + "' references missing server '"
 						+ server + "'");
 		}
 
-		if (blank(proxy.getDefaultServer()))
-			throw new ScenarioValidationException("Proxy '" + proxy.getName() + "' must declare a default server");
-		if (!registered.contains(proxy.getDefaultServer()))
-			throw new ScenarioValidationException("Proxy '" + proxy.getName() + "' default server '"
-					+ proxy.getDefaultServer() + "' is not registered with that proxy");
+		if (blank(proxy.defaultServer()))
+			throw new ScenarioValidationException("Proxy '" + proxy.name() + "' must declare a default server");
+		if (!registered.contains(proxy.defaultServer()))
+			throw new ScenarioValidationException("Proxy '" + proxy.name() + "' default server '"
+					+ proxy.defaultServer() + "' is not registered with that proxy");
 	}
 
 	private boolean blank(@Nullable String value) {

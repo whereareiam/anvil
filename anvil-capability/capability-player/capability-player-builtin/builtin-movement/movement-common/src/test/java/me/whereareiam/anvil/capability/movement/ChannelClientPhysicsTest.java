@@ -51,7 +51,7 @@ class ChannelClientPhysicsTest {
 
 	@Test
 	void readsWhetherPhysicsIsOnWhyItTurnedOffAndTheMotion() {
-		assertTrue(physics.isEnabled());
+		assertTrue(physics.enabled());
 		assertEquals(Optional.empty(), physics.failure());
 
 		state.set(state(false, 12, "tick failed: boom"));

@@ -17,26 +17,26 @@ public enum RunnerOption {
 	SCENARIO("scenario"),
 	DEFINITION("definition");
 
-	private static final Map<String, RunnerOption> BY_NAME = byName();
+	private static final Map<String, RunnerOption> BY_TOKEN = byToken();
 
-	private final String name;
+	private final String token;
 
 	/**
 	 * Resolves one command-line option name.
 	 *
-	 * @param name option name without the leading dashes
+	 * @param token option token without the leading dashes
 	 * @return matching option
 	 * @throws IllegalArgumentException when the option is unknown
 	 */
-	public static @NotNull RunnerOption fromName(@NotNull String name) {
-		RunnerOption option = BY_NAME.get(name);
-		if (option == null) throw new IllegalArgumentException("Unknown option: --" + name);
+	public static @NotNull RunnerOption fromToken(@NotNull String token) {
+		RunnerOption option = BY_TOKEN.get(token);
+		if (option == null) throw new IllegalArgumentException("Unknown option: --" + token);
 		return option;
 	}
 
-	private static @NotNull Map<String, RunnerOption> byName() {
+	private static @NotNull Map<String, RunnerOption> byToken() {
 		Map<String, RunnerOption> result = new LinkedHashMap<>();
-		for (RunnerOption option : values()) result.put(option.name, option);
+		for (RunnerOption option : values()) result.put(option.token, option);
 
 		return Map.copyOf(result);
 	}

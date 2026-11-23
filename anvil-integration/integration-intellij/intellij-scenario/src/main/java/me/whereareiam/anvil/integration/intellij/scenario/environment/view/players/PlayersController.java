@@ -52,7 +52,7 @@ final class PlayersController {
 
 	void update() {
 		SessionSnapshot snapshot = session.getSnapshot();
-		retainedPlayers.putAll(index(snapshot.getPlayers()));
+		retainedPlayers.putAll(index(snapshot.players()));
 		List<PlayerDescriptor> current = List.copyOf(retainedPlayers.values());
 
 		if (!current.equals(displayedPlayers)) refreshList(current);
@@ -64,7 +64,7 @@ final class PlayersController {
 			@NotNull List<PlayerDescriptor> players
 	) {
 		Map<String, PlayerDescriptor> indexed = new LinkedHashMap<>();
-		for (PlayerDescriptor player : players) indexed.put(player.getName(), player);
+		for (PlayerDescriptor player : players) indexed.put(player.name(), player);
 
 		return indexed;
 	}
@@ -84,8 +84,8 @@ final class PlayersController {
 	}
 
 	private void restoreSelection(@Nullable PlayerDescriptor previous) {
-		if (previous != null && retainedPlayers.containsKey(previous.getName())) {
-			players.setSelectedValue(retainedPlayers.get(previous.getName()), true);
+		if (previous != null && retainedPlayers.containsKey(previous.name())) {
+			players.setSelectedValue(retainedPlayers.get(previous.name()), true);
 			return;
 		}
 
@@ -95,7 +95,7 @@ final class PlayersController {
 	private void updateControls(@NotNull SessionSnapshot snapshot) {
 		PlayerDescriptor selected = players.getSelectedValue();
 		updateContributions(selected);
-		title.setText(selected == null ? "No player selected" : selected.getDisplayName());
+		title.setText(selected == null ? "No player selected" : selected.displayName());
 		info.setText(selected == null
 				? "Players appear when the scenario creates them."
 				: status(selected, snapshot).getLabel());
@@ -107,7 +107,7 @@ final class PlayersController {
 			return;
 		}
 
-		contributions.update(target(selected.getName()));
+		contributions.update(target(selected.name()));
 	}
 
 	private static @NotNull ActionTarget target(@NotNull String player) {
@@ -119,7 +119,7 @@ final class PlayersController {
 			@NotNull SessionSnapshot snapshot
 	) {
 		if (!session.isActive()) return PlayerStatus.COMPLETED;
-		if (snapshot.getPlayers().stream().noneMatch(present -> present.getName().equals(player.getName())))
+		if (snapshot.players().stream().noneMatch(present -> present.name().equals(player.name())))
 			return PlayerStatus.LEFT;
 
 		return PlayerStatus.PRESENT;

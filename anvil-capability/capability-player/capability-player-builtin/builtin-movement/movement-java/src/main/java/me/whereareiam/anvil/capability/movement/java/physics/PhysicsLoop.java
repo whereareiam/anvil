@@ -153,7 +153,7 @@ final class PhysicsLoop implements AutoCloseable {
 	 *
 	 * @return whether ticks run
 	 */
-	boolean isRunning() {
+	boolean running() {
 		lock.lock();
 		try {
 			return current != null;

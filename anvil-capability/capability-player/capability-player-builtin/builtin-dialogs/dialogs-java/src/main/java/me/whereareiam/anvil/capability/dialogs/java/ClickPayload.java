@@ -16,7 +16,7 @@ import java.util.List;
 /**
  * Builds the payload of a custom click as the client does: the compound the action declared, or an empty one when it
  * declared none, with the value of each input put in under the input's key, replacing a declared entry with the same
- * key. The capability holds each value as the text {@code DialogInput#getInitial()} writes; it is turned into a tag
+ * key. The capability holds each value as the text {@code DialogInput#initial()} writes; it is turned into a tag
  * here.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -36,7 +36,7 @@ final class ClickPayload {
 	 */
 	static @NotNull NbtCompound of(@Nullable NbtTag declared, @NotNull List<DialogValue> values) {
 		NbtCompound payload = declared == null ? NbtCompound.EMPTY : compound(declared);
-		for (DialogValue value : values) payload = payload.with(value.getKey(), tag(value));
+		for (DialogValue value : values) payload = payload.with(value.key(), tag(value));
 
 		return payload;
 	}
@@ -48,12 +48,12 @@ final class ClickPayload {
 	}
 
 	private static NbtTag tag(DialogValue value) {
-		return switch (value.getType()) {
-			case TEXT, SINGLE_OPTION -> new NbtString(value.getValue());
+		return switch (value.type()) {
+			case TEXT, SINGLE_OPTION -> new NbtString(value.value());
 			case BOOLEAN -> NbtByte.of(checkbox(value));
 			case NUMBER_RANGE -> new NbtFloat(slider(value));
 			case OTHER ->
-					throw new IllegalArgumentException("Input " + value.getKey() + " has a type Anvil does not know");
+					throw new IllegalArgumentException("Input " + value.key() + " has a type Anvil does not know");
 		};
 	}
 
@@ -63,10 +63,10 @@ final class ClickPayload {
 	 * @throws IllegalArgumentException for any other text
 	 */
 	private static boolean checkbox(DialogValue value) {
-		if (value.getValue().equals(CHECKED)) return true;
-		if (value.getValue().equals(UNCHECKED)) return false;
+		if (value.value().equals(CHECKED)) return true;
+		if (value.value().equals(UNCHECKED)) return false;
 
-		throw new IllegalArgumentException("Input " + value.getKey() + " holds true or false, not " + value.getValue());
+		throw new IllegalArgumentException("Input " + value.key() + " holds true or false, not " + value.value());
 	}
 
 	/**
@@ -76,9 +76,9 @@ final class ClickPayload {
 	 */
 	private static float slider(DialogValue value) {
 		try {
-			return Float.parseFloat(value.getValue());
+			return Float.parseFloat(value.value());
 		} catch (NumberFormatException failure) {
-			throw new IllegalArgumentException("Input " + value.getKey() + " holds a number, not " + value.getValue(),
+			throw new IllegalArgumentException("Input " + value.key() + " holds a number, not " + value.value(),
 					failure);
 		}
 	}

@@ -27,22 +27,22 @@ final class WorkspacePlanValidator {
 			WorkspacePlan declared,
 			List<WorkspaceCache> providerDefaults
 	) {
-		List<WorkspaceAsset> assets = List.copyOf(declared.getAssets());
+		List<WorkspaceAsset> assets = List.copyOf(declared.assets());
 		Map<String, WorkspaceCache> cachesByPath = new LinkedHashMap<>();
 		for (WorkspaceCache cache : providerDefaults)
 			cachesByPath.put(cachePath(cache), cache);
-		for (WorkspaceCache cache : declared.getCaches())
+		for (WorkspaceCache cache : declared.caches())
 			cachesByPath.put(cachePath(cache), cache);
 
 		List<WorkspaceCache> allCaches = List.copyOf(cachesByPath.values());
 		List<WorkspaceCache> caches = allCaches.stream()
-				.filter(cache -> cache.getPolicy() != CachePolicy.DISABLED)
+				.filter(cache -> cache.policy() != CachePolicy.DISABLED)
 				.toList();
-		List<WorkspaceCleanup> cleanups = List.copyOf(declared.getCleanups());
+		List<WorkspaceCleanup> cleanups = List.copyOf(declared.cleanups());
 		validateAssets(assets);
 		validateCaches(allCaches, cleanups);
 		return WorkspacePlan.builder()
-				.mode(declared.getMode())
+				.mode(declared.mode())
 				.assets(assets)
 				.caches(caches)
 				.cleanups(cleanups)
@@ -50,21 +50,21 @@ final class WorkspacePlanValidator {
 	}
 
 	private String cachePath(WorkspaceCache cache) {
-		return files.resolveRelative(Path.of("/anvil-workspace"), cache.getPath(), "Cache path")
+		return files.resolveRelative(Path.of("/anvil-workspace"), cache.path(), "Cache path")
 				.toString();
 	}
 
 	private void validateAssets(List<WorkspaceAsset> assets) {
 		List<Path> targets = new ArrayList<>();
 		for (WorkspaceAsset asset : assets) {
-			if (asset.getGroup() == null || asset.getGroup().isBlank())
+			if (asset.group() == null || asset.group().isBlank())
 				throw new ScenarioValidationException("Workspace asset group must not be blank");
-			Path target = files.resolveRelative(Path.of("/anvil-workspace"), asset.getTarget(), "Asset target");
+			Path target = files.resolveRelative(Path.of("/anvil-workspace"), asset.target(), "Asset target");
 			for (Path previous : targets)
 				if (overlaps(previous, target))
 					throw new ScenarioValidationException("Workspace asset targets overlap: " + previous + " and " + target);
 			targets.add(target);
-			AssetSource source = asset.getSource();
+			AssetSource source = asset.source();
 			if (source == null || source.declaredSources() != 1)
 				throw new ScenarioValidationException("Workspace asset must declare exactly one source: " + asset);
 		}
@@ -76,18 +76,18 @@ final class WorkspacePlanValidator {
 	) {
 		List<Path> cachePaths = new ArrayList<>();
 		for (WorkspaceCache cache : caches) {
-			if (cache.getGroup() == null || cache.getGroup().isBlank())
+			if (cache.group() == null || cache.group().isBlank())
 				throw new ScenarioValidationException("Workspace cache group must not be blank");
-			Path path = files.resolveRelative(Path.of("/anvil-workspace"), cache.getPath(), "Cache path");
+			Path path = files.resolveRelative(Path.of("/anvil-workspace"), cache.path(), "Cache path");
 			for (Path previous : cachePaths)
 				if (overlaps(previous, path))
 					throw new ScenarioValidationException("Workspace cache paths overlap: " + previous + " and " + path);
 			cachePaths.add(path);
 		}
 		for (WorkspaceCleanup cleanup : cleanups) {
-			if (cleanup.getGroup() == null || cleanup.getGroup().isBlank())
+			if (cleanup.group() == null || cleanup.group().isBlank())
 				throw new ScenarioValidationException("Workspace cleanup group must not be blank");
-			Path cleanupPath = files.resolveRelative(Path.of("/anvil-workspace"), cleanup.getPath(), "Cleanup path");
+			Path cleanupPath = files.resolveRelative(Path.of("/anvil-workspace"), cleanup.path(), "Cleanup path");
 			for (Path cachePath : cachePaths)
 				if (overlaps(cachePath, cleanupPath))
 					throw new ScenarioValidationException("Workspace cleanup overlaps a cache path: " + cleanupPath);

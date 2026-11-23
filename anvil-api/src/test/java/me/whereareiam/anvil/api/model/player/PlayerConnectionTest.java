@@ -10,12 +10,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class PlayerConnectionTest {
 	@Test
 	void defaultsToTheEntrypointAtItsRealAddress() {
-		PlayerConnection connection = PlayerOptions.builder().name("alice").build().getConnection();
+		PlayerConnection connection = PlayerOptions.builder().name("alice").build().connection();
 
 		assertSame(PlayerConnection.entrypoint(), connection);
-		assertNull(connection.getTarget());
-		assertNull(connection.getVirtualHost());
-		assertNull(connection.getSourceAddress());
+		assertNull(connection.target());
+		assertNull(connection.virtualHost());
+		assertNull(connection.sourceAddress());
 		assertEquals(connection, PlayerConnection.builder().build());
 	}
 
@@ -26,10 +26,10 @@ class PlayerConnectionTest {
 				.sourceAddress("127.0.0.2")
 				.build();
 
-		assertEquals("proxy", connection.getTarget());
-		assertEquals("lobby.example.test", connection.getVirtualHost());
-		assertEquals("127.0.0.2", connection.getSourceAddress());
-		assertEquals("::1", PlayerConnection.builder().sourceAddress("::1").build().getSourceAddress());
+		assertEquals("proxy", connection.target());
+		assertEquals("lobby.example.test", connection.virtualHost());
+		assertEquals("127.0.0.2", connection.sourceAddress());
+		assertEquals("::1", PlayerConnection.builder().sourceAddress("::1").build().sourceAddress());
 	}
 
 	@Test

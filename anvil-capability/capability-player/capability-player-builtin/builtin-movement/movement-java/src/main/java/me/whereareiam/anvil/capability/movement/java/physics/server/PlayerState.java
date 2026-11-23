@@ -76,9 +76,9 @@ public final class PlayerState {
 	 * @param login the login
 	 */
 	public void login(@NotNull ClientboundLogin login) {
-		entityId = login.getEntityId();
+		entityId = login.entityId();
 		attributes.reset();
-		renew(login.getGameMode());
+		renew(login.gameMode());
 	}
 
 	/**
@@ -88,7 +88,7 @@ public final class PlayerState {
 	 */
 	public void respawn(@NotNull ClientboundRespawn respawn) {
 		attributes.keepBaseValues();
-		renew(respawn.getGameMode());
+		renew(respawn.gameMode());
 	}
 
 	/**
@@ -105,9 +105,9 @@ public final class PlayerState {
 	 * @param event the event
 	 */
 	public void gameEvent(@NotNull ClientboundGameEvent event) {
-		if (event.getEvent() != GameEventType.CHANGE_GAME_MODE) return;
+		if (event.event() != GameEventType.CHANGE_GAME_MODE) return;
 
-		int id = (int) Math.floor(event.getValue() + 0.5F);
+		int id = (int) Math.floor(event.value() + 0.5F);
 		gameMode(id >= 0 && id < GameMode.values().length ? GameMode.values()[id] : GameMode.SURVIVAL);
 	}
 
@@ -117,10 +117,10 @@ public final class PlayerState {
 	 * @param abilities the abilities
 	 */
 	public void abilities(@NotNull ClientboundPlayerAbilities abilities) {
-		flying = abilities.isFlying();
-		mayFly = abilities.isMayFly();
-		flyingSpeed = abilities.getFlyingSpeed();
-		walkingSpeed = abilities.getWalkingSpeed();
+		flying = abilities.flying();
+		mayFly = abilities.mayFly();
+		flyingSpeed = abilities.flyingSpeed();
+		walkingSpeed = abilities.walkingSpeed();
 	}
 
 	/**
@@ -129,8 +129,8 @@ public final class PlayerState {
 	 * @param health the health
 	 */
 	public void health(@NotNull ClientboundSetHealth health) {
-		food = health.getFood();
-		if (health.getHealth() <= 0.0F) dead = true;
+		food = health.food();
+		if (health.health() <= 0.0F) dead = true;
 	}
 
 	/**
@@ -139,7 +139,7 @@ public final class PlayerState {
 	 * @param kill the kill
 	 */
 	public void combatKill(@NotNull ClientboundPlayerCombatKill kill) {
-		if (own(kill.getPlayerId())) dead = true;
+		if (own(kill.playerId())) dead = true;
 	}
 
 	/**
@@ -148,7 +148,7 @@ public final class PlayerState {
 	 * @param update the attributes
 	 */
 	public void attributes(@NotNull ClientboundUpdateAttributes update) {
-		if (own(update.getEntityId())) attributes.update(update.getAttributes());
+		if (own(update.entityId())) attributes.update(update.attributes());
 	}
 
 	/**
@@ -157,7 +157,7 @@ public final class PlayerState {
 	 * @param effect the effect
 	 */
 	public void effect(@NotNull ClientboundUpdateMobEffect effect) {
-		if (own(effect.getEntityId())) effects.add(effect.getEffect(), effect.getAmplifier());
+		if (own(effect.entityId())) effects.add(effect.effect(), effect.amplifier());
 	}
 
 	/**
@@ -166,7 +166,7 @@ public final class PlayerState {
 	 * @param effect the removal
 	 */
 	public void removeEffect(@NotNull ClientboundRemoveMobEffect effect) {
-		if (own(effect.getEntityId())) effects.remove(effect.getEffect());
+		if (own(effect.entityId())) effects.remove(effect.effect());
 	}
 
 	/**

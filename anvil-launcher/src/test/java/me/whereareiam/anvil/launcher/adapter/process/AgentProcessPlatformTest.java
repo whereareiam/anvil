@@ -38,14 +38,14 @@ class AgentProcessPlatformTest {
 		agent.record(AgentPlayerEventType.JOINED, "lobby");
 		AgentProcessPlatform platform = new AgentProcessPlatform("proxy", () -> Optional.of(agent), Instant.EPOCH);
 
-		assertEquals(List.of(1L), platform.events().stream().map(PlatformEvent::getPosition).toList());
+		assertEquals(List.of(1L), platform.events().stream().map(PlatformEvent::position).toList());
 		agent.record(AgentPlayerEventType.LEFT, "lobby");
 		List<PlatformEvent> events = platform.events();
 
-		assertEquals(List.of(PlatformEventType.JOINED, PlatformEventType.LEFT), events.stream().map(PlatformEvent::getType).toList());
-		assertEquals(List.of(1L, 2L), events.stream().map(PlatformEvent::getPosition).toList());
-		assertEquals("proxy", events.getFirst().getProcess());
-		assertEquals("lobby", events.getFirst().getServer());
+		assertEquals(List.of(PlatformEventType.JOINED, PlatformEventType.LEFT), events.stream().map(PlatformEvent::type).toList());
+		assertEquals(List.of(1L, 2L), events.stream().map(PlatformEvent::position).toList());
+		assertEquals("proxy", events.getFirst().process());
+		assertEquals("lobby", events.getFirst().server());
 		assertEquals(List.of(0L, 1L), agent.asked);
 	}
 
@@ -62,10 +62,10 @@ class AgentProcessPlatformTest {
 		List<PlatformEvent> events = platform.events();
 
 		assertEquals(List.of(PlatformEventType.JOINED, PlatformEventType.LEFT, PlatformEventType.JOINED),
-				events.stream().map(PlatformEvent::getType).toList());
-		assertEquals(List.of("lobby", "lobby", "auth"), events.stream().map(PlatformEvent::getServer).toList());
-		assertEquals(List.of(1L, 2L, 3L), events.stream().map(PlatformEvent::getPosition).toList());
-		assertEquals(events, events.stream().sorted(Comparator.comparing(PlatformEvent::getAt)).toList());
+				events.stream().map(PlatformEvent::type).toList());
+		assertEquals(List.of("lobby", "lobby", "auth"), events.stream().map(PlatformEvent::server).toList());
+		assertEquals(List.of(1L, 2L, 3L), events.stream().map(PlatformEvent::position).toList());
+		assertEquals(events, events.stream().sorted(Comparator.comparing(PlatformEvent::at)).toList());
 	}
 
 	@Test
@@ -126,17 +126,17 @@ class AgentProcessPlatformTest {
 		@Override
 		public <T> @Nullable T request(@NotNull String operation, @Nullable Object arguments, @NotNull Class<T> responseType) {
 			if (!available) throw new AgentUnavailableException("The connection is closed");
-			if (operation.equals(AgentOperations.COMMAND.getName()))
+			if (operation.equals(AgentOperations.COMMAND.name()))
 				return responseType.cast(AgentCommandResponse.builder()
-						.accepted(((AgentCommandRequest) arguments).getCommand().equals("accepted"))
+						.accepted(((AgentCommandRequest) arguments).command().equals("accepted"))
 						.build());
 
-			long after = ((AgentPlayerEventsRequest) arguments).getAfter();
+			long after = ((AgentPlayerEventsRequest) arguments).after();
 			asked.add(after);
 			return responseType.cast(AgentPlayerEventsResponse.builder()
 					.generation(generation)
 					.proxy(true)
-					.events(events.stream().filter(event -> event.getPosition() > after).toList())
+					.events(events.stream().filter(event -> event.position() > after).toList())
 					.build());
 		}
 

@@ -82,8 +82,8 @@ class AttributePacketsTest {
 
 	private String key(AttributeType type) {
 		return assertInstanceOf(ClientboundUpdateAttributes.class, packets.decode(
-				new ServerEntityPropertiesPacket(7, List.of(new Attribute(type, 0))))).getAttributes().getFirst()
-				.getAttribute();
+				new ServerEntityPropertiesPacket(7, List.of(new Attribute(type, 0))))).attributes().getFirst()
+				.attribute();
 	}
 
 	private static final class UnknownPacket implements ServerboundPacket {

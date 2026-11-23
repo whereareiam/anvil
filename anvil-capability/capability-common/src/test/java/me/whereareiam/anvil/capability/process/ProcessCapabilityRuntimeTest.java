@@ -340,10 +340,10 @@ class ProcessCapabilityRuntimeTest {
 	void aScenariosGroupRunsScenarioFinishActionsInReverseBeforeClosingCapabilities() {
 		List<String> events = new ArrayList<>();
 		var provider = provider("identity", OwnerIdentity.class, context -> {
-			context.on(ScenarioFinished.class, finished -> events.add("first-action:" + context.processName() + ":" + finished.isPassed()));
+			context.on(ScenarioFinished.class, finished -> events.add("first-action:" + context.processName() + ":" + finished.passed()));
 			context.on(
 					ScenarioFinished.class,
-					finished -> events.add("second-action:" + context.processName() + ":" + finished.isPassed())
+					finished -> events.add("second-action:" + context.processName() + ":" + finished.passed())
 			);
 			context.on(Closed.class, closed -> events.add("close:" + context.processName()));
 			return context::processName;
@@ -364,7 +364,7 @@ class ProcessCapabilityRuntimeTest {
 	void aRetainedGroupRunsScenarioFinishActionsForEveryScenarioButNotWhenItStops() {
 		List<String> events = new ArrayList<>();
 		var provider = provider("identity", OwnerIdentity.class, context -> {
-			context.on(ScenarioFinished.class, finished -> events.add("scenario:" + finished.isPassed()));
+			context.on(ScenarioFinished.class, finished -> events.add("scenario:" + finished.passed()));
 			context.on(Closed.class, closed -> events.add("close"));
 			return context::processName;
 		}, Set.of());

@@ -110,9 +110,9 @@ final class JavaWorldStore implements JavaWorld {
 			case ClientboundRespawn respawn -> written(() -> respawn(respawn));
 			case ClientboundStartConfiguration ignored -> clear();
 			case ClientboundLevelChunkWithLight chunk -> written(() -> load(chunk));
-			case ClientboundForgetLevelChunk forget -> written(() -> columns.remove(forget.getPosition()));
-			case ClientboundBlockUpdate update -> written(() -> change(update.getChange()));
-			case ClientboundSectionBlocksUpdate update -> written(() -> update.getChanges().forEach(this::change));
+			case ClientboundForgetLevelChunk forget -> written(() -> columns.remove(forget.position()));
+			case ClientboundBlockUpdate update -> written(() -> change(update.change()));
+			case ClientboundSectionBlocksUpdate update -> written(() -> update.changes().forEach(this::change));
 			default -> {
 			}
 		}
@@ -130,28 +130,28 @@ final class JavaWorldStore implements JavaWorld {
 
 	private void enter(ClientboundLogin login) {
 		columns.clear();
-		level = new Level(login.getDimension(), login.getDimensionType());
+		level = new Level(login.dimension(), login.dimensionType());
 	}
 
 	private void respawn(ClientboundRespawn respawn) {
-		if (level == null || !level.getKey().equals(respawn.getDimension())) columns.clear();
+		if (level == null || !level.key().equals(respawn.dimension())) columns.clear();
 
-		level = new Level(respawn.getDimension(), respawn.getDimensionType());
+		level = new Level(respawn.dimension(), respawn.dimensionType());
 	}
 
 	private void load(ClientboundLevelChunkWithLight chunk) {
 		if (!storing || level == null) return;
 
-		columns.put(chunk.getPosition(), new Column(level, chunk.getSections()));
+		columns.put(chunk.position(), new Column(level, chunk.sections()));
 	}
 
 	private void change(BlockChange change) {
-		BlockPosition position = change.getPosition();
-		Column column = columns.get(ChunkPosition.containing(position.getX(), position.getZ()));
-		if (column == null || !column.level.contains(position.getY())) return;
+		BlockPosition position = change.position();
+		Column column = columns.get(ChunkPosition.containing(position.x(), position.z()));
+		if (column == null || !column.level.contains(position.y())) return;
 
-		column.change(position.getX() & SECTION_MASK, position.getY(), position.getZ() & SECTION_MASK,
-				change.getBlockState());
+		column.change(position.x() & SECTION_MASK, position.y(), position.z() & SECTION_MASK,
+				change.blockState());
 	}
 
 	private <T> T locked(Supplier<T> read) {

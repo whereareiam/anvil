@@ -82,9 +82,9 @@ class JavaEntitiesExtensionTest {
 		player.deliver(spawn(7, "zombie", 0, 0, 0));
 		player.deliver(respawn());
 
-		assertEquals(List.of(1, 1, 2, 2), changes().stream().map(change -> change.getEntity().getConnection()).toList());
+		assertEquals(List.of(1, 1, 2, 2), changes().stream().map(change -> change.entity().connection()).toList());
 		assertEquals(List.of(EntityChangeKind.APPEARED, EntityChangeKind.DISAPPEARED, EntityChangeKind.APPEARED,
-				EntityChangeKind.DISAPPEARED), changes().stream().map(EntityChange::getKind).toList());
+				EntityChangeKind.DISAPPEARED), changes().stream().map(EntityChange::kind).toList());
 	}
 
 	@Test
@@ -98,11 +98,11 @@ class JavaEntitiesExtensionTest {
 		player.deliver(spawn(8, "zombie", 0, 0, 0));
 		player.deliver(ClientboundMoveEntityPos.builder().entityId(new EntityId(8)).delta(new Vec3d(4, 0, 0)).build());
 
-		List<SeenEntity> known = operations.call(EntitiesChannel.KNOWN, null).getEntities();
+		List<SeenEntity> known = operations.call(EntitiesChannel.KNOWN, null).entities();
 		assertEquals(List.of("entities.known"), operations.registered());
-		assertEquals(List.of(8), known.stream().map(SeenEntity::getId).toList());
-		assertEquals(4.0, known.getFirst().getX());
-		assertEquals(2, known.getFirst().getConnection());
+		assertEquals(List.of(8), known.stream().map(SeenEntity::id).toList());
+		assertEquals(4.0, known.getFirst().x());
+		assertEquals(2, known.getFirst().connection());
 		assertEquals(3, changes().size());
 	}
 
@@ -121,14 +121,14 @@ class JavaEntitiesExtensionTest {
 		player.deliver(ClientboundAddEntity.builder().entityId(new EntityId(11)).type(EntityTypeKey.minecraft("experience_orb"))
 				.position(new Vec3d(1, 2, 3)).build());
 
-		List<SeenEntity> spawned = changes().stream().map(EntityChange::getEntity).toList();
+		List<SeenEntity> spawned = changes().stream().map(EntityChange::entity).toList();
 		assertEquals(List.of("minecraft:armor_stand", "minecraft:zombie", "minecraft:player", "minecraft:painting",
-				"minecraft:experience_orb"), spawned.stream().map(SeenEntity::getType).toList());
-		assertEquals(List.of(1.5, 64.0, -2.5), List.of(spawned.get(0).getX(), spawned.get(0).getY(), spawned.get(0).getZ()));
-		assertEquals(List.of(180f, 20f), List.of(spawned.get(1).getYaw(), spawned.get(1).getPitch()));
-		assertEquals(new UUID(0, 9), spawned.get(2).getUniqueId());
-		assertEquals(List.of(4.0, 65.0, 4.0), List.of(spawned.get(3).getX(), spawned.get(3).getY(), spawned.get(3).getZ()));
-		assertNull(spawned.get(4).getUniqueId());
+				"minecraft:experience_orb"), spawned.stream().map(SeenEntity::type).toList());
+		assertEquals(List.of(1.5, 64.0, -2.5), List.of(spawned.get(0).x(), spawned.get(0).y(), spawned.get(0).z()));
+		assertEquals(List.of(180f, 20f), List.of(spawned.get(1).yaw(), spawned.get(1).pitch()));
+		assertEquals(new UUID(0, 9), spawned.get(2).uniqueId());
+		assertEquals(List.of(4.0, 65.0, 4.0), List.of(spawned.get(3).x(), spawned.get(3).y(), spawned.get(3).z()));
+		assertNull(spawned.get(4).uniqueId());
 	}
 
 	@Test
@@ -143,9 +143,9 @@ class JavaEntitiesExtensionTest {
 		player.deliver(new ClientboundRemoveEntities(List.of(new EntityId(7))));
 
 		assertEquals(List.of(EntityChangeKind.APPEARED, EntityChangeKind.CHANGED, EntityChangeKind.CHANGED,
-				EntityChangeKind.DISAPPEARED), changes().stream().map(EntityChange::getKind).toList());
-		assertEquals("Alice: hello", changes().get(1).getEntity().getCustomName());
-		assertTrue(changes().get(2).getEntity().isRidingPlayer());
+				EntityChangeKind.DISAPPEARED), changes().stream().map(EntityChange::kind).toList());
+		assertEquals("Alice: hello", changes().get(1).entity().customName());
+		assertTrue(changes().get(2).entity().ridingPlayer());
 	}
 
 	@Test
@@ -195,7 +195,7 @@ class JavaEntitiesExtensionTest {
 		player.deliver(new ClientboundStartConfiguration());
 
 		assertEquals(List.of(EntityChangeKind.APPEARED, EntityChangeKind.DISAPPEARED, EntityChangeKind.APPEARED,
-				EntityChangeKind.DISAPPEARED), changes().stream().map(EntityChange::getKind).toList());
+				EntityChangeKind.DISAPPEARED), changes().stream().map(EntityChange::kind).toList());
 	}
 
 	@Test
@@ -252,12 +252,12 @@ class JavaEntitiesExtensionTest {
 	}
 
 	private List<Object> place() {
-		SeenEntity entity = operations.call(EntitiesChannel.KNOWN, null).getEntities().getFirst();
-		return List.of(entity.getX(), entity.getY(), entity.getZ(), entity.getYaw(), entity.getPitch());
+		SeenEntity entity = operations.call(EntitiesChannel.KNOWN, null).entities().getFirst();
+		return List.of(entity.x(), entity.y(), entity.z(), entity.yaw(), entity.pitch());
 	}
 
 	private @Nullable Double distance() {
-		return operations.call(EntitiesChannel.KNOWN, null).getEntities().getFirst().getPlayerDistance();
+		return operations.call(EntitiesChannel.KNOWN, null).entities().getFirst().playerDistance();
 	}
 
 	private static ClientboundLogin login(int entityId) {

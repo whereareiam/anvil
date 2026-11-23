@@ -53,7 +53,7 @@ class WorldPacketsTest {
 		assertEquals(ClientboundSetDefaultSpawnPosition.builder()
 				.position(BlockPosition.builder().x(1).y(64).z(-3).build())
 				.build(), spawn);
-		assertNull(spawn.getDimension());
+		assertNull(spawn.dimension());
 	}
 
 	@Test

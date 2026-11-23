@@ -85,7 +85,7 @@ public final class JavaInstallationInspector {
 	 * @throws ProvisioningException when planning left the feature version unset
 	 */
 	public int featureVersion(@NotNull JavaRequirement requirement) {
-		Integer feature = requirement.getFeatureVersion();
+		Integer feature = requirement.featureVersion();
 		if (feature == null)
 			throw new ProvisioningException("Java requirement " + requirement + " has no feature version; platform "
 					+ "planning selects an exact LTS release before execution");
@@ -120,15 +120,15 @@ public final class JavaInstallationInspector {
 
 	public void validate(JavaInstallation installation, JavaRequirement requirement) {
 		int feature = featureVersion(requirement);
-		if (installation.getFeatureVersion() != feature)
-			throw new JavaVersionMismatchException("Java at " + installation.getExecutable() + " is Java " + installation.getVersion()
+		if (installation.featureVersion() != feature)
+			throw new JavaVersionMismatchException("Java at " + installation.executable() + " is Java " + installation.version()
 					+ ", but the process requires exactly Java " + feature);
-		if (requirement.getRelease() != null
-				&& !requirement.getRelease().equals(installation.getVersion())
-				&& !requirement.getRelease().equals(installation.getRuntimeVersion()))
-			throw new ProvisioningException("Java release mismatch: requested " + requirement.getRelease());
+		if (requirement.release() != null
+				&& !requirement.release().equals(installation.version())
+				&& !requirement.release().equals(installation.runtimeVersion()))
+			throw new ProvisioningException("Java release mismatch: requested " + requirement.release());
 
-		String distribution = requirement.getDistribution();
+		String distribution = requirement.distribution();
 		if (distribution == null) return;
 
 		JavaDistributionDescriptor provider = distributions.get(distribution);

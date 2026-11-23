@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * The signature a player's chat message was signed with, which identifies the message from Minecraft 1.19 on. Two
  * signatures are equal when their bytes are. The signature keeps its own copy of the bytes, so it stays unchanged
- * whatever happens to the array it was created from or to an array {@link #getBytes()} returned.
+ * whatever happens to the array it was created from or to an array {@link #bytes()} returned.
  */
 @Value
 public class MessageSignature {
@@ -29,7 +29,7 @@ public class MessageSignature {
 	 *
 	 * @return the signature's bytes
 	 */
-	public byte @NotNull [] getBytes() {
+	public byte @NotNull [] bytes() {
 		return bytes.clone();
 	}
 }

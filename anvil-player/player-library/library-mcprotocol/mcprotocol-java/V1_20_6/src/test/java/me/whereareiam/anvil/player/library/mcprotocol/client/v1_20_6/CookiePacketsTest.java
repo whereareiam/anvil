@@ -29,8 +29,8 @@ class CookiePacketsTest {
 		ClientboundStoreCookie stored = assertInstanceOf(ClientboundStoreCookie.class,
 				packets.decode(new ClientboundStoreCookiePacket(Key.key("example:ticket"), TICKET)));
 
-		assertEquals("example:ticket", stored.getKey());
-		assertArrayEquals(TICKET, stored.getPayload());
+		assertEquals("example:ticket", stored.key());
+		assertArrayEquals(TICKET, stored.payload());
 		assertEquals(new ClientboundCookieRequest("minecraft:ticket"),
 				packets.decode(new ClientboundCookieRequestPacket(Key.key("ticket"))));
 	}

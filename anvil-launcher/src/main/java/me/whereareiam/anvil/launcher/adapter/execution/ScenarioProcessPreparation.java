@@ -53,7 +53,7 @@ public final class ScenarioProcessPreparation implements ExecutionPreparation {
 
 	@Override
 	public void open() {
-		workspaces.recreateRunDirectory(workbench.workDirectory(), layout.getRunDirectory());
+		workspaces.recreateRunDirectory(workbench.workDirectory(), layout.runDirectory());
 	}
 
 	@Override
@@ -63,38 +63,38 @@ public final class ScenarioProcessPreparation implements ExecutionPreparation {
 			@NotNull Map<String, InetSocketAddress> peers,
 			@NotNull ProcessAddresses processes
 	) {
-		ProcessFiles files = workspaces.files(process.getRequest().getWorkspace());
-		if (process.isContainer())
-			return PreparedContainer.prepare(container(process.getRequest().getName()), process, files, processes);
+		ProcessFiles files = workspaces.files(process.request().workspace());
+		if (process.container())
+			return PreparedContainer.prepare(container(process.request().name()), process, files, processes);
 
-		var planned = plan.getProcesses().get(process.getRequest().getName());
-		var declaration = planned.getDeclaration();
+		var planned = plan.processes().get(process.request().name());
+		var declaration = planned.declaration();
 		UnaryOperator<String> addresses = processes::resolve;
 		var request = PlatformRequest.builder()
-				.scenario(plan.getScenario())
-				.workDirectory(process.getRequest().getWorkspace())
+				.scenario(plan.scenario())
+				.workDirectory(process.request().workspace())
 				.files(files)
 				.cacheDirectory(workbench.cacheDirectory())
-				.workspaceGroupDirectory(layout.getRunDirectory())
+				.workspaceGroupDirectory(layout.runDirectory())
 				.bindAddress(target.bindAddress())
 				.port(target.peerAddress().getPort())
 				.processAddresses(peers)
 				.build();
 		var workspace = workspaces.prepare(WorkspaceRequest.builder()
 				.root(workbench.workDirectory())
-				.directory(request.getWorkDirectory())
+				.directory(request.workDirectory())
 				.process(declaration)
-				.plan(stored(planned.getWorkspace()))
-				.providerDefaults(planned.getDefaultCaches())
+				.plan(stored(planned.workspace()))
+				.providerDefaults(planned.defaultCaches())
 				.text(addresses)
 				.build());
 		try {
 			var jar = platforms.resolve(planned, request);
 			var command = JavaCommand.builder()
 					.jar(jar)
-					.memoryMegabytes(declaration.getMemoryMegabytes())
-					.jvmArguments(planned.getJvmArguments().stream().map(addresses).toList())
-					.arguments(planned.getProgramArguments().stream().map(addresses).toList())
+					.memoryMegabytes(declaration.memoryMegabytes())
+					.jvmArguments(planned.jvmArguments().stream().map(addresses).toList())
+					.arguments(planned.programArguments().stream().map(addresses).toList())
 					.build();
 
 			return new PreparedPlatformProcess(
@@ -102,17 +102,17 @@ public final class ScenarioProcessPreparation implements ExecutionPreparation {
 					request,
 					platforms,
 					workspace,
-					() -> refresh(planned.getWorkspace()),
+					() -> refresh(planned.workspace()),
 					command,
 					target,
 					connections,
-					planned.isAgent() ? agents.register(declaration.getName()) : null,
-					capabilities == null ? null : () -> capabilities.initialize(declaration.getName()),
-					capabilities == null ? null : capabilities.owner(declaration.getName())
+					planned.agent() ? agents.register(declaration.name()) : null,
+					capabilities == null ? null : () -> capabilities.initialize(declaration.name()),
+					capabilities == null ? null : capabilities.owner(declaration.name())
 			);
 		} catch (IOException failure) {
 			ProvisioningException contextual = new ProvisioningException(
-					"Could not prepare process '" + declaration.getName() + "'",
+					"Could not prepare process '" + declaration.name() + "'",
 					failure
 			);
 			rollback(workspace, contextual);
@@ -128,9 +128,9 @@ public final class ScenarioProcessPreparation implements ExecutionPreparation {
 	 * the workbench, and points the assets at the workbench's copies.
 	 */
 	private WorkspacePlan stored(WorkspacePlan plan) {
-		List<WorkspaceAsset> assets = plan.getAssets().stream()
-				.map(asset -> asset.getSource().isPath()
-						? asset.toBuilder().source(AssetSource.path(workbench.store(asset.getSource().getPath()))).build()
+		List<WorkspaceAsset> assets = plan.assets().stream()
+				.map(asset -> asset.source().isPath()
+						? asset.toBuilder().source(AssetSource.path(workbench.store(asset.source().path()))).build()
 						: asset)
 				.toList();
 
@@ -143,24 +143,24 @@ public final class ScenarioProcessPreparation implements ExecutionPreparation {
 	 */
 	private WorkspaceRefresh refresh(WorkspacePlan plan) {
 		WorkspaceRefresh.WorkspaceRefreshBuilder refresh = WorkspaceRefresh.builder();
-		for (WorkspaceAsset asset : plan.getAssets())
-			if (asset.getSource().isPath())
-				refresh.asset(new AssetRefresh(asset.getTarget(), AssetSource.path(workbench.store(asset.getSource().getPath()))));
+		for (WorkspaceAsset asset : plan.assets())
+			if (asset.source().isPath())
+				refresh.asset(new AssetRefresh(asset.target(), AssetSource.path(workbench.store(asset.source().path()))));
 
 		return refresh.build();
 	}
 
 	private ContainerProcess container(String name) {
-		return plan.getScenario().getContainers().stream()
-				.filter(container -> container.getName().equals(name))
+		return plan.scenario().containers().stream()
+				.filter(container -> container.name().equals(name))
 				.findFirst()
 				.orElseThrow(() -> new IllegalStateException("The scenario declares no container '" + name + "'"));
 	}
 
 	@Override
 	public void finish(boolean successful) {
-		workspaces.finishRunDirectory(workbench.workDirectory(), layout.getRunDirectory(),
-				successful, options.isKeepFailedWorkspaces());
+		workspaces.finishRunDirectory(workbench.workDirectory(), layout.runDirectory(),
+				successful, options.keepFailedWorkspaces());
 	}
 
 	private void rollback(@NotNull PreparedWorkspace workspace, @NotNull Throwable failure) {

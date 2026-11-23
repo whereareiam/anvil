@@ -55,7 +55,7 @@ class Selection {
 	@Nullable ProcessDefinition definition() {
 		if (process == null) return null;
 
-		return scenario.getProcesses().stream().filter(candidate -> candidate.getName().equals(process)).findFirst().orElse(null);
+		return scenario.processes().stream().filter(candidate -> candidate.name().equals(process)).findFirst().orElse(null);
 	}
 
 	/**
@@ -63,6 +63,6 @@ class Selection {
 	 */
 	@NotNull String role() {
 		ProcessDefinition definition = definition();
-		return definition != null && definition.getRole() == ProcessRole.PROXY ? "Proxy" : "Server";
+		return definition != null && definition.role() == ProcessRole.PROXY ? "Proxy" : "Server";
 	}
 }

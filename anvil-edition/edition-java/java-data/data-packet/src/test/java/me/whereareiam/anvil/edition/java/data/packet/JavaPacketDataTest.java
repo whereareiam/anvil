@@ -63,7 +63,7 @@ class JavaPacketDataTest {
 	void reportsWhyAMissingProtocolHasNoPacketData() {
 		PacketDataUnavailableException failure = assertThrows(PacketDataUnavailableException.class, () -> DATA.require(777));
 
-		assertEquals(777, failure.getProtocol());
+		assertEquals(777, failure.protocol());
 		assertEquals("No packet data for protocol 777: PrismarineJS/minecraft-data 3.117.0 has no protocol file for it",
 				failure.getMessage());
 	}

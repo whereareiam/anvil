@@ -52,13 +52,13 @@ class RequirementCheckTest {
 		ScenarioRequirementsException refused = assertThrows(ScenarioRequirementsException.class,
 				() -> RequirementCheck.require(scenario, "local", facts));
 
-		assertEquals("scenario", refused.getScenarioName());
-		assertEquals("workstation", refused.getWorkbenchName());
+		assertEquals("scenario", refused.scenarioName());
+		assertEquals("workstation", refused.workbenchName());
 		assertEquals(List.of(
 				"its processes may not reach api.minecraftservices.com",
 				"it needs 16 processors, but 8 are available",
 				"it needs 32768 MiB of memory, but 16384 MiB are available"
-		), refused.getUnmet());
+		), refused.unmet());
 	}
 
 	@Test

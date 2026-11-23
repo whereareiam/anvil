@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 
 /**
  * Where the scenario's processes reach each other: each process's game address and the addresses of its
- * {@link MinecraftProcess#getListeners() listeners}, as the execution provider lets its peers reach them. Anvil fills
+ * {@link MinecraftProcess#listeners() listeners}, as the execution provider lets its peers reach them. Anvil fills
  * the placeholders of a process's text assets and JVM and program arguments with them:
  *
  * <ul>

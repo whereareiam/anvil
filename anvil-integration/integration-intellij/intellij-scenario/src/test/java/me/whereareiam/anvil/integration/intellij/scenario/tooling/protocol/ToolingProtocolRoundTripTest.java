@@ -55,7 +55,7 @@ class ToolingProtocolRoundTripTest {
 			.availability(ActionAvailability.builder().enabled(true).build()).build();
 	private final UUID executionId = UUID.fromString("00000000-0000-0000-0000-000000000123");
 	private final SessionSnapshot snapshot = SessionSnapshot.builder().sessionId("session-1")
-			.definition(scenario.getDefinition()).scenario(scenario.getName()).state(SessionState.RUNNING)
+			.definition(scenario.definition()).scenario(scenario.name()).state(SessionState.RUNNING)
 			.processes(List.of(ProcessSnapshot.builder().name("lobby").displayName("Lobby").executionId(executionId)
 					.state(ProcessState.READY).host("localhost").port(25565).workDirectory("/work/lobby").build()))
 			.actions(List.of(action)).build();
@@ -75,10 +75,10 @@ class ToolingProtocolRoundTripTest {
 		})) {
 			assertEquals(List.of(scenario), peer.request(peer.encode(ScenarioOperations.DISCOVER, null)));
 			assertEquals(snapshot, peer.request(peer.encode(ScenarioOperations.START, ScenarioLaunchRequest.builder()
-					.definition(scenario.getDefinition()).scenario(scenario.getName()).target("lobby").build())));
+					.definition(scenario.definition()).scenario(scenario.name()).target("lobby").build())));
 
 			var request = peer.encode(EnvironmentOperations.INVOKE, ActionRequest.builder()
-					.sessionId("session-1").actionId(action.getDefinition().getId()).target(action.getTarget())
+					.sessionId("session-1").actionId(action.definition().id()).target(action.target())
 					.argument("argument", "hello").build());
 			JsonNode encoded = new ObjectMapper().readTree(request.line());
 			assertEquals("PROCESS", encoded.path("target").path("type").asText());
@@ -86,9 +86,9 @@ class ToolingProtocolRoundTripTest {
 			assertFalse(encoded.has("targetType"));
 			assertEquals(outcome, peer.request(request));
 			assertEquals(ActionRequest.builder().sessionId("session-1").actionId("example.inspect")
-					.target(action.getTarget()).argument("argument", "hello").build(), invoked.get());
+					.target(action.target()).argument("argument", "hello").build(), invoked.get());
 			assertTrue(peer.request(peer.encode(ProcessOperations.CONSOLE,
-					ConsoleCommandRequest.builder().target("lobby").text("list").build())).getAccepted());
+					ConsoleCommandRequest.builder().target("lobby").text("list").build())).accepted());
 			assertEquals("lobby:list", console.get());
 		}
 	}
@@ -178,7 +178,7 @@ class ToolingProtocolRoundTripTest {
 
 		private <Q, R> Encoded<R> encode(ToolingOperation<Q, R> operation, Q payload) throws Exception {
 			String id = UUID.randomUUID().toString();
-			return new Encoded<>(id, codec.write(id, operation, payload), operation.getResponseType());
+			return new Encoded<>(id, codec.write(id, operation, payload), operation.responseType());
 		}
 
 		private record Encoded<R>(String id, String line, TypeReference<R> responseType) {}

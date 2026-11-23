@@ -67,9 +67,9 @@ class BukkitWorldsTest {
 		BukkitWorlds bukkit = new BukkitWorlds(server(worlds, List.of()), log, events);
 
 		assertEquals(List.of("minecraft:overworld", "minecraft:the_nether", "minecraft:the_end", "minecraft:arena"),
-				bukkit.worlds().stream().map(AgentWorld::getKey).collect(Collectors.toList()));
+				bukkit.worlds().stream().map(AgentWorld::key).collect(Collectors.toList()));
 		assertEquals(List.of("OVERWORLD", "NETHER", "END", "OVERWORLD"),
-				bukkit.worlds().stream().map(AgentWorld::getKind).collect(Collectors.toList()));
+				bukkit.worlds().stream().map(AgentWorld::kind).collect(Collectors.toList()));
 	}
 
 	@Test
@@ -79,7 +79,7 @@ class BukkitWorldsTest {
 				NamespacedKey.minecraft("overworld")), custom), List.of()), log, events);
 
 		assertEquals(List.of("minecraft:overworld", "example:dungeon"),
-				bukkit.worlds().stream().map(AgentWorld::getKey).collect(Collectors.toList()));
+				bukkit.worlds().stream().map(AgentWorld::key).collect(Collectors.toList()));
 	}
 
 	@Test
@@ -89,10 +89,10 @@ class BukkitWorldsTest {
 		BukkitWorlds bukkit = new BukkitWorlds(server(List.of(world), List.of(alice)), log, events);
 
 		AgentLocation spawn = AgentLocation.builder().world("minecraft:overworld").x(0.5).y(64).z(0.5).build();
-		assertEquals(spawn, bukkit.worlds().get(0).getSpawn());
+		assertEquals(spawn, bukkit.worlds().get(0).spawn());
 		assertEquals(AgentLocation.builder().world("minecraft:overworld").x(1.5).y(65).z(-2.5).yaw(90).pitch(15).build(),
-				bukkit.placements().get(0).getLocation());
-		assertEquals(ALICE, bukkit.placements().get(0).getUniqueId());
+				bukkit.placements().get(0).location());
+		assertEquals(ALICE, bukkit.placements().get(0).uniqueId());
 	}
 
 	@Test
@@ -129,10 +129,10 @@ class BukkitWorldsTest {
 
 		bukkit.changed(new PlayerChangedWorldEvent(alice, world));
 
-		AgentWorldChange change = log.since(AgentLogRequest.builder().after(0).build()).getChanges().get(0);
+		AgentWorldChange change = log.since(AgentLogRequest.builder().after(0).build()).changes().get(0);
 		assertEquals(List.of("Alice", "minecraft:overworld", "minecraft:the_nether"),
-				List.of(change.getUsername(), change.getFrom(), change.getTo()));
-		assertFalse(change.getAt() <= 0);
+				List.of(change.username(), change.from(), change.to()));
+		assertFalse(change.at() <= 0);
 	}
 
 	@Test
@@ -143,7 +143,7 @@ class BukkitWorldsTest {
 		AgentWorld created = bukkit.create(AgentWorldCreation.builder().key("minecraft:arena").kind("NETHER").seed(42L)
 				.generator("FLAT").build());
 
-		assertEquals(List.of("minecraft:arena", "NETHER"), List.of(created.getKey(), created.getKind()));
+		assertEquals(List.of("minecraft:arena", "NETHER"), List.of(created.key(), created.kind()));
 		WorldCreator creator = creators.get(0);
 		assertEquals(List.of("arena", World.Environment.NETHER, 42L, WorldType.FLAT),
 				List.of(creator.name(), creator.environment(), creator.seed(), creator.type()));
@@ -189,7 +189,7 @@ class BukkitWorldsTest {
 		AgentWorld map = bukkit.load(AgentWorldLoad.builder().key("minecraft:map").kind("OVERWORLD").build());
 		bukkit.load(AgentWorldLoad.builder().key("minecraft:lair").kind("NETHER").build());
 
-		assertEquals("minecraft:map", map.getKey());
+		assertEquals("minecraft:map", map.key());
 		assertEquals(List.of("map", "lair"), creators.stream().map(WorldCreator::name).collect(Collectors.toList()));
 		assertEquals(List.of(World.Environment.NORMAL, World.Environment.NETHER),
 				creators.stream().map(WorldCreator::environment).collect(Collectors.toList()));
@@ -278,9 +278,9 @@ class BukkitWorldsTest {
 		bukkit.loaded(new WorldLoadEvent(arena));
 		bukkit.unloaded(new WorldUnloadEvent(arena));
 
-		List<AgentWorldEvent> recorded = events.since(AgentLogRequest.builder().after(0).build()).getEvents();
+		List<AgentWorldEvent> recorded = events.since(AgentLogRequest.builder().after(0).build()).events();
 		assertEquals(List.of("minecraft:arena LOADED", "minecraft:arena UNLOADED"), recorded.stream()
-				.map(event -> event.getWorld() + " " + event.getType())
+				.map(event -> event.world() + " " + event.type())
 				.collect(Collectors.toList()));
 	}
 

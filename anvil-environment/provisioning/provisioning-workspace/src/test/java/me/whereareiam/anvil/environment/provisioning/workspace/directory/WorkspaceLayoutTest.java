@@ -55,15 +55,15 @@ class WorkspaceLayoutTest {
 		WorkspaceLayout second = workspaces.layout(root, scenario);
 		Path scenarioDirectory = temporary.resolve("work/Mixed-world");
 
-		assertEquals(scenarioDirectory, first.getRunDirectory().getParent());
-		assertTrue(first.getRunDirectory().getFileName().toString().matches("[0-9]+-[0-9a-f]{8}"));
-		assertNotEquals(first.getRunDirectory(), second.getRunDirectory());
+		assertEquals(scenarioDirectory, first.runDirectory().getParent());
+		assertTrue(first.runDirectory().getFileName().toString().matches("[0-9]+-[0-9a-f]{8}"));
+		assertNotEquals(first.runDirectory(), second.runDirectory());
 		for (WorkspaceLayout layout : List.of(first, second)) {
 			assertEquals(scenarioDirectory.resolve("persistent/saved-server"), layout.processDirectory("saved/server"));
 			assertEquals(scenarioDirectory.resolve("persistent/saved-proxy"), layout.processDirectory("saved?proxy"));
-			assertEquals(layout.getRunDirectory().resolve("fresh-server"), layout.processDirectory("fresh/server"));
-			assertEquals(layout.getRunDirectory().resolve("fresh-proxy"), layout.processDirectory("fresh?proxy"));
-			assertEquals(4, layout.getProcessDirectories().size());
+			assertEquals(layout.runDirectory().resolve("fresh-server"), layout.processDirectory("fresh/server"));
+			assertEquals(layout.runDirectory().resolve("fresh-proxy"), layout.processDirectory("fresh?proxy"));
+			assertEquals(4, layout.processDirectories().size());
 		}
 		assertFalse(Files.exists(temporary.resolve("work")));
 		assertFalse(Files.exists(temporary.resolve("unused")));
@@ -124,9 +124,9 @@ class WorkspaceLayoutTest {
 		directories.put("server", temporary.resolve("other"));
 		builder.processDirectory("proxy", run.resolve("proxy"));
 
-		assertEquals(Map.of("server", server), layout.getProcessDirectories());
+		assertEquals(Map.of("server", server), layout.processDirectories());
 		assertEquals(server, layout.processDirectory("server"));
-		assertThrows(UnsupportedOperationException.class, () -> layout.getProcessDirectories().put("proxy", run.resolve("proxy")));
+		assertThrows(UnsupportedOperationException.class, () -> layout.processDirectories().put("proxy", run.resolve("proxy")));
 		assertThrows(IllegalArgumentException.class, () -> layout.processDirectory("missing"));
 	}
 

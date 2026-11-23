@@ -32,23 +32,23 @@ class EntityTrackerTest {
 
 		EntityChange change = single(spawn(tracker, 7, "minecraft:armor_stand", 3, 68, 0));
 
-		assertEquals(EntityChangeKind.APPEARED, change.getKind());
-		assertNull(change.getPrevious());
-		SeenEntity stand = change.getEntity();
-		assertEquals(3, stand.getConnection());
-		assertEquals(7, stand.getId());
-		assertEquals(new UUID(0, 7), stand.getUniqueId());
-		assertEquals("minecraft:armor_stand", stand.getType());
-		assertEquals(5.0, stand.getPlayerDistance());
-		assertEquals(List.of(), stand.getPassengerIds());
-		assertFalse(stand.isRidingPlayer());
+		assertEquals(EntityChangeKind.APPEARED, change.kind());
+		assertNull(change.previous());
+		SeenEntity stand = change.entity();
+		assertEquals(3, stand.connection());
+		assertEquals(7, stand.id());
+		assertEquals(new UUID(0, 7), stand.uniqueId());
+		assertEquals("minecraft:armor_stand", stand.type());
+		assertEquals(5.0, stand.playerDistance());
+		assertEquals(List.of(), stand.passengerIds());
+		assertFalse(stand.ridingPlayer());
 	}
 
 	@Test
 	void measuresNoDistanceBeforeThePlayerIsPlaced() {
 		EntityTracker tracker = new EntityTracker(1);
 
-		assertNull(single(spawn(tracker, 7, "minecraft:zombie", 3, 68, 0)).getEntity().getPlayerDistance());
+		assertNull(single(spawn(tracker, 7, "minecraft:zombie", 3, 68, 0)).entity().playerDistance());
 	}
 
 	@Test
@@ -64,16 +64,16 @@ class EntityTrackerTest {
 		EntityChange text = single(tracker.change(7, List.of(new DisplayText("hi"), new CustomName(null),
 				new ShownItem(ItemStack.of(871, 3)))));
 
-		assertEquals(EntityChangeKind.CHANGED, change.getKind());
-		assertNull(change.getPrevious().getCustomName());
-		assertEquals("Alice: hi", change.getEntity().getCustomName());
-		assertTrue(change.getEntity().isCustomNameVisible());
-		assertEquals(List.of(true, true, true, true, false, false, false), List.of(change.getEntity().isInvisible(),
-				change.getEntity().isGlowing(), change.getEntity().isOnFire(), change.getEntity().isSneaking(),
-				change.getEntity().isSprinting(), change.getEntity().isSwimming(), change.getEntity().isGliding()));
-		assertEquals("hi", text.getEntity().getText());
-		assertNull(text.getEntity().getCustomName());
-		assertEquals(new EntityItem(871, 3), text.getEntity().getItem());
+		assertEquals(EntityChangeKind.CHANGED, change.kind());
+		assertNull(change.previous().customName());
+		assertEquals("Alice: hi", change.entity().customName());
+		assertTrue(change.entity().customNameVisible());
+		assertEquals(List.of(true, true, true, true, false, false, false), List.of(change.entity().invisible(),
+				change.entity().glowing(), change.entity().onFire(), change.entity().sneaking(),
+				change.entity().sprinting(), change.entity().swimming(), change.entity().gliding()));
+		assertEquals("hi", text.entity().text());
+		assertNull(text.entity().customName());
+		assertEquals(new EntityItem(871, 3), text.entity().item());
 	}
 
 	@Test
@@ -82,7 +82,7 @@ class EntityTrackerTest {
 		spawn(tracker, 7, "minecraft:item", 0, 0, 0);
 		tracker.change(7, List.of(new ShownItem(ItemStack.of(871, 3))));
 
-		assertNull(single(tracker.change(7, List.of(new ShownItem(ItemStack.of(871, 0))))).getEntity().getItem());
+		assertNull(single(tracker.change(7, List.of(new ShownItem(ItemStack.of(871, 0))))).entity().item());
 		assertEquals(List.of(), tracker.change(7, List.of(new ShownItem(null))));
 	}
 
@@ -96,7 +96,7 @@ class EntityTrackerTest {
 		assertEquals(List.of(), tracker.change(8, List.of(SharedFlags.builder().invisible(true).build())));
 		tracker.move(8, 1, 0, 0, false, false, false);
 		tracker.turn(8, 90, 0, false, false);
-		assertEquals(List.of(7), tracker.known().stream().map(SeenEntity::getId).toList());
+		assertEquals(List.of(7), tracker.known().stream().map(SeenEntity::id).toList());
 		assertEquals(List.of(), tracker.remove(List.of(8)));
 	}
 
@@ -110,8 +110,8 @@ class EntityTrackerTest {
 		tracker.move(7, 10, 1, 20, false, true, false);
 		SeenEntity teleported = tracker.known().getFirst();
 
-		assertEquals(List.of(1.5, 1.0, 3.0), List.of(moved.getX(), moved.getY(), moved.getZ()));
-		assertEquals(List.of(10.0, 2.0, 20.0), List.of(teleported.getX(), teleported.getY(), teleported.getZ()));
+		assertEquals(List.of(1.5, 1.0, 3.0), List.of(moved.x(), moved.y(), moved.z()));
+		assertEquals(List.of(10.0, 2.0, 20.0), List.of(teleported.x(), teleported.y(), teleported.z()));
 	}
 
 	@Test
@@ -121,9 +121,9 @@ class EntityTrackerTest {
 		spawn(tracker, 7, "minecraft:zombie", 0, 64, 10);
 
 		tracker.movePlayer(0, 0, 4, true, true, true);
-		assertEquals(6.0, tracker.known().getFirst().getPlayerDistance());
+		assertEquals(6.0, tracker.known().getFirst().playerDistance());
 		tracker.move(7, 0, 0, -3, true, true, true);
-		assertEquals(3.0, tracker.known().getFirst().getPlayerDistance());
+		assertEquals(3.0, tracker.known().getFirst().playerDistance());
 	}
 
 	@Test
@@ -134,22 +134,22 @@ class EntityTrackerTest {
 
 		EntityChange named = single(tracker.change(7, List.of(new CustomName("hello"))));
 
-		assertEquals(5.0, named.getEntity().getX());
-		assertEquals(5.0, named.getPrevious().getX());
+		assertEquals(5.0, named.entity().x());
+		assertEquals(5.0, named.previous().x());
 	}
 
 	@Test
 	void keepsTheSpawnRotationAndTurnsByRelativeAnglesAndToAbsoluteOnes() {
 		EntityTracker tracker = new EntityTracker(1);
 		SeenEntity spawned = single(tracker.spawn(7, null, "minecraft:zombie", new Vec3d(0, 0, 0), 90, 10))
-				.getEntity();
+				.entity();
 
 		tracker.turn(7, 180, 5, false, true);
 		SeenEntity turned = tracker.known().getFirst();
 
-		assertNull(spawned.getUniqueId());
-		assertEquals(List.of(90f, 10f), List.of(spawned.getYaw(), spawned.getPitch()));
-		assertEquals(List.of(180f, 15f), List.of(turned.getYaw(), turned.getPitch()));
+		assertNull(spawned.uniqueId());
+		assertEquals(List.of(90f, 10f), List.of(spawned.yaw(), spawned.pitch()));
+		assertEquals(List.of(180f, 15f), List.of(turned.yaw(), turned.pitch()));
 	}
 
 	@Test
@@ -162,17 +162,17 @@ class EntityTrackerTest {
 		List<EntityChange> onTop = tracker.mount(7, List.of(8));
 		List<EntityChange> mounted = tracker.mount(PLAYER, List.of(7));
 
-		assertEquals(List.of(8), onTop.get(0).getEntity().getPassengerIds());
-		assertEquals(7, onTop.get(1).getEntity().getVehicleId());
-		assertFalse(onTop.get(1).getEntity().isRidingPlayer());
+		assertEquals(List.of(8), onTop.get(0).entity().passengerIds());
+		assertEquals(7, onTop.get(1).entity().vehicleId());
+		assertFalse(onTop.get(1).entity().ridingPlayer());
 		assertEquals(2, mounted.size());
-		assertTrue(mounted.stream().allMatch(change -> change.getEntity().isRidingPlayer()));
-		assertEquals(PLAYER, mounted.get(0).getEntity().getVehicleId());
+		assertTrue(mounted.stream().allMatch(change -> change.entity().ridingPlayer()));
+		assertEquals(PLAYER, mounted.get(0).entity().vehicleId());
 
 		List<EntityChange> dismounted = tracker.mount(PLAYER, List.of());
 		assertEquals(2, dismounted.size());
-		assertTrue(dismounted.stream().noneMatch(change -> change.getEntity().isRidingPlayer()));
-		assertNull(dismounted.get(0).getEntity().getVehicleId());
+		assertTrue(dismounted.stream().noneMatch(change -> change.entity().ridingPlayer()));
+		assertNull(dismounted.get(0).entity().vehicleId());
 	}
 
 	@Test
@@ -186,11 +186,11 @@ class EntityTrackerTest {
 
 		List<EntityChange> changes = tracker.remove(List.of(7));
 
-		assertEquals(EntityChangeKind.DISAPPEARED, changes.get(0).getKind());
-		assertEquals(7, changes.get(0).getEntity().getId());
-		assertEquals(EntityChangeKind.CHANGED, changes.get(1).getKind());
-		assertNull(changes.get(1).getEntity().getVehicleId());
-		assertFalse(changes.get(1).getEntity().isRidingPlayer());
+		assertEquals(EntityChangeKind.DISAPPEARED, changes.get(0).kind());
+		assertEquals(7, changes.get(0).entity().id());
+		assertEquals(EntityChangeKind.CHANGED, changes.get(1).kind());
+		assertNull(changes.get(1).entity().vehicleId());
+		assertFalse(changes.get(1).entity().ridingPlayer());
 	}
 
 	@Test
@@ -201,8 +201,8 @@ class EntityTrackerTest {
 		List<EntityChange> changes = spawn(tracker, 7, "minecraft:zombie", 0, 0, 0);
 
 		assertEquals(List.of(EntityChangeKind.DISAPPEARED, EntityChangeKind.APPEARED),
-				changes.stream().map(EntityChange::getKind).toList());
-		assertEquals("minecraft:zombie", changes.get(1).getEntity().getType());
+				changes.stream().map(EntityChange::kind).toList());
+		assertEquals("minecraft:zombie", changes.get(1).entity().type());
 	}
 
 	@Test
@@ -215,9 +215,9 @@ class EntityTrackerTest {
 		spawn(tracker, 9, "minecraft:zombie", 0, 0, 0);
 		List<EntityChange> cleared = tracker.clear();
 
-		assertEquals(List.of(7, 8), joined.stream().map(change -> change.getEntity().getId()).toList());
-		assertTrue(joined.stream().allMatch(change -> change.getKind() == EntityChangeKind.DISAPPEARED));
-		assertEquals(List.of(9), cleared.stream().map(change -> change.getEntity().getId()).toList());
+		assertEquals(List.of(7, 8), joined.stream().map(change -> change.entity().id()).toList());
+		assertTrue(joined.stream().allMatch(change -> change.kind() == EntityChangeKind.DISAPPEARED));
+		assertEquals(List.of(9), cleared.stream().map(change -> change.entity().id()).toList());
 		assertEquals(List.of(), tracker.clear());
 	}
 

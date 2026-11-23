@@ -70,7 +70,7 @@ class DefaultPlatformPlannerTest {
 
 			@Override
 			public void validateDistribution(@NotNull MinecraftProcess process) {
-				assertEquals(jar, process.getDistribution().getLocalJar());
+				assertEquals(jar, process.distribution().localJar());
 				calls.add("validate");
 			}
 
@@ -124,10 +124,10 @@ class DefaultPlatformPlannerTest {
 		PlatformPlan plan = planner.plan(scenario);
 
 		assertEquals(List.of("validate"), calls);
-		assertTrue(server.getDistribution().isArtifact(), "Planning must preserve the caller's declarations");
-		ProcessPlan process = plan.getProcesses().get("server");
-		assertEquals(jar, process.getDeclaration().getDistribution().getLocalJar());
-		PlatformRequest request = PlatformRequest.builder().scenario(plan.getScenario())
+		assertTrue(server.distribution().isArtifact(), "Planning must preserve the caller's declarations");
+		ProcessPlan process = plan.processes().get("server");
+		assertEquals(jar, process.declaration().distribution().localJar());
+		PlatformRequest request = PlatformRequest.builder().scenario(plan.scenario())
 				.workDirectory(directory.resolve("work/server")).workspaceGroupDirectory(directory.resolve("work"))
 				.files(new WorkspaceProcessFiles(directory.resolve("work/server"), new WorkspaceFiles()))
 				.cacheDirectory(directory.resolve("cache"))
@@ -139,15 +139,15 @@ class DefaultPlatformPlannerTest {
 
 		assertEquals(List.of("validate", "resolve", "configure"), calls);
 		for (PlatformContext context : contexts) {
-			assertSame(artifacts, context.getArtifactSource());
-			assertSame(process.getForwarding(), context.getForwarding());
-			assertSame(plan.getScenario(), context.getScenario());
-			assertEquals(request.getProcessAddresses(), context.getProcessAddresses());
-			assertEquals(request.getBindAddress(), context.getBindAddress());
-			assertEquals(request.getPort(), context.getPort());
-			assertEquals(request.getWorkDirectory(), context.getWorkDirectory());
-			assertEquals(request.getWorkspaceGroupDirectory(), context.getWorkspaceGroupDirectory());
-			assertTrue(context.isEulaAccepted());
+			assertSame(artifacts, context.artifactSource());
+			assertSame(process.forwarding(), context.forwarding());
+			assertSame(plan.scenario(), context.scenario());
+			assertEquals(request.processAddresses(), context.processAddresses());
+			assertEquals(request.bindAddress(), context.bindAddress());
+			assertEquals(request.port(), context.port());
+			assertEquals(request.workDirectory(), context.workDirectory());
+			assertEquals(request.workspaceGroupDirectory(), context.workspaceGroupDirectory());
+			assertTrue(context.eulaAccepted());
 		}
 	}
 	@Test
@@ -175,31 +175,31 @@ class DefaultPlatformPlannerTest {
 				.server(inherited).server(overridden).proxy(proxy)
 				.networkPolicy(NetworkPolicy.builder().backendNetworkExposure(NetworkExposure.PRIVATE).build()).build();
 
-		var enginePlan = planner.plan(scenario).getProcesses();
-		assertEquals(engineJava, enginePlan.get("inherited").getJavaSelection().getRequirement());
-		assertSame(engineSource, enginePlan.get("inherited").getJavaSelection().getSource());
+		var enginePlan = planner.plan(scenario).processes();
+		assertEquals(engineJava, enginePlan.get("inherited").javaSelection().requirement());
+		assertSame(engineSource, enginePlan.get("inherited").javaSelection().source());
 		var scenarioPlan = planner.plan(scenario.toBuilder()
 						.javaSelection(JavaSelection.builder().requirement(scenarioJava).source(scenarioSource).build())
 						.build())
-				.getProcesses();
-		assertEquals(scenarioJava, scenarioPlan.get("inherited").getJavaSelection().getRequirement());
-		assertSame(scenarioSource, scenarioPlan.get("inherited").getJavaSelection().getSource());
-		assertEquals(processJava, scenarioPlan.get("overridden").getJavaSelection().getRequirement());
-		assertSame(processSource, scenarioPlan.get("overridden").getJavaSelection().getSource());
-		assertTrue(scenarioPlan.get("proxy").isProxy());
-		assertTrue(scenarioPlan.get("proxy").isPublishGame());
-		assertEquals(List.of("inherited", "overridden"), scenarioPlan.get("proxy").getDependencies());
-		assertFalse(scenarioPlan.get("inherited").isProxy());
-		assertFalse(scenarioPlan.get("inherited").isPublishGame());
-		assertTrue(scenarioPlan.get("inherited").getDependencies().isEmpty());
-		assertNull(inherited.getJavaSelection().getRequirement(), "Planning must preserve the caller's declarations");
-		assertNull(inherited.getJavaSelection().getSource());
+				.processes();
+		assertEquals(scenarioJava, scenarioPlan.get("inherited").javaSelection().requirement());
+		assertSame(scenarioSource, scenarioPlan.get("inherited").javaSelection().source());
+		assertEquals(processJava, scenarioPlan.get("overridden").javaSelection().requirement());
+		assertSame(processSource, scenarioPlan.get("overridden").javaSelection().source());
+		assertTrue(scenarioPlan.get("proxy").proxy());
+		assertTrue(scenarioPlan.get("proxy").publishGame());
+		assertEquals(List.of("inherited", "overridden"), scenarioPlan.get("proxy").dependencies());
+		assertFalse(scenarioPlan.get("inherited").proxy());
+		assertFalse(scenarioPlan.get("inherited").publishGame());
+		assertTrue(scenarioPlan.get("inherited").dependencies().isEmpty());
+		assertNull(inherited.javaSelection().requirement(), "Planning must preserve the caller's declarations");
+		assertNull(inherited.javaSelection().source());
 
 		var direct = scenario.toBuilder().clearProxies().entrypoint("inherited")
 				.networkPolicy(NetworkPolicy.builder().build()).build();
-		var directPlan = policyPlanner(EngineOptions.builder().build()).plan(direct).getProcesses().get("inherited");
-		assertTrue(directPlan.isPublishGame());
-		assertNull(directPlan.getJavaSelection().getSource(), "Execution may select its own source when none is declared");
+		var directPlan = policyPlanner(EngineOptions.builder().build()).plan(direct).processes().get("inherited");
+		assertTrue(directPlan.publishGame());
+		assertNull(directPlan.javaSelection().source(), "Execution may select its own source when none is declared");
 	}
 
 	@Test
@@ -213,10 +213,10 @@ class DefaultPlatformPlannerTest {
 		var scenario = AnvilScenario.builder().name("test").entrypoint("server").server(process).build();
 		var planner = policyPlanner(options);
 
-		var inherited = planner.plan(scenario).getProcesses().get("server").getJavaSelection();
-		assertNotNull(inherited.getRequirement());
-		assertEquals(21, inherited.getRequirement().getFeatureVersion(), "Planning selects the platform's preferred LTS");
-		assertSame(engineSource, inherited.getSource());
+		var inherited = planner.plan(scenario).processes().get("server").javaSelection();
+		assertNotNull(inherited.requirement());
+		assertEquals(21, inherited.requirement().featureVersion(), "Planning selects the platform's preferred LTS");
+		assertSame(engineSource, inherited.source());
 
 		var scenarioRequirement = JavaRequirement.builder().featureVersion(25).build();
 		var processSource = JavaSource.home(directory.resolve("process-java"));
@@ -225,10 +225,10 @@ class DefaultPlatformPlannerTest {
 				.clearServers()
 				.server(process.toBuilder().javaSelection(JavaSelection.builder().source(processSource).build()).build())
 				.build();
-		var effective = planner.plan(configured).getProcesses().get("server").getJavaSelection();
-		assertEquals(scenarioRequirement, effective.getRequirement());
-		assertSame(processSource, effective.getSource());
-		assertNull(options.getJavaSelection().getRequirement());
+		var effective = planner.plan(configured).processes().get("server").javaSelection();
+		assertEquals(scenarioRequirement, effective.requirement());
+		assertSame(processSource, effective.source());
+		assertNull(options.javaSelection().requirement());
 	}
 
 	@Test

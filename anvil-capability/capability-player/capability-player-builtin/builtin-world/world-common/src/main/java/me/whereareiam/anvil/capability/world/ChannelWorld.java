@@ -44,10 +44,10 @@ final class ChannelWorld implements World {
 		channel.subscribe(WorldChannel.SERVER, server::set);
 		channel.subscribe(WorldChannel.DIMENSION, change -> {
 			changes.add(change);
-			level.set(change.getLevel());
+			level.set(change.level());
 		});
 		channel.subscribe(WorldChannel.LEFT, left -> {
-			level.getAndUpdate(now -> now != null && now.getDimension().equals(left) ? null : now);
+			level.getAndUpdate(now -> now != null && now.dimension().equals(left) ? null : now);
 			server.set(null);
 		});
 		channel.subscribe(WorldChannel.STATE, next -> {
@@ -59,7 +59,7 @@ final class ChannelWorld implements World {
 
 	@Override
 	public @NotNull Optional<String> dimension() {
-		return level().map(Level::getDimension);
+		return level().map(Level::dimension);
 	}
 
 	@Override
@@ -190,7 +190,7 @@ final class ChannelWorld implements World {
 
 			DimensionChange change = Objects.requireNonNull(cursor.find(matcher));
 			throw new IllegalStateException("Player made a dimension change it must not make: "
-					+ (change.getFrom() == null ? "joined " : "from " + change.getFrom() + " to ") + change.getTo());
+					+ (change.from() == null ? "joined " : "from " + change.from() + " to ") + change.to());
 		}
 
 		@Override

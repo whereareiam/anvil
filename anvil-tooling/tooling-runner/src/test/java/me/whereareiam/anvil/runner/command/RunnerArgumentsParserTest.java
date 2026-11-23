@@ -13,16 +13,16 @@ final class RunnerArgumentsParserTest {
 	void parsesOneScenarioSelection() {
 		RunnerArguments arguments = RunnerArgumentsParser.parse(new String[]{"--scenario=manual"});
 
-		assertEquals("manual", arguments.getScenario());
-		assertFalse(arguments.isList());
+		assertEquals("manual", arguments.scenario());
+		assertFalse(arguments.list());
 	}
 
 	@Test
 	void parsesDirectDefinitionSelection() {
 		RunnerArguments arguments = RunnerArgumentsParser.parse(new String[]{"--definition=example.ManualScenario"});
 
-		assertEquals("example.ManualScenario", arguments.getDefinition());
-		assertTrue(arguments.getScenario() == null);
+		assertEquals("example.ManualScenario", arguments.definition());
+		assertTrue(arguments.scenario() == null);
 	}
 
 	@Test

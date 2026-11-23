@@ -46,7 +46,7 @@ import java.util.function.Predicate;
 public final class ToolingExtensionRegistry implements ToolingRegistry {
 	private static final TargetScope<ScenarioAccess> SCENARIO = new TargetScope<>(
 			ActionTargetType.SCENARIO,
-			List::of, context -> context.definition().getName(), target -> true);
+			List::of, context -> context.definition().name(), target -> true);
 	private static final TargetScope<RunningProcess> PROCESS = new TargetScope<>(
 			ActionTargetType.PROCESS,
 			context -> List.copyOf(context.processes().all()), RunningProcess::name,
@@ -114,20 +114,20 @@ public final class ToolingExtensionRegistry implements ToolingRegistry {
 	 */
 	@Override
 	public @NotNull ActionResult invoke(@NotNull ScenarioContext context, @NotNull ActionRequest request) {
-		ActionBinding<?> action = actions.get(request.getActionId());
-		if (action == null) throw new NoSuchElementException("Unknown tooling action: " + request.getActionId());
+		ActionBinding<?> action = actions.get(request.actionId());
+		if (action == null) throw new NoSuchElementException("Unknown tooling action: " + request.actionId());
 
 		ActionResult supplied = Objects.requireNonNull(action.invoke(context, request), "Action returned no result");
-		ActionResult result = supplied.toBuilder().clearRows().rows(supplied.getRows().stream().map(List::copyOf).toList()).build();
-		if (result.getRows().stream().anyMatch(row -> row.size() != result.getColumns().size())) {
-			throw new IllegalStateException("Action result row does not match its columns: " + request.getActionId());
+		ActionResult result = supplied.toBuilder().clearRows().rows(supplied.rows().stream().map(List::copyOf).toList()).build();
+		if (result.rows().stream().anyMatch(row -> row.size() != result.columns().size())) {
+			throw new IllegalStateException("Action result row does not match its columns: " + request.actionId());
 		}
 
 		return result;
 	}
 
 	private void addAction(@NotNull ToolingAction<?> contribution) {
-		ActionDefinition definition = ToolingDefinitionValidator.action(contribution.getDefinition());
+		ActionDefinition definition = ToolingDefinitionValidator.action(contribution.definition());
 		ActionBinding<?> bound = switch (contribution) {
 			case ScenarioAction action -> new ActionBinding<>(SCENARIO, definition, action);
 			case ProcessAction action -> new ActionBinding<>(PROCESS, definition, action);
@@ -136,14 +136,14 @@ public final class ToolingExtensionRegistry implements ToolingRegistry {
 					"Unsupported tooling action scope; extend ScenarioAction, PlayerAction or ProcessAction.");
 		};
 
-		if (actions.putIfAbsent(definition.getId(), bound) != null) {
-			throw new IllegalArgumentException("Duplicate tooling action: " + definition.getId());
+		if (actions.putIfAbsent(definition.id(), bound) != null) {
+			throw new IllegalArgumentException("Duplicate tooling action: " + definition.id());
 		}
 	}
 
 	private void addObservation(@NotNull ToolingObservation<?> contribution) {
-		ObservationDefinition definition = contribution.getDefinition();
-		ToolingDefinitionValidator.observation(definition.getId());
+		ObservationDefinition definition = contribution.definition();
+		ToolingDefinitionValidator.observation(definition.id());
 		ObservationBinding<?> bound = switch (contribution) {
 			case ScenarioObservation observation -> new ObservationBinding<>(SCENARIO, definition, observation);
 			case ProcessObservation observation -> new ObservationBinding<>(PROCESS, definition, observation);
@@ -152,8 +152,8 @@ public final class ToolingExtensionRegistry implements ToolingRegistry {
 					"Unsupported tooling observation scope; extend ScenarioObservation, PlayerObservation or ProcessObservation.");
 		};
 
-		if (observations.putIfAbsent(definition.getId(), bound) != null) {
-			throw new IllegalArgumentException("Duplicate tooling observation: " + definition.getId());
+		if (observations.putIfAbsent(definition.id(), bound) != null) {
+			throw new IllegalArgumentException("Duplicate tooling observation: " + definition.id());
 		}
 	}
 
@@ -246,15 +246,15 @@ public final class ToolingExtensionRegistry implements ToolingRegistry {
 		}
 
 		private @NotNull ActionResult invoke(@NotNull ScenarioContext context, @NotNull ActionRequest request) {
-			if (scope.type() != request.getTarget().getType()) throw new IllegalArgumentException("Action target type does not match");
-			T target = scope.targets(context).stream().filter(value -> scope.name(value).equals(request.getTarget().getName()))
+			if (scope.type() != request.target().type()) throw new IllegalArgumentException("Action target type does not match");
+			T target = scope.targets(context).stream().filter(value -> scope.name(value).equals(request.target().name()))
 					.findFirst()
-					.orElseThrow(() -> new NoSuchElementException("Action target no longer exists: " + request.getTarget().getName()));
+					.orElseThrow(() -> new NoSuchElementException("Action target no longer exists: " + request.target().name()));
 			if (!handler.supports(target)) throw new IllegalStateException("Target no longer supports this action");
 			ActionAvailability availability = availability(target);
-			if (!availability.isEnabled())
-				throw new IllegalStateException(availability.getReason() == null ? "Action is unavailable" : availability.getReason());
-			return handler.execute(target, ToolingDefinitionValidator.arguments(definition, request.getArguments()));
+			if (!availability.enabled())
+				throw new IllegalStateException(availability.reason() == null ? "Action is unavailable" : availability.reason());
+			return handler.execute(target, ToolingDefinitionValidator.arguments(definition, request.arguments()));
 		}
 
 		private @NotNull ActionAvailability availability(@NotNull T target) {

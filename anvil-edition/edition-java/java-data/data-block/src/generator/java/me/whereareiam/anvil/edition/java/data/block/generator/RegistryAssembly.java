@@ -43,8 +43,8 @@ public final class RegistryAssembly {
 	private RegistryAssembly(@NotNull String context, @NotNull BlockFacts facts, @NotNull MinecraftDataShapes shapes) {
 		this.context = context;
 		this.facts = facts;
-		this.shapeIndices = shapes.getBlocks();
-		this.shapes = shapeTable(shapes.getShapes());
+		this.shapeIndices = shapes.blocks();
+		this.shapes = shapeTable(shapes.shapes());
 	}
 
 	/**
@@ -73,46 +73,46 @@ public final class RegistryAssembly {
 	}
 
 	private void add(MinecraftDataBlock source) {
-		String name = NAMESPACE + source.getName();
-		if (source.getId() != blocks.size()) throw fail(name, "has id " + source.getId() + " at position " + blocks.size());
+		String name = NAMESPACE + source.name();
+		if (source.id() != blocks.size()) throw fail(name, "has id " + source.id() + " at position " + blocks.size());
 		if (!names.add(name)) throw fail(name, "is listed more than once");
-		if (source.getMinStateId() != states.size() || source.getMaxStateId() < source.getMinStateId())
-			throw fail(name, "has the states " + source.getMinStateId() + " to " + source.getMaxStateId()
+		if (source.minStateId() != states.size() || source.maxStateId() < source.minStateId())
+			throw fail(name, "has the states " + source.minStateId() + " to " + source.maxStateId()
 					+ " after " + (states.size() - 1));
-		if (source.getDefaultState() < source.getMinStateId() || source.getDefaultState() > source.getMaxStateId())
-			throw fail(name, "has the default state " + source.getDefaultState() + " outside its states");
+		if (source.defaultState() < source.minStateId() || source.defaultState() > source.maxStateId())
+			throw fail(name, "has the default state " + source.defaultState() + " outside its states");
 
 		BlockFact fact = facts.of(name);
 		BlockType block = BlockType.builder()
-				.id(source.getId())
+				.id(source.id())
 				.name(name)
-				.minStateId(source.getMinStateId())
-				.maxStateId(source.getMaxStateId())
-				.defaultStateId(source.getDefaultState())
-				.properties(properties(name, source.getStates(), fact))
-				.kind(fact.getKind())
-				.collision(fact.getCollision())
-				.movement(fact.getMovement())
+				.minStateId(source.minStateId())
+				.maxStateId(source.maxStateId())
+				.defaultStateId(source.defaultState())
+				.properties(properties(name, source.states(), fact))
+				.kind(fact.kind())
+				.collision(fact.collision())
+				.movement(fact.movement())
 				.build();
 		blocks.add(block);
-		addStates(block, source.getName(), fact.getFluid());
+		addStates(block, source.name(), fact.fluid());
 	}
 
 	private List<BlockProperty> properties(String name, List<MinecraftDataProperty> sources, BlockFact fact) {
 		List<BlockProperty> properties = new ArrayList<>();
 		for (MinecraftDataProperty source : sources) {
-			Integer start = fact.getPropertyStarts().get(source.getName());
-			if (start != null && source.getType() == PropertyType.BOOL)
-				throw fail(name, "has the boolean property " + source.getName() + ", which block-facts.toml gives a start");
+			Integer start = fact.propertyStarts().get(source.name());
+			if (start != null && source.type() == PropertyType.BOOL)
+				throw fail(name, "has the boolean property " + source.name() + ", which block-facts.toml gives a start");
 
 			List<String> values = values(name, source, start);
-			if (values.size() != source.getValueCount())
-				throw fail(name, "gives " + source.getName() + " " + source.getValueCount() + " values, but lists "
+			if (values.size() != source.valueCount())
+				throw fail(name, "gives " + source.name() + " " + source.valueCount() + " values, but lists "
 						+ values.size());
-			properties.add(new BlockProperty(source.getName(), values));
+			properties.add(new BlockProperty(source.name(), values));
 		}
-		fact.getPropertyStarts().keySet().stream()
-				.filter(property -> sources.stream().noneMatch(source -> source.getName().equals(property)))
+		fact.propertyStarts().keySet().stream()
+				.filter(property -> sources.stream().noneMatch(source -> source.name().equals(property)))
 				.findFirst()
 				.ifPresent(property -> {
 					throw fail(name, "has no property " + property + ", which block-facts.toml gives a start");
@@ -123,22 +123,22 @@ public final class RegistryAssembly {
 
 	private List<String> values(String name, MinecraftDataProperty source, Integer start) {
 		try {
-			return source.getType().values(source, start);
+			return source.type().values(source, start);
 		} catch (IllegalStateException failure) {
 			throw fail(name, failure.getMessage());
 		}
 	}
 
 	private void addStates(BlockType block, String sourceName, FluidType fluid) {
-		long combinations = block.getProperties().stream()
-				.mapToLong(property -> property.getValues().size())
+		long combinations = block.properties().stream()
+				.mapToLong(property -> property.values().size())
 				.reduce(1, (product, count) -> product * count);
 		if (combinations != block.stateCount())
-			throw fail(block.getName(), "has " + block.stateCount() + " states, but its properties combine to " + combinations);
+			throw fail(block.name(), "has " + block.stateCount() + " states, but its properties combine to " + combinations);
 
 		List<Integer> indices = shapeIndices(block, sourceName);
 		for (int offset = 0; offset < block.stateCount(); offset++) {
-			int stateId = block.getMinStateId() + offset;
+			int stateId = block.minStateId() + offset;
 			Map<String, String> properties = block.propertiesAt(stateId);
 			boolean waterlogged = Boolean.parseBoolean(properties.get(WATERLOGGED));
 			FluidType stateFluid = fluid == FluidType.NONE && waterlogged ? FluidType.WATER : fluid;
@@ -148,7 +148,7 @@ public final class RegistryAssembly {
 
 	private List<Integer> shapeIndices(BlockType block, String sourceName) {
 		ShapeIndices listed = shapeIndices.get(sourceName);
-		if (listed == null) throw fail(block.getName(), "has no collision shape");
+		if (listed == null) throw fail(block.name(), "has no collision shape");
 
 		try {
 			List<Integer> indices = listed.forStates(block.stateCount());
@@ -157,7 +157,7 @@ public final class RegistryAssembly {
 			});
 			return indices;
 		} catch (IllegalStateException failure) {
-			throw fail(block.getName(), failure.getMessage());
+			throw fail(block.name(), failure.getMessage());
 		}
 	}
 

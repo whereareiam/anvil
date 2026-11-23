@@ -1,7 +1,9 @@
 package me.whereareiam.anvil.runner.protocol;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MapperFeature;
@@ -19,7 +21,11 @@ import java.io.IOException;
  * Decodes transport headers and binds operation payloads before the runner invokes the session.
  */
 final class ToolingRequestReader {
+	// Tooling payloads read through fluent accessors, which are no JavaBean getters: their fields are their members.
 	private final @NotNull ObjectMapper json = JsonMapper.builder()
+			.visibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
+			.visibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
+			.visibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE)
 			.disable(MapperFeature.ALLOW_COERCION_OF_SCALARS)
 			.disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)
 			.enable(DeserializationFeature.FAIL_ON_NUMBERS_FOR_ENUMS)

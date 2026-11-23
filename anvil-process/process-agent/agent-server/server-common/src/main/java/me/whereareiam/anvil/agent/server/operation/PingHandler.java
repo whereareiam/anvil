@@ -15,9 +15,9 @@ public final class PingHandler implements AgentOperationHandler<Object, AgentPin
 	public @NotNull AgentPingResponse execute(@NotNull PlatformAgent platform, @NotNull Object request) {
 		var info = platform.info();
 		return AgentPingResponse.builder()
-				.platform(info.getPlatform())
-				.version(info.getVersion())
-				.role(info.getRole().name().toLowerCase(Locale.ROOT))
+				.platform(info.platform())
+				.version(info.version())
+				.role(info.role().name().toLowerCase(Locale.ROOT))
 				.build();
 	}
 }

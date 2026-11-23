@@ -260,7 +260,7 @@ public class ToolingLaunchPlatformTest extends ScenarioPlatformTestCase {
 		launch.subscribe(new ToolingLaunch.Listener() {
 			@Override
 			public void snapshot(@NotNull SessionSnapshot snapshot) {
-				if (snapshot.getState() == SessionState.STOPPED) launch.stop();
+				if (snapshot.state() == SessionState.STOPPED) launch.stop();
 			}
 		}, getTestRootDisposable());
 		launch.startAfter(null);
@@ -388,7 +388,7 @@ public class ToolingLaunchPlatformTest extends ScenarioPlatformTestCase {
 		var first = launch.discover();
 		var second = launch.discover();
 
-		assertEquals("example", first.get(5, TimeUnit.SECONDS).getFirst().getName());
+		assertEquals("example", first.get(5, TimeUnit.SECONDS).getFirst().name());
 		assertEquals(first.get(), second.get(5, TimeUnit.SECONDS));
 		assertEquals(1, runner.getRequests().size());
 	}

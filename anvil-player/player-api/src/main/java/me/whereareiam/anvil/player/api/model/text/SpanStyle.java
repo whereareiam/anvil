@@ -75,17 +75,17 @@ public class SpanStyle {
 	 */
 	@NotNull SpanStyle inherit(@NotNull TextStyle style) {
 		SpanStyleBuilder resolved = toBuilder()
-				.bold(style.getDecorations().getOrDefault(TextDecoration.BOLD, bold))
-				.italic(style.getDecorations().getOrDefault(TextDecoration.ITALIC, italic))
-				.underlined(style.getDecorations().getOrDefault(TextDecoration.UNDERLINED, underlined))
-				.strikethrough(style.getDecorations().getOrDefault(TextDecoration.STRIKETHROUGH, strikethrough))
-				.obfuscated(style.getDecorations().getOrDefault(TextDecoration.OBFUSCATED, obfuscated));
-		if (style.getColor() != null) resolved.color(style.getColor());
-		if (style.getShadowColor() != null) resolved.shadowColor(style.getShadowColor());
-		if (style.getFont() != null) resolved.font(style.getFont());
-		if (style.getInsertion() != null) resolved.insertion(style.getInsertion());
-		if (style.getClick() != null) resolved.click(style.getClick());
-		if (style.getHover() != null) resolved.hover(style.getHover());
+				.bold(style.decorations().getOrDefault(TextDecoration.BOLD, bold))
+				.italic(style.decorations().getOrDefault(TextDecoration.ITALIC, italic))
+				.underlined(style.decorations().getOrDefault(TextDecoration.UNDERLINED, underlined))
+				.strikethrough(style.decorations().getOrDefault(TextDecoration.STRIKETHROUGH, strikethrough))
+				.obfuscated(style.decorations().getOrDefault(TextDecoration.OBFUSCATED, obfuscated));
+		if (style.color() != null) resolved.color(style.color());
+		if (style.shadowColor() != null) resolved.shadowColor(style.shadowColor());
+		if (style.font() != null) resolved.font(style.font());
+		if (style.insertion() != null) resolved.insertion(style.insertion());
+		if (style.click() != null) resolved.click(style.click());
+		if (style.hover() != null) resolved.hover(style.hover());
 
 		return resolved.build();
 	}

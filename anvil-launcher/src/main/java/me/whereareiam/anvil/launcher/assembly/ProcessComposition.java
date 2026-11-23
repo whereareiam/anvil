@@ -32,8 +32,8 @@ public final class ProcessComposition {
 			@NotNull ScenarioPlatforms platforms
 	) {
 		Map<String, String> declared = new LinkedHashMap<>();
-		plan.getProcesses().forEach((name, process) -> {
-			if (process.isAgent()) declared.put(name, process.getDeclaration().getPlatform());
+		plan.processes().forEach((name, process) -> {
+			if (process.agent()) declared.put(name, process.declaration().platform());
 		});
 
 		return ProcessCapabilityRuntime.discover(declared, name -> new AgentRequestChannel(directory.register(name)), platforms::platform);

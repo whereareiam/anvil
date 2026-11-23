@@ -50,8 +50,8 @@ class VitalsReleaseTest {
 		server.console("kill " + player.name());
 
 		Death death = deaths.died(TIMEOUT);
-		assertTrue(death.getMessage().contains(player.name()), death.getMessage());
-		assertFalse(death.isRespawnedImmediately());
+		assertTrue(death.message().contains(player.name()), death.message());
+		assertFalse(death.respawnedImmediately());
 		assertTrue(vitals.dead());
 		deaths.neverDied(QUIET);
 		assertTrue(vitals.dead());
@@ -73,7 +73,7 @@ class VitalsReleaseTest {
 
 			server.console("kill " + player.name());
 
-			assertTrue(deaths.died(TIMEOUT).isRespawnedImmediately());
+			assertTrue(deaths.died(TIMEOUT).respawnedImmediately());
 			player.awaitFirst(TIMEOUT, Expectation.of("respawn", () -> vitals.health() == 20F && !vitals.dead()));
 		} finally {
 			immediateRespawn(server, false);

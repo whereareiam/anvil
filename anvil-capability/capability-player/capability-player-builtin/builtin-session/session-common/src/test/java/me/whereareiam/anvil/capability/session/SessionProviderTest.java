@@ -16,9 +16,9 @@ class SessionProviderTest {
 	void describesTheSessionCapabilityForTheLibrariesWhoseWorkersBindSessions() {
 		SessionProvider provider = new SessionProvider();
 
-		assertEquals(SessionProvider.ID, provider.descriptor().getId());
+		assertEquals(SessionProvider.ID, provider.descriptor().id());
 		assertEquals(SessionProvider.ID, new SessionBinding().id());
-		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
+		assertTrue(provider.descriptor().requiredCapabilities().isEmpty());
 		assertTrue(provider.workerBacked());
 		assertEquals(Session.class, provider.capability());
 	}
@@ -28,11 +28,11 @@ class SessionProviderTest {
 		TestProtocolChannel channel = new TestProtocolChannel(Set.of(SessionProvider.ID));
 		channel.answer(SessionOperations.CONNECT, ignored -> null);
 		Session session = new SessionProvider().create(new TestProtocolPlayerCapabilityContext(channel));
-		assertEquals(List.of(PlayerConnectionEvent.CHANGED.getId(), PlayerConnectionEvent.DESTROYED.getId()), channel.subscriptions());
+		assertEquals(List.of(PlayerConnectionEvent.CHANGED.id(), PlayerConnectionEvent.DESTROYED.id()), channel.subscriptions());
 		assertTrue(channel.requests().isEmpty());
 
 		session.connect();
 
-		assertEquals(List.of(SessionOperations.CONNECT.getId()), channel.requests());
+		assertEquals(List.of(SessionOperations.CONNECT.id()), channel.requests());
 	}
 }

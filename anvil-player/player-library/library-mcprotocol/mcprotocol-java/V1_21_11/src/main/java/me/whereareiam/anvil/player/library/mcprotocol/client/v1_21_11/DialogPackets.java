@@ -47,8 +47,8 @@ public final class DialogPackets implements PacketTranslation<Packet> {
 	public @Nullable Packet encode(@NotNull ServerboundPacket packet) {
 		if (!(packet instanceof ServerboundCustomClickAction click)) return null;
 
-		NbtMap payload = click.getPayload() == null ? null : NbtTranslator.map(click.getPayload());
-		return new ServerboundCustomClickActionPacket(Key.key(click.getId()), payload);
+		NbtMap payload = click.payload() == null ? null : NbtTranslator.map(click.payload());
+		return new ServerboundCustomClickActionPacket(Key.key(click.id()), payload);
 	}
 
 	private static ClientboundShowDialog shown(Holder<NbtMap> dialog) {

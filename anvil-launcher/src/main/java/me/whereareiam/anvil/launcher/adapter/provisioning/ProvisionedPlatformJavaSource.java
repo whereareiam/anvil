@@ -19,7 +19,7 @@ public final class ProvisionedPlatformJavaSource implements PlatformJavaSource {
 	@Override
 	public @NotNull OptionalInt featureVersion(@NotNull JavaSource source) {
 		return java.inspect(source)
-				.map(JavaInstallation::getFeatureVersion)
+				.map(JavaInstallation::featureVersion)
 				.map(OptionalInt::of)
 				.orElse(OptionalInt.empty());
 	}

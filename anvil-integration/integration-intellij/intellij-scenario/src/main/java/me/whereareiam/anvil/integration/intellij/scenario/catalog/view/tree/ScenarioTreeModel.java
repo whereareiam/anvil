@@ -35,7 +35,7 @@ public final class ScenarioTreeModel {
 
 			ScenarioNode parent = new ScenarioNode(scenario);
 			if (ScenarioPresentation.standaloneProcess(scenario) == null) {
-				for (ProcessDefinition process : scenario.getProcesses())
+				for (ProcessDefinition process : scenario.processes())
 					parent.add(new ProcessNode(scenario, process));
 			}
 
@@ -67,7 +67,7 @@ public final class ScenarioTreeModel {
 		if (value instanceof ProcessDefinition process
 				&& node.getParent() instanceof DefaultMutableTreeNode parent) {
 			String parentIdentity = identity(parent);
-			return parentIdentity == null ? null : parentIdentity + "/" + process.getName();
+			return parentIdentity == null ? null : parentIdentity + "/" + process.name();
 		}
 
 		return null;
@@ -101,19 +101,19 @@ public final class ScenarioTreeModel {
 	static boolean matches(@NotNull ScenarioDescriptor scenario, @NotNull String query) {
 		if (query.isBlank()) return true;
 
-		StringBuilder text = new StringBuilder(scenario.getDisplayName())
+		StringBuilder text = new StringBuilder(scenario.displayName())
 				.append(' ')
-				.append(scenario.getName());
+				.append(scenario.name());
 
-		if (scenario.getDescription() != null) text.append(' ').append(scenario.getDescription());
-		if (scenario.getCategory() != null) text.append(' ').append(scenario.getCategory());
+		if (scenario.description() != null) text.append(' ').append(scenario.description());
+		if (scenario.category() != null) text.append(' ').append(scenario.category());
 
-		text.append(' ').append(String.join(" ", scenario.getTags()));
-		for (ProcessDefinition process : scenario.getProcesses()) {
+		text.append(' ').append(String.join(" ", scenario.tags()));
+		for (ProcessDefinition process : scenario.processes()) {
 			text.append(' ')
-					.append(process.getDisplayName())
+					.append(process.displayName())
 					.append(' ')
-					.append(process.getPlatform());
+					.append(process.platform());
 		}
 
 		return text.toString()

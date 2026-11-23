@@ -83,7 +83,7 @@ final class EchoServer {
 	 */
 	@NotNull List<ClientboundPacket> join() {
 		DimensionType overworld = DimensionType.known(OVERWORLD);
-		List<LevelChunkSection> sections = new ArrayList<>(Collections.nCopies(overworld.getHeight() / 16,
+		List<LevelChunkSection> sections = new ArrayList<>(Collections.nCopies(overworld.height() / 16,
 				LevelChunkSection.EMPTY));
 		sections.set(0, LevelChunkSection.uniform(STONE));
 
@@ -103,9 +103,9 @@ final class EchoServer {
 	 */
 	@NotNull List<ClientboundPacket> answer(@NotNull String player, @NotNull ServerboundPacket packet) {
 		if (packet instanceof ServerboundChat chat)
-			return List.of(ClientboundPlayerChat.unsigned(Text.literal("<" + player + "> " + chat.getText())));
+			return List.of(ClientboundPlayerChat.unsigned(Text.literal("<" + player + "> " + chat.text())));
 		if (packet instanceof ServerboundChatCommand command)
-			return List.of(new ClientboundSystemChat(Text.literal("ran /" + command.getCommand()), false));
+			return List.of(new ClientboundSystemChat(Text.literal("ran /" + command.command()), false));
 
 		return List.of();
 	}

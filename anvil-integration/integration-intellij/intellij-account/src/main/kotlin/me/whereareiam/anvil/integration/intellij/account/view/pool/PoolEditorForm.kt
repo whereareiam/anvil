@@ -25,9 +25,9 @@ internal class PoolEditorForm(
 		val choices = formPanel {
 			for (entry in accounts) {
 				val account = entry.account
-				val id = account.accountId
+				val id = account.accountId()
 				if (members.containsKey(id)) continue
-				val username = account.username?.let { " · $it" }.orEmpty()
+				val username = account.username()?.let { " · $it" }.orEmpty()
 				row {
 					members[id] = checkBox("$id · ${entry.source.label}$username")
 						.applyToComponent { isSelected = id in selected }.component

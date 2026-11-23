@@ -17,7 +17,7 @@ import java.util.List;
  * CookieWatch asked = cookies.watch();
  * session.rejoin();
  * CookieRequest request = asked.requested("example:ticket", Duration.ofSeconds(10));
- * assertNull(request.getAnswer());
+ * assertNull(request.answer());
  * }</pre>
  */
 public interface CookieWatch {

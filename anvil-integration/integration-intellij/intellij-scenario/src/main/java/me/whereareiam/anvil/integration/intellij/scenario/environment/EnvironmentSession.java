@@ -125,7 +125,7 @@ public final class EnvironmentSession implements Disposable {
 	 * Reports whether this session executes the given scenario of the given source.
 	 */
 	public boolean runs(@NotNull ScenarioSource source, @NotNull ScenarioDescriptor scenario) {
-		return this.source.getId().equals(source.getId()) && this.scenario.getDefinition().equals(scenario.getDefinition());
+		return this.source.getId().equals(source.getId()) && this.scenario.definition().equals(scenario.definition());
 	}
 
 	/**
@@ -133,11 +133,11 @@ public final class EnvironmentSession implements Disposable {
 	 */
 	public boolean canStartAll() {
 		SessionSnapshot snapshot = execution.snapshot();
-		if (!isActive() || snapshot.getState() != SessionState.RUNNING) return false;
+		if (!isActive() || snapshot.state() != SessionState.RUNNING) return false;
 
-		return !snapshot.isSetupComplete() || scenario.getProcesses().stream().anyMatch(definition ->
-				snapshot.getProcesses().stream().noneMatch(process ->
-						process.getName().equals(definition.getName()) && process.getState() == ProcessState.READY));
+		return !snapshot.setupComplete() || scenario.processes().stream().anyMatch(definition ->
+				snapshot.processes().stream().noneMatch(process ->
+						process.name().equals(definition.name()) && process.state() == ProcessState.READY));
 	}
 
 	/**
@@ -145,11 +145,11 @@ public final class EnvironmentSession implements Disposable {
 	 */
 	public boolean canStartProcess(@NotNull String process) {
 		SessionSnapshot snapshot = execution.snapshot();
-		if (!isActive() || snapshot.getState() != SessionState.RUNNING) return false;
+		if (!isActive() || snapshot.state() != SessionState.RUNNING) return false;
 
 		ProcessSnapshot live = process(process);
-		return live == null || live.getState() == ProcessState.CREATED || live.getState() == ProcessState.STOPPED
-				|| live.getState() == ProcessState.FAILED;
+		return live == null || live.state() == ProcessState.CREATED || live.state() == ProcessState.STOPPED
+				|| live.state() == ProcessState.FAILED;
 	}
 
 	/**
@@ -159,10 +159,10 @@ public final class EnvironmentSession implements Disposable {
 	 * @return whether starting is possible, with the reason when it is not
 	 */
 	public @NotNull Availability availability(@Nullable String process) {
-		String name = "“" + scenario.getDisplayName() + "”";
+		String name = "“" + scenario.displayName() + "”";
 		if (!isActive()) return Availability.unavailable(name + " has ended");
 
-		SessionState state = execution.snapshot().getState();
+		SessionState state = execution.snapshot().state();
 		if (state == SessionState.STARTING) return Availability.unavailable(name + " is starting");
 		if (state != SessionState.RUNNING) return Availability.unavailable(name + " is stopping");
 		if (process == null) return canStartAll() ? Availability.AVAILABLE : Availability.unavailable(name + " is already running");
@@ -175,15 +175,15 @@ public final class EnvironmentSession implements Disposable {
 	 */
 	public boolean isReady(@NotNull String process) {
 		ProcessSnapshot live = process(process);
-		return isActive() && execution.snapshot().getState() == SessionState.RUNNING
-				&& live != null && live.getState() == ProcessState.READY;
+		return isActive() && execution.snapshot().state() == SessionState.RUNNING
+				&& live != null && live.state() == ProcessState.READY;
 	}
 
 	/**
 	 * Reports whether the environment can be stopped: it is preparing, starting, or running.
 	 */
 	public boolean canStop() {
-		SessionState state = execution.snapshot().getState();
+		SessionState state = execution.snapshot().state();
 		return isActive() && (state == SessionState.STARTING || state == SessionState.RUNNING);
 	}
 
@@ -191,7 +191,7 @@ public final class EnvironmentSession implements Disposable {
 	 * Returns the latest snapshot of one process, or null before it is created.
 	 */
 	public @Nullable ProcessSnapshot process(@NotNull String name) {
-		return execution.snapshot().getProcesses().stream().filter(process -> process.getName().equals(name)).findFirst().orElse(null);
+		return execution.snapshot().processes().stream().filter(process -> process.name().equals(name)).findFirst().orElse(null);
 	}
 
 	/**
@@ -293,7 +293,7 @@ public final class EnvironmentSession implements Disposable {
 	 */
 	@RequiresEdt
 	public @NotNull Map<String, String> actionDraft(@NotNull ActionDescriptor action) {
-		return actionDrafts.getOrDefault(new ActionScope(action.getDefinition().getId(), action.getTarget()), Map.of());
+		return actionDrafts.getOrDefault(new ActionScope(action.definition().id(), action.target()), Map.of());
 	}
 
 	/**
@@ -304,11 +304,11 @@ public final class EnvironmentSession implements Disposable {
 		if (disposed) return;
 
 		Map<String, String> safe = new HashMap<>();
-		action.getDefinition().getInputs().forEach(input -> {
-			if (!input.isSensitive() && values.containsKey(input.getName()))
-				safe.put(input.getName(), values.get(input.getName()));
+		action.definition().inputs().forEach(input -> {
+			if (!input.sensitive() && values.containsKey(input.name()))
+				safe.put(input.name(), values.get(input.name()));
 		});
-		actionDrafts.put(new ActionScope(action.getDefinition().getId(), action.getTarget()), Map.copyOf(safe));
+		actionDrafts.put(new ActionScope(action.definition().id(), action.target()), Map.copyOf(safe));
 	}
 
 	/**
@@ -426,7 +426,7 @@ public final class EnvironmentSession implements Disposable {
 		 * Derives the status from a scenario's declaration and its latest snapshot.
 		 */
 		public static @NotNull Status of(@NotNull ScenarioDescriptor scenario, @NotNull SessionSnapshot snapshot) {
-			switch (snapshot.getState()) {
+			switch (snapshot.state()) {
 				case IDLE: return NOT_STARTED;
 				case STARTING: return STARTING;
 				case STOPPING: return STOPPING;
@@ -435,15 +435,15 @@ public final class EnvironmentSession implements Disposable {
 				case RUNNING: break;
 			}
 
-			List<ProcessSnapshot> processes = snapshot.getProcesses();
-			if (processes.stream().anyMatch(process -> process.getState() == ProcessState.FAILED)) return FAILED;
-			if (processes.stream().anyMatch(process -> process.getState() == ProcessState.STOPPING)) return STOPPING;
-			if (processes.stream().anyMatch(process -> process.getState() == ProcessState.STARTING)) return STARTING;
+			List<ProcessSnapshot> processes = snapshot.processes();
+			if (processes.stream().anyMatch(process -> process.state() == ProcessState.FAILED)) return FAILED;
+			if (processes.stream().anyMatch(process -> process.state() == ProcessState.STOPPING)) return STOPPING;
+			if (processes.stream().anyMatch(process -> process.state() == ProcessState.STARTING)) return STARTING;
 
-			long ready = processes.stream().filter(process -> process.getState() == ProcessState.READY).count();
+			long ready = processes.stream().filter(process -> process.state() == ProcessState.READY).count();
 			if (ready == 0) return READY_TO_START;
-			if (ready < Math.max(scenario.getProcesses().size(), processes.size())) return PARTIALLY_RUNNING;
-			if (scenario.isSetupAvailable() && !snapshot.isSetupComplete()) return SETUP_PENDING;
+			if (ready < Math.max(scenario.processes().size(), processes.size())) return PARTIALLY_RUNNING;
+			if (scenario.setupAvailable() && !snapshot.setupComplete()) return SETUP_PENDING;
 
 			return RUNNING;
 		}

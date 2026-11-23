@@ -65,8 +65,8 @@ class NeoForgePlatformProviderTest {
 
 		var resolved = provider.resolve(server, context(server, ForwardingMode.NONE));
 
-		assertEquals(installation.resolve("server/server.jar"), resolved.getJar());
-		assertEquals("NeoForge 21.1.256 for Minecraft 1.21.1", resolved.getDescription());
+		assertEquals(installation.resolve("server/server.jar"), resolved.jar());
+		assertEquals("NeoForge 21.1.256 for Minecraft 1.21.1", resolved.description());
 		String installer = "https://maven.neoforged.net/releases/net/neoforged/neoforge/21.1.256/neoforge-21.1.256-installer.jar";
 		assertEquals(List.of(
 				"read " + installer + ".sha256",
@@ -80,7 +80,7 @@ class NeoForgePlatformProviderTest {
 		installed("21.1.256");
 		MinecraftServer server = server(Distribution.remote("1.21.1", "21.1.256"));
 		PlatformContext context = context(server, ForwardingMode.NONE);
-		Path work = context.getWorkDirectory();
+		Path work = context.workDirectory();
 		Files.writeString(work.resolve("server.properties"), "level-name=retained\nserver-port=1\n");
 
 		provider.configure(server, context);
@@ -106,7 +106,7 @@ class NeoForgePlatformProviderTest {
 
 		assertEquals("NeoForge does not support identity forwarding", failure.getMessage());
 		assertEquals(List.of(ForwardingMode.NONE), provider.forwardingModes());
-		assertEquals(Path.of("mods", "anvil-platform-agent.jar"), provider.platformAgent().getTarget());
+		assertEquals(Path.of("mods", "anvil-platform-agent.jar"), provider.platformAgent().target());
 		assertEquals(List.of("nogui"), provider.programArguments(server));
 	}
 
@@ -143,7 +143,7 @@ class NeoForgePlatformProviderTest {
 	private PlatformContext context(MinecraftServer server, ForwardingMode forwarding) throws IOException {
 		Path work = Files.createDirectories(temporary.resolve("server"));
 		return PlatformContext.builder()
-				.scenario(AnvilScenario.builder().name("neoforge").entrypoint(server.getName()).server(server).build())
+				.scenario(AnvilScenario.builder().name("neoforge").entrypoint(server.name()).server(server).build())
 				.cacheDirectory(temporary.resolve("cache"))
 				.workDirectory(work)
 				.files(new WorkspaceProcessFiles(work, new WorkspaceFiles()))

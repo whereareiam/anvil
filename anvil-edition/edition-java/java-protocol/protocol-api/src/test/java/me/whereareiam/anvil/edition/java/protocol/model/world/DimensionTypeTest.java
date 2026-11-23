@@ -12,17 +12,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class DimensionTypeTest {
 	@Test
 	void knowsFastLavaOnlyInTheVanillaNether() {
-		assertTrue(Objects.requireNonNull(DimensionType.known("minecraft:the_nether")).isFastLava());
+		assertTrue(Objects.requireNonNull(DimensionType.known("minecraft:the_nether")).fastLava());
 	}
 
 	@ParameterizedTest
 	@ValueSource(strings = {"minecraft:overworld", "minecraft:overworld_caves", "minecraft:the_end"})
 	void knowsSlowLavaInEveryOtherVanillaType(String key) {
-		assertFalse(Objects.requireNonNull(DimensionType.known(key)).isFastLava());
+		assertFalse(Objects.requireNonNull(DimensionType.known(key)).fastLava());
 	}
 
 	@Test
 	void describesATypeByItsEffectsWithSlowLava() {
-		assertFalse(DimensionType.withEffects("example:hot", "minecraft:the_nether", 0, 256).isFastLava());
+		assertFalse(DimensionType.withEffects("example:hot", "minecraft:the_nether", 0, 256).fastLava());
 	}
 }

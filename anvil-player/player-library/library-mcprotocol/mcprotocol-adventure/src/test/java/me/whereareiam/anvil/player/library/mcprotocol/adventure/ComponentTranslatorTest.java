@@ -123,12 +123,12 @@ class ComponentTranslatorTest {
 		Text text = TEXT.translate(message);
 
 		TranslatedContent joined = text.find(TranslatedContent.class).orElseThrow();
-		assertEquals("multiplayer.player.joined", joined.getKey());
-		assertNull(joined.getFallback());
+		assertEquals("multiplayer.player.joined", joined.key());
+		assertNull(joined.fallback());
 		assertEquals(List.of(Text.builder()
 				.content(new LiteralContent("Ivan"))
 				.style(TextStyle.builder().color(TextColor.AQUA).build())
-				.build()), joined.getArguments());
+				.build()), joined.arguments());
 		assertEquals("multiplayer.player.joined Ivan", text.plain());
 	}
 
@@ -143,14 +143,14 @@ class ComponentTranslatorTest {
 
 		Text text = TEXT.translate(message);
 
-		assertEquals(new KeybindContent("key.jump"), text.getContent());
+		assertEquals(new KeybindContent("key.jump"), text.content());
 		assertEquals(List.of(
 				new SelectorContent("@p", null),
 				new ScoreContent("Alice", "kills"),
 				new NbtContent("Items[0]", false, null, NbtSource.BLOCK, "1 ~1 -2"),
 				new NbtContent("Health", false, null, NbtSource.ENTITY, "@s"),
 				new NbtContent("value", false, null, NbtSource.STORAGE, "arbor:state")
-		), text.getChildren().stream().map(Text::getContent).toList());
+		), text.children().stream().map(Text::content).toList());
 	}
 
 	@Test
@@ -171,7 +171,7 @@ class ComponentTranslatorTest {
 				new ChangePageClick(3),
 				new CopyToClipboardClick("copied"),
 				new OpenFileClick("screenshot.png")
-		), text.spans().stream().map(span -> span.getStyle().getClick()).toList());
+		), text.spans().stream().map(span -> span.style().click()).toList());
 	}
 
 	@Test
@@ -191,7 +191,7 @@ class ComponentTranslatorTest {
 						.build()),
 				new ShowItemHover("minecraft:diamond", 2),
 				new ShowEntityHover("minecraft:zombie", zombie, Text.literal("Bob"))
-		), text.spans().stream().map(span -> span.getStyle().getHover()).toList());
+		), text.spans().stream().map(span -> span.style().hover()).toList());
 	}
 
 	@Test
@@ -200,10 +200,10 @@ class ComponentTranslatorTest {
 				.style(style -> style.font(Key.key("minecraft", "uniform")))
 				.insertion("/vote");
 
-		TextStyle style = TEXT.translate(message).getStyle();
+		TextStyle style = TEXT.translate(message).style();
 
-		assertEquals("minecraft:uniform", style.getFont());
-		assertEquals("/vote", style.getInsertion());
+		assertEquals("minecraft:uniform", style.font());
+		assertEquals("/vote", style.insertion());
 	}
 
 	@Test
@@ -230,9 +230,9 @@ class ComponentTranslatorTest {
 
 		Text text = release.translate(message);
 
-		assertEquals(new TranslatedContent("arbor.hello", "Hello", List.of(Text.literal("Ivan"))), text.getContent());
-		assertEquals(new RunCommandClick("read /hi"), text.getStyle().getClick());
-		assertEquals(new SelectorContent("@a", Text.literal(" & ")), text.getChildren().getFirst().getContent());
+		assertEquals(new TranslatedContent("arbor.hello", "Hello", List.of(Text.literal("Ivan"))), text.content());
+		assertEquals(new RunCommandClick("read /hi"), text.style().click());
+		assertEquals(new SelectorContent("@a", Text.literal(" & ")), text.children().getFirst().content());
 	}
 
 	@Test

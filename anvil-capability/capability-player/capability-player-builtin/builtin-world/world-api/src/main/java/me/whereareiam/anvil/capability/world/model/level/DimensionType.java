@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * The type of the dimension a level is, as the client knows it: how the client renders its levels and which block
- * heights they span, from {@link #getMinY()} up to just below {@code minY + height}.
+ * heights they span, from {@link #minY()} up to just below {@code minY + height}.
  */
 @Value
 public class DimensionType {
@@ -23,7 +23,7 @@ public class DimensionType {
 	 */
 	int minY;
 	/**
-	 * The number of block heights a level of the type spans from {@link #getMinY()} up, such as {@code 384} for the
+	 * The number of block heights a level of the type spans from {@link #minY()} up, such as {@code 384} for the
 	 * overworld from Minecraft 1.18 on; every type spans 256 before Minecraft 1.17.
 	 */
 	int height;

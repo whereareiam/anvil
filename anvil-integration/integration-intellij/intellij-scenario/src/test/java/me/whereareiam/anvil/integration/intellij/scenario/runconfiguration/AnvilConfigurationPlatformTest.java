@@ -187,8 +187,8 @@ public class AnvilConfigurationPlatformTest extends ScenarioPlatformTestCase {
 
 		EnvironmentSession session = service().launch(configuration);
 
-		assertEquals(DEFINITION, session.getScenario().getDefinition());
-		assertEquals("Saved launcher", session.getScenario().getDisplayName());
+		assertEquals(DEFINITION, session.getScenario().definition());
+		assertEquals("Saved launcher", session.getScenario().displayName());
 		ControlledProject.await(() -> project.startRequests().size() == 1);
 		assertEquals(DEFINITION, project.startRequests().getFirst().path("definition").asText());
 		assertTrue(project.startRequests().getFirst().path("target").isMissingNode());

@@ -26,13 +26,13 @@ class PlatformEventLogTest {
 
 		AgentPlayerEventsResponse later = log.after(1);
 
-		assertEquals(List.of(2L, 3L), later.getEvents().stream().map(AgentPlayerEvent::getPosition).toList());
+		assertEquals(List.of(2L, 3L), later.events().stream().map(AgentPlayerEvent::position).toList());
 		assertEquals(List.of(AgentPlayerEventType.LEFT, AgentPlayerEventType.JOINED),
-				later.getEvents().stream().map(AgentPlayerEvent::getType).toList());
-		assertEquals(List.of("auth", "lobby"), later.getEvents().stream().map(AgentPlayerEvent::getServer).toList());
-		assertFalse(later.isTruncated());
-		assertEquals(later.getGeneration(), log.after(0).getGeneration());
-		assertNotEquals(later.getGeneration(), new PlatformEventLog(true).after(0).getGeneration());
+				later.events().stream().map(AgentPlayerEvent::type).toList());
+		assertEquals(List.of("auth", "lobby"), later.events().stream().map(AgentPlayerEvent::server).toList());
+		assertFalse(later.truncated());
+		assertEquals(later.generation(), log.after(0).generation());
+		assertNotEquals(later.generation(), new PlatformEventLog(true).after(0).generation());
 	}
 
 	@Test
@@ -42,8 +42,8 @@ class PlatformEventLogTest {
 
 		AgentPlayerEventsResponse response = log.after(0);
 
-		assertEquals(PlatformEventLog.LIMIT, response.getEvents().size());
-		assertEquals(3, response.getEvents().getFirst().getPosition());
-		assertTrue(response.isTruncated());
+		assertEquals(PlatformEventLog.LIMIT, response.events().size());
+		assertEquals(3, response.events().getFirst().position());
+		assertTrue(response.truncated());
 	}
 }

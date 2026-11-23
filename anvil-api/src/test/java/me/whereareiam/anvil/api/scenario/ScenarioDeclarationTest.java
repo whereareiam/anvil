@@ -19,32 +19,32 @@ class ScenarioDeclarationTest {
 		AnvilScenario fresh = scenario("fresh");
 		AnvilScenario persistent = fresh.toBuilder()
 				.clearServers()
-				.server(fresh.getServers().getFirst().toBuilder()
+				.server(fresh.servers().getFirst().toBuilder()
 						.workspace(WorkspacePlan.builder()
 								.mode(WorkspaceMode.PERSISTENT)
 								.build())
 						.build())
 				.build();
 
-		assertEquals(WorkspaceMode.FRESH, fresh.getServers().getFirst().getWorkspace().getMode());
-		assertEquals(WorkspaceMode.PERSISTENT, persistent.getServers().getFirst().getWorkspace().getMode());
+		assertEquals(WorkspaceMode.FRESH, fresh.servers().getFirst().workspace().mode());
+		assertEquals(WorkspaceMode.PERSISTENT, persistent.servers().getFirst().workspace().mode());
 	}
 
 	@Test
 	void carriesJavaSourcesAtScenarioAndProcessScope() {
 		JavaSource scenarioSource = JavaSource.home(Path.of("scenario-jdk"));
 		JavaSource processSource = JavaSource.executable(Path.of("process-java"));
-		MinecraftServer server = scenario("sources").getServers().getFirst().toBuilder()
+		MinecraftServer server = scenario("sources").servers().getFirst().toBuilder()
 				.javaSelection(JavaSelection.builder().source(processSource).build()).build();
 		AnvilScenario configured = AnvilScenario.builder()
 				.name("sources")
-				.entrypoint(server.getName())
+				.entrypoint(server.name())
 				.javaSelection(JavaSelection.builder().source(scenarioSource).build())
 				.server(server)
 				.build();
 
-		assertEquals(scenarioSource, configured.getJavaSelection().getSource());
-		assertEquals(processSource, configured.getServers().getFirst().getJavaSelection().getSource());
+		assertEquals(scenarioSource, configured.javaSelection().source());
+		assertEquals(processSource, configured.servers().getFirst().javaSelection().source());
 	}
 
 	private AnvilScenario scenario(String name) {
@@ -53,6 +53,6 @@ class ScenarioDeclarationTest {
 				.platform("test")
 				.distribution(Distribution.remote("1.21.11", "1"))
 				.build();
-		return AnvilScenario.builder().name(name).entrypoint(server.getName()).server(server).build();
+		return AnvilScenario.builder().name(name).entrypoint(server.name()).server(server).build();
 	}
 }

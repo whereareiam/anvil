@@ -23,9 +23,9 @@ class WorkbenchChoiceTest {
 
 		assertEquals(Optional.empty(), WorkbenchChoice.chosen(null, null, pairings));
 		pairings.setDefault("server");
-		assertEquals("server", WorkbenchChoice.chosen(null, null, pairings).orElseThrow().getName());
-		assertEquals("workstation", WorkbenchChoice.chosen(null, "workstation", pairings).orElseThrow().getName());
-		assertEquals("server", WorkbenchChoice.chosen("server", "workstation", pairings).orElseThrow().getName());
+		assertEquals("server", WorkbenchChoice.chosen(null, null, pairings).orElseThrow().name());
+		assertEquals("workstation", WorkbenchChoice.chosen(null, "workstation", pairings).orElseThrow().name());
+		assertEquals("server", WorkbenchChoice.chosen("server", "workstation", pairings).orElseThrow().name());
 		assertEquals(Optional.empty(), WorkbenchChoice.chosen("local", "workstation", pairings));
 	}
 

@@ -182,18 +182,18 @@ final class DialogReader {
 	 */
 	private List<DialogButton> listed(@Nullable NbtTag dialogs) {
 		List<DialogButton> buttons = new ArrayList<>();
-		if (dialogs instanceof NbtString name && name.getValue().startsWith(TAG_PREFIX)) return buttons;
+		if (dialogs instanceof NbtString name && name.value().startsWith(TAG_PREFIX)) return buttons;
 
 		for (NbtTag entry : entries(dialogs)) {
 			if (entry instanceof NbtString name) {
-				String registryName = id(name.getValue());
+				String registryName = id(name.value());
 				buttons.add(new DialogButton(registryName, DialogAction.show(registryName, null), false));
 				continue;
 			}
 			if (!(entry instanceof NbtCompound inline)) continue;
 
 			Dialog listed = read(inline);
-			buttons.add(new DialogButton(listed.getExternalTitle(), DialogAction.show("", listed), false));
+			buttons.add(new DialogButton(listed.externalTitle(), DialogAction.show("", listed), false));
 		}
 
 		return buttons;
@@ -201,7 +201,7 @@ final class DialogReader {
 
 	private static List<NbtTag> entries(@Nullable NbtTag dialogs) {
 		if (dialogs == null) return List.of();
-		if (dialogs instanceof NbtList list) return list.getElements();
+		if (dialogs instanceof NbtList list) return list.elements();
 
 		return List.of(dialogs);
 	}
@@ -250,7 +250,7 @@ final class DialogReader {
 	 */
 	private DialogAction show(@Nullable NbtTag dialog) {
 		if (dialog instanceof NbtCompound inline) return DialogAction.show("", read(inline));
-		if (dialog instanceof NbtString name) return DialogAction.show(id(name.getValue()), null);
+		if (dialog instanceof NbtString name) return DialogAction.show(id(name.value()), null);
 
 		return DialogAction.show("", null);
 	}
@@ -290,10 +290,10 @@ final class DialogReader {
 			case SINGLE_OPTION_INPUT -> {
 				List<DialogOption> options = options(input.get(OPTIONS));
 				builder.type(DialogInputType.SINGLE_OPTION).options(options).initial(options.stream()
-						.filter(DialogOption::isInitial)
+						.filter(DialogOption::initial)
 						.findFirst()
 						.or(() -> options.stream().findFirst())
-						.map(DialogOption::getId)
+						.map(DialogOption::id)
 						.orElse(""));
 			}
 			case NUMBER_RANGE_INPUT -> {
@@ -315,9 +315,9 @@ final class DialogReader {
 		List<DialogOption> read = new ArrayList<>();
 		if (!(options instanceof NbtList list)) return read;
 
-		for (NbtTag option : list.getElements()) {
+		for (NbtTag option : list.elements()) {
 			if (option instanceof NbtString id) {
-				read.add(new DialogOption(id.getValue(), id.getValue(), false));
+				read.add(new DialogOption(id.value(), id.value(), false));
 				continue;
 			}
 			if (!(option instanceof NbtCompound compound)) continue;
@@ -350,7 +350,7 @@ final class DialogReader {
 	}
 
 	private static String string(NbtCompound compound, String key, String fallback) {
-		return compound.string(key).map(NbtString::getValue).orElse(fallback);
+		return compound.string(key).map(NbtString::value).orElse(fallback);
 	}
 
 	private static boolean bool(NbtCompound compound, String key, boolean fallback) {

@@ -34,7 +34,7 @@ public final class StopAction extends DumbAwareAction {
 		}
 
 		EnvironmentSession session = session(event);
-		presentation.setText(session == null ? "Stop Environment" : "Stop “" + session.getScenario().getDisplayName() + "”");
+		presentation.setText(session == null ? "Stop Environment" : "Stop “" + session.getScenario().displayName() + "”");
 		presentation.setEnabled(session != null && session.canStop());
 		presentation.setDescription(session == null ? "No environment is running" : "Stop every process and clean up");
 	}

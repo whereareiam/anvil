@@ -27,12 +27,12 @@ class ComponentItemTranslatorTest {
 
 		ItemStack item = items.item(new org.geysermc.mcprotocollib.protocol.data.game.item.ItemStack(791, 3, components));
 
-		assertEquals("Buy", item.getCustomName().plain());
-		assertEquals(TextColor.GREEN, item.getCustomName().getStyle().getColor());
-		assertEquals("Emerald Token", item.getItemName().plain());
-		assertEquals(List.of("Costs 64 coins", "Click to buy"), item.getLore().stream().map(Text::plain).toList());
-		assertEquals(791, item.getId());
-		assertEquals(3, item.getCount());
+		assertEquals("Buy", item.customName().plain());
+		assertEquals(TextColor.GREEN, item.customName().style().color());
+		assertEquals("Emerald Token", item.itemName().plain());
+		assertEquals(List.of("Costs 64 coins", "Click to buy"), item.lore().stream().map(Text::plain).toList());
+		assertEquals(791, item.id());
+		assertEquals(3, item.count());
 	}
 
 	@Test

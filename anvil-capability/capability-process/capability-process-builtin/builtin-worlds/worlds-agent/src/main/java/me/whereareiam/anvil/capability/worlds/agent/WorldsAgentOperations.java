@@ -34,7 +34,7 @@ public abstract class WorldsAgentOperations implements AgentOperationProvider {
 		registry.register(WorldsOperations.PLACEMENTS, (agent, ignored) ->
 				agent.call(() -> AgentPlacements.builder().placements(worlds.placements()).build()));
 		registry.register(WorldsOperations.SEND, (agent, transfer) ->
-				agent.call(() -> worlds.teleport(transfer.getUniqueId(), transfer.getLocation())));
+				agent.call(() -> worlds.teleport(transfer.uniqueId(), transfer.location())));
 		registry.register(WorldsOperations.CHANGES, (agent, request) -> changes.since(request));
 		registry.register(WorldsOperations.CREATE, (agent, creation) ->
 				agent.call(() -> outcome(() -> AgentWorldOutcome.builder().world(worlds.create(creation)).build())));

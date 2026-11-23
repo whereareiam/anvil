@@ -39,7 +39,7 @@ class ProcessKillSystemTest {
 	void killsAProxyWithoutItsShutdownAndStartsItAgain() throws Exception {
 		AnvilScenario original = CompatibilityScenarioFactory.proxyScenario(Platforms.VELOCITY, Platforms.PAPER,
 				MinecraftVersion.parse("1.21.11"));
-		var proxy = original.getProxies().getFirst().toBuilder().setting("advanced.login-ratelimit", "0").build();
+		var proxy = original.proxies().getFirst().toBuilder().setting("advanced.login-ratelimit", "0").build();
 		AnvilScenario scenario = original.toBuilder().name("process-kill").clearProxies().proxy(proxy).build();
 
 		try (var engine = AnvilLauncher.create(EngineOptions.builder().eulaAccepted(true)
@@ -67,7 +67,7 @@ class ProcessKillSystemTest {
 				session.disconnected(TIMEOUT);
 				assertEquals(DisconnectCause.CONNECTION_LOST, session.state().disconnectCause());
 				assertEquals(ProcessState.STOPPED, killed.state());
-				List<String> output = console.read(200).getLines().stream().map(ConsoleLine::getText).toList();
+				List<String> output = console.read(200).lines().stream().map(ConsoleLine::text).toList();
 				assertFalse(output.stream().anyMatch(line -> line.contains(CLEAN_SHUTDOWN)), output.toString());
 				assertTrue(output.getLast().contains("[Anvil] Process 'proxy' was killed on request without a clean shutdown"),
 						output.toString());

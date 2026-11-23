@@ -60,7 +60,7 @@ public final class WorldChangeLog {
 	 * @return this log's identity and the changes after the request
 	 */
 	public synchronized @NotNull AgentWorldChanges since(@NotNull AgentLogRequest request) {
-		long after = Objects.equals(request.getLog(), identity) ? request.getAfter() : 0;
+		long after = Objects.equals(request.log(), identity) ? request.after() : 0;
 		int from = (int) Math.min(Math.max(after, 0), changes.size());
 
 		return AgentWorldChanges.builder()

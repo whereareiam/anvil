@@ -36,7 +36,7 @@ public final class DebuggerAnnouncement implements EngineExtension {
 				} catch (IllegalArgumentException notDebugged) {
 					continue;
 				}
-				output.println("[Anvil] Debugger of '" + process.name() + "' in scenario '" + scenario.definition().getName()
+				output.println("[Anvil] Debugger of '" + process.name() + "' in scenario '" + scenario.definition().name()
 						+ "': attach a remote JVM debugger to " + address.getHostString() + ":" + address.getPort());
 			}
 			return successful -> {

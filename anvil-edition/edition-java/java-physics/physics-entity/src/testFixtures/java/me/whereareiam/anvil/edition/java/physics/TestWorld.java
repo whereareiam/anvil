@@ -121,14 +121,14 @@ public final class TestWorld {
 	public @NotNull TestWorld set(int x, int y, int z, @NotNull String block, @NotNull Map<String, String> properties) {
 		BlockType type = registry.block(block).orElseThrow();
 		BlockState state = registry.states(type).stream()
-				.filter(candidate -> candidate.getProperties().entrySet().containsAll(properties.entrySet()))
+				.filter(candidate -> candidate.properties().entrySet().containsAll(properties.entrySet()))
 				.findFirst()
 				.orElseThrow();
-		return state(x, y, z, state.getId());
+		return state(x, y, z, state.id());
 	}
 
 	public @NotNull TestWorld set(int x, int y, int z, @NotNull String block) {
-		return state(x, y, z, registry.block(block).orElseThrow().getDefaultStateId());
+		return state(x, y, z, registry.block(block).orElseThrow().defaultStateId());
 	}
 
 	public @NotNull TestWorld state(int x, int y, int z, int state) {
@@ -166,8 +166,8 @@ public final class TestWorld {
 
 	private @NotNull List<LevelChunkSection> sections(@NotNull ChunkPosition chunk) {
 		List<LevelChunkSection> sections = new ArrayList<>();
-		for (int section = 0; section < dimension.getHeight() >> 4; section++)
-			sections.add(section(chunk, dimension.getMinY() + section * 16));
+		for (int section = 0; section < dimension.height() >> 4; section++)
+			sections.add(section(chunk, dimension.minY() + section * 16));
 		return sections;
 	}
 
@@ -177,7 +177,7 @@ public final class TestWorld {
 		for (int y = 0; y < 16; y++)
 			for (int z = 0; z < 16; z++)
 				for (int x = 0; x < 16; x++) {
-					int state = blocks.getOrDefault(List.of(chunk.getX() * 16 + x, bottom + y, chunk.getZ() * 16 + z), 0);
+					int state = blocks.getOrDefault(List.of(chunk.x() * 16 + x, bottom + y, chunk.z() * 16 + z), 0);
 					if (!palette.contains(state)) palette.add(state);
 					states[(y << 8) | (z << 4) | x] = palette.indexOf(state);
 				}

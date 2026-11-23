@@ -16,14 +16,14 @@ import org.jetbrains.annotations.NotNull;
 final class InteractionPackets extends InteractionTranslation {
 	@Override
 	protected @NotNull Packet useItem(@NotNull ServerboundUseItem use) {
-		return new ServerboundUseItemPacket(ValueTranslator.hand(use.getHand()), use.getSequence());
+		return new ServerboundUseItemPacket(ValueTranslator.hand(use.hand()), use.sequence());
 	}
 
 	@Override
 	protected @NotNull Packet useItemOn(@NotNull ServerboundUseItemOn use) {
-		BlockPosition position = use.getPosition();
-		return new ServerboundUseItemOnPacket(Vector3i.from(position.getX(), position.getY(), position.getZ()),
-				ValueTranslator.direction(use.getFace()), ValueTranslator.hand(use.getHand()), use.getCursorX(),
-				use.getCursorY(), use.getCursorZ(), use.isInsideBlock(), use.getSequence());
+		BlockPosition position = use.position();
+		return new ServerboundUseItemOnPacket(Vector3i.from(position.x(), position.y(), position.z()),
+				ValueTranslator.direction(use.face()), ValueTranslator.hand(use.hand()), use.cursorX(),
+				use.cursorY(), use.cursorZ(), use.insideBlock(), use.sequence());
 	}
 }

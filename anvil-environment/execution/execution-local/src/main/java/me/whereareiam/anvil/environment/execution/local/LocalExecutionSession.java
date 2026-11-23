@@ -41,30 +41,30 @@ final class LocalExecutionSession implements ExecutionSession {
 
 	@Override
 	public @NotNull ProcessTarget prepare(@NotNull ProcessRequest request) {
-		if (request.getImage() != null)
-			throw new ProvisioningException("Local execution runs no container images; run container '" + request.getName()
+		if (request.image() != null)
+			throw new ProvisioningException("Local execution runs no container images; run container '" + request.name()
 					+ "' with an execution provider that does, such as executionProviderId(\"docker\")");
-		if (context.getNetworkPolicy().getNetworkServerAccess() == NetworkServerAccess.PROXY_ONLY
-				&& context.getNetworkPolicy().getBackendNetworkExposure() == NetworkExposure.PRIVATE)
+		if (context.networkPolicy().networkServerAccess() == NetworkServerAccess.PROXY_ONLY
+				&& context.networkPolicy().backendNetworkExposure() == NetworkExposure.PRIVATE)
 			throw new ProvisioningException("Local execution cannot enforce proxy-only private backend access");
 
-		JavaSelection java = Objects.requireNonNull(request.getJavaSelection(), "A Java process needs a Java selection");
-		JavaSource source = java.getSource() == null ? settings.source(java.getRequirement()) : java.getSource();
+		JavaSelection java = Objects.requireNonNull(request.javaSelection(), "A Java process needs a Java selection");
+		JavaSource source = java.source() == null ? settings.source(java.requirement()) : java.source();
 
 		Path executable = runtime.executable(request, source);
-		String bindAddress = context.getNetworkPolicy().getBindAddress();
+		String bindAddress = context.networkPolicy().bindAddress();
 		Map<String, InetSocketAddress> listeners = new LinkedHashMap<>();
-		request.getListeners().forEach(listener -> listeners.put(listener, new InetSocketAddress(bindAddress, port(bindAddress))));
+		request.listeners().forEach(listener -> listeners.put(listener, new InetSocketAddress(bindAddress, port(bindAddress))));
 
 		return new LocalProcessTarget(request, executable,
 				new InetSocketAddress(bindAddress, port(bindAddress)),
 				new InetSocketAddress("127.0.0.1", port("127.0.0.1")),
 				Map.copyOf(listeners),
-				context.getProcessPriority() == ProcessPriority.LOW ? LOW_PRIORITY : List.of());
+				context.processPriority() == ProcessPriority.LOW ? LOW_PRIORITY : List.of());
 	}
 
 	private synchronized int port(String address) {
-		int port = services.getPorts().reserve(address);
+		int port = services.ports().reserve(address);
 		ports.add(port);
 
 		return port;
@@ -75,7 +75,7 @@ final class LocalExecutionSession implements ExecutionSession {
 	 */
 	@Override
 	public synchronized void close() {
-		ports.forEach(services.getPorts()::release);
+		ports.forEach(services.ports()::release);
 		ports.clear();
 	}
 }

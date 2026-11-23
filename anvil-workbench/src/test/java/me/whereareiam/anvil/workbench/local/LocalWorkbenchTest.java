@@ -38,12 +38,12 @@ class LocalWorkbenchTest {
 				"stopped", provider("stopped", "the daemon does not answer")))) {
 			WorkbenchFacts facts = workbench.facts();
 
-			assertEquals("local", facts.getWorkbenchName());
-			assertTrue(facts.getProcessors() >= 1);
-			assertTrue(facts.getMemoryMegabytes() > 0);
-			assertEquals(Set.of("ready", "stopped"), facts.getExecutions());
-			assertEquals(Map.of("stopped", "the daemon does not answer"), facts.getUnavailableExecutions());
-			assertEquals(List.of("*"), facts.getReachableHosts());
+			assertEquals("local", facts.workbenchName());
+			assertTrue(facts.processors() >= 1);
+			assertTrue(facts.memoryMegabytes() > 0);
+			assertEquals(Set.of("ready", "stopped"), facts.executions());
+			assertEquals(Map.of("stopped", "the daemon does not answer"), facts.unavailableExecutions());
+			assertEquals(List.of("*"), facts.reachableHosts());
 		}
 	}
 
@@ -74,8 +74,8 @@ class LocalWorkbenchTest {
 			workbench.executions().get("recording").open(context);
 
 			assertSame(context, contexts.getFirst());
-			assertEquals(temporary.resolve("cache"), services.getFirst().getCacheDirectory());
-			assertSame(services.get(0).getPorts(), services.get(1).getPorts(), "One workbench reserves ports once");
+			assertEquals(temporary.resolve("cache"), services.getFirst().cacheDirectory());
+			assertSame(services.get(0).ports(), services.get(1).ports(), "One workbench reserves ports once");
 		}
 	}
 

@@ -36,7 +36,7 @@ public class ProtocolLibraryContext {
 	@NotNull ProtocolWorkerLauncher workers;
 	/**
 	 * User-supplied release data file in the library's own format, or null when none was configured.
-	 * Releases read from it are {@link ProtocolRelease#isAdditional() additional}.
+	 * Releases read from it are {@link ProtocolRelease#additional() additional}.
 	 */
 	@Nullable Path additionalReleases;
 }

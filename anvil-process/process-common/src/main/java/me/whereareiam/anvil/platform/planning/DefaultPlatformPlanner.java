@@ -55,7 +55,7 @@ public final class DefaultPlatformPlanner implements PlatformPlanner, PlatformPr
 		this.javaPlanner = new JavaRequirementPlanner(options, providers, javaSources, System.err);
 		this.providers = Map.copyOf(providers);
 		this.downloads = downloads;
-		this.artifacts = new ScenarioArtifactResolver(options.getArtifacts(), agents);
+		this.artifacts = new ScenarioArtifactResolver(options.artifacts(), agents);
 	}
 
 	@Override
@@ -65,10 +65,10 @@ public final class DefaultPlatformPlanner implements PlatformPlanner, PlatformPr
 		ForwardingPlan topology = new ForwardingNegotiator().negotiate(ProcessTopology.from(resolved), providers);
 		Map<String, ForwardingConfiguration> forwarding = forwarding(topology);
 
-		List<String> servers = resolved.getServers().stream().map(MinecraftProcess::getName).toList();
+		List<String> servers = resolved.servers().stream().map(MinecraftProcess::name).toList();
 		PlatformPlan.PlatformPlanBuilder plan = PlatformPlan.builder().scenario(resolved);
 		declarations.forEach((name, declaration) -> {
-			PlatformProvider provider = providers.get(declaration.getPlatform());
+			PlatformProvider provider = providers.get(declaration.platform());
 			var agent = provider.platformAgent();
 			boolean proxy = !(declaration instanceof MinecraftServer);
 			JavaRequirementPlanner.PlannedJava planned = javaPlanner.plan(resolved, declaration);
@@ -76,9 +76,9 @@ public final class DefaultPlatformPlanner implements PlatformPlanner, PlatformPr
 					.declaration(declaration)
 					.javaSelection(planned.selection())
 					.proxy(proxy)
-					.publishGame(proxy || resolved.getNetworkPolicy().getBackendNetworkExposure() != NetworkExposure.PRIVATE)
+					.publishGame(proxy || resolved.networkPolicy().backendNetworkExposure() != NetworkExposure.PRIVATE)
 					.dependencies(proxy ? servers : List.of())
-					.workspace(artifacts.installAgent(declaration.getWorkspace(), declaration.getPlatform(), agent))
+					.workspace(artifacts.installAgent(declaration.workspace(), declaration.platform(), agent))
 					.forwarding(forwarding.get(name))
 					.agent(agent != null)
 					.readinessPattern(provider.readinessPattern())
@@ -99,45 +99,45 @@ public final class DefaultPlatformPlanner implements PlatformPlanner, PlatformPr
 	 */
 	private List<String> jvmArguments(MinecraftProcess declaration, PlatformProvider provider, JavaRequirementPlanner.PlannedJava planned) {
 		List<String> arguments = new ArrayList<>();
-		Integer processors = options.getProcessScheduling().getProcessors();
+		Integer processors = options.processScheduling().processors();
 		if (processors != null) arguments.add("-XX:ActiveProcessorCount=" + processors);
 
 		arguments.addAll(planned.jvmArguments());
-		arguments.addAll(provider.jvmArguments(declaration, options.isConsoleColors()));
-		if (declaration.getSessionServer() != null)
-			arguments.addAll(provider.sessionServerArguments(declaration, declaration.getSessionServer()));
-		arguments.addAll(declaration.getJvmArguments());
+		arguments.addAll(provider.jvmArguments(declaration, options.consoleColors()));
+		if (declaration.sessionServer() != null)
+			arguments.addAll(provider.sessionServerArguments(declaration, declaration.sessionServer()));
+		arguments.addAll(declaration.jvmArguments());
 
 		return arguments;
 	}
 
 	@Override
 	public @NotNull Path resolve(@NotNull ProcessPlan process, @NotNull PlatformRequest request) throws IOException {
-		return provider(process).resolve(process.getDeclaration(), context(process, request)).getJar();
+		return provider(process).resolve(process.declaration(), context(process, request)).jar();
 	}
 
 	@Override
 	public void configure(@NotNull ProcessPlan process, @NotNull PlatformRequest request) throws IOException {
-		provider(process).configure(process.getDeclaration(), context(process, request));
+		provider(process).configure(process.declaration(), context(process, request));
 	}
 
 	private PlatformProvider provider(ProcessPlan process) {
-		return providers.get(process.getDeclaration().getPlatform());
+		return providers.get(process.declaration().platform());
 	}
 
 	private PlatformContext context(ProcessPlan process, PlatformRequest request) {
 		return PlatformContext.builder()
-				.scenario(request.getScenario())
-				.cacheDirectory(request.getCacheDirectory())
-				.files(request.getFiles())
-				.workDirectory(request.getWorkDirectory())
-				.workspaceGroupDirectory(request.getWorkspaceGroupDirectory())
-				.bindAddress(request.getBindAddress())
-				.port(request.getPort())
-				.processAddresses(request.getProcessAddresses())
-				.eulaAccepted(options.isEulaAccepted())
+				.scenario(request.scenario())
+				.cacheDirectory(request.cacheDirectory())
+				.files(request.files())
+				.workDirectory(request.workDirectory())
+				.workspaceGroupDirectory(request.workspaceGroupDirectory())
+				.bindAddress(request.bindAddress())
+				.port(request.port())
+				.processAddresses(request.processAddresses())
+				.eulaAccepted(options.eulaAccepted())
 				.artifactSource(downloads)
-				.forwarding(process.getForwarding())
+				.forwarding(process.forwarding())
 				.build();
 	}
 

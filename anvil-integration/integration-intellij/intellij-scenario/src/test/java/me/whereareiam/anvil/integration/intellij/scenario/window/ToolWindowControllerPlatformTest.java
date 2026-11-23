@@ -139,7 +139,7 @@ public class ToolWindowControllerPlatformTest extends ScenarioPlatformTestCase {
 		SwingTestSupport.await(() -> !first.isActive());
 		var completed = contents.getContent(1);
 		assertEquals(2, contents.getContentCount());
-		assertEquals(2, first.getScenario().getProcesses().size());
+		assertEquals(2, first.getScenario().processes().size());
 		assertNotNull(((EnvironmentTab) completed.getComponent()).consolePresentation().getConsole().getComponent());
 		provider.gate = new Gate();
 		var second =

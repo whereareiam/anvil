@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
  * Climbing, as {@code LivingEntity.onClimbable} and {@code handleOnClimbable} let a living entity climb: in a climbable
  * block, or an open trapdoor above a ladder that faces the same way, where the entity climbs at all
  * ({@link LivingBody#onClimbable}); there its speed is held to {@code 0.15} sideways and down, and an entity that holds
- * on ({@link LivingBody#isSuppressingSlidingDownLadder}) does not slide down, except in scaffolding.
+ * on ({@link LivingBody#suppressingSlidingDownLadder}) does not slide down, except in scaffolding.
  */
 public final class Climbing {
 	private final @NotNull LivingBody body;
@@ -24,7 +24,7 @@ public final class Climbing {
 	 */
 	public Climbing(@NotNull LivingBody body) {
 		this.body = body;
-		this.reader = body.getLevel();
+		this.reader = body.level();
 	}
 
 	/**
@@ -36,12 +36,12 @@ public final class Climbing {
 	 */
 	public static boolean isClimbable(@NotNull BlockReader reader, int @NotNull [] at) {
 		BlockState state = reader.state(at[0], at[1], at[2]);
-		if (state.getBlock().getMovement().has(MovementBehaviour.CLIMBABLE)) return true;
-		if (state.getBlock().getKind() != BlockKind.TRAPDOOR || !"true".equals(state.property("open").orElse("false")))
+		if (state.block().movement().has(MovementBehaviour.CLIMBABLE)) return true;
+		if (state.block().kind() != BlockKind.TRAPDOOR || !"true".equals(state.property("open").orElse("false")))
 			return false;
 
 		BlockState below = reader.state(at[0], at[1] - 1, at[2]);
-		return below.getBlock().getKind() == BlockKind.LADDER && below.property("facing").equals(state.property("facing"));
+		return below.block().kind() == BlockKind.LADDER && below.property("facing").equals(state.property("facing"));
 	}
 
 	/**
@@ -57,13 +57,13 @@ public final class Climbing {
 		double x = Math.clamp(movement.x, -0.15F, 0.15F);
 		double z = Math.clamp(movement.z, -0.15F, 0.15F);
 		double y = Math.max(movement.y, -0.15F);
-		if (y < 0.0 && !inScaffolding() && body.isSuppressingSlidingDownLadder()) y = 0.0;
+		if (y < 0.0 && !inScaffolding() && body.suppressingSlidingDownLadder()) y = 0.0;
 
 		return new Vector(x, y, z);
 	}
 
 	private boolean inScaffolding() {
 		int[] at = body.blockPosition();
-		return reader.state(at[0], at[1], at[2]).getBlock().getKind() == BlockKind.SCAFFOLDING;
+		return reader.state(at[0], at[1], at[2]).block().kind() == BlockKind.SCAFFOLDING;
 	}
 }

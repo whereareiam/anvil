@@ -43,9 +43,9 @@ class DialogsReleaseTest {
 
 		messages.command("anvil-fixture dialog");
 		Dialog dialog = dialogs.shown("anvil:dialog", Duration.ofSeconds(10));
-		assertEquals(List.of("anvil:dialog-body"), dialog.getBody());
+		assertEquals(List.of("anvil:dialog-body"), dialog.body());
 		assertEquals(List.of("Echo", "Nested", "Unknown", "Signed", "Seed", "Clear"),
-				dialog.getButtons().stream().map(DialogButton::getLabel).toList());
+				dialog.buttons().stream().map(DialogButton::label).toList());
 
 		dialogs.press("Echo", Map.of("word", "hello", "flag", "true"));
 		messages.received("anvil:dialog-echo:hello:on", Duration.ofSeconds(10));
@@ -55,19 +55,19 @@ class DialogsReleaseTest {
 		assertEquals(new CommandConfirmation("anvil-unknown-command", CommandCheck.PARSE_ERRORS),
 				dialogs.confirmation().orElseThrow());
 		dialogs.decline();
-		assertEquals("anvil:dialog", dialogs.current().orElseThrow().getTitle());
+		assertEquals("anvil:dialog", dialogs.current().orElseThrow().title());
 		dialogs.press("Unknown");
 		dialogs.confirm();
 		messages.received("command.unknown.command", Duration.ofSeconds(10));
 
 		dialogs.press("Signed");
-		assertEquals(CommandCheck.SIGNATURE_REQUIRED, dialogs.confirmation().orElseThrow().getReason());
+		assertEquals(CommandCheck.SIGNATURE_REQUIRED, dialogs.confirmation().orElseThrow().reason());
 		MessageWatch afterSigned = messages.watch();
 		dialogs.confirm();
 		afterSigned.neverReceived("anvil:signed", Duration.ofSeconds(2));
 
 		dialogs.press("Seed");
-		assertEquals(CommandCheck.PERMISSIONS_REQUIRED, dialogs.confirmation().orElseThrow().getReason());
+		assertEquals(CommandCheck.PERMISSIONS_REQUIRED, dialogs.confirmation().orElseThrow().reason());
 		dialogs.confirm();
 		messages.received("commands.seed.success", Duration.ofSeconds(10));
 	}
@@ -82,13 +82,13 @@ class DialogsReleaseTest {
 		messages.command("anvil-fixture dialog");
 		dialogs.shown("anvil:dialog", Duration.ofSeconds(10));
 		dialogs.press("Nested");
-		assertEquals("anvil:nested", dialogs.current().orElseThrow().getTitle());
+		assertEquals("anvil:nested", dialogs.current().orElseThrow().title());
 		dialogs.close();
 		dialogs.closed(Duration.ofSeconds(10));
 
 		DialogWatch again = dialogs.watch();
 		messages.command("anvil-fixture dialog");
-		again.shown(shown -> shown.getTitle().equals("anvil:dialog"), Duration.ofSeconds(10));
+		again.shown(shown -> shown.title().equals("anvil:dialog"), Duration.ofSeconds(10));
 		dialogs.press("Clear");
 		dialogs.closed(Duration.ofSeconds(10));
 	}

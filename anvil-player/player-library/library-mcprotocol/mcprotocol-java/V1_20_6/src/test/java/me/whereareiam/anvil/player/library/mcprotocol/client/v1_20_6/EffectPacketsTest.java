@@ -30,7 +30,7 @@ class EffectPacketsTest {
 						false)));
 		assertEquals("minecraft:hero_of_the_village", ((ClientboundUpdateMobEffect) packets.decode(
 				new ClientboundUpdateMobEffectPacket(7, Effect.HERO_OF_THE_VILLAGE, 0, 20, false, true, true, false)))
-				.getEffect());
+				.effect());
 	}
 
 	@Test

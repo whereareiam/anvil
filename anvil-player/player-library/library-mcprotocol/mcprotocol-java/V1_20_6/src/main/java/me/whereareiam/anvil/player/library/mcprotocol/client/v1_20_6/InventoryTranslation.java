@@ -103,7 +103,7 @@ public abstract class InventoryTranslation implements PacketTranslation<Packet> 
 	@Override
 	public final @Nullable Packet encode(@NotNull ServerboundPacket packet) {
 		if (packet instanceof ServerboundSetCarriedItem carried)
-			return new ServerboundSetCarriedItemPacket(carried.getSlot());
+			return new ServerboundSetCarriedItemPacket(carried.slot());
 		if (packet instanceof ServerboundContainerClick click) return click(click, type(click), action(click));
 
 		return null;
@@ -145,7 +145,7 @@ public abstract class InventoryTranslation implements PacketTranslation<Packet> 
 	}
 
 	private static ContainerActionType type(ServerboundContainerClick click) {
-		return switch (click.getClickType()) {
+		return switch (click.clickType()) {
 			case PICKUP -> ContainerActionType.CLICK_ITEM;
 			case QUICK_MOVE -> ContainerActionType.SHIFT_CLICK_ITEM;
 			case SWAP -> ContainerActionType.MOVE_TO_HOTBAR_SLOT;
@@ -157,9 +157,9 @@ public abstract class InventoryTranslation implements PacketTranslation<Packet> 
 	}
 
 	private static ContainerAction action(ServerboundContainerClick click) {
-		int button = click.getButton();
+		int button = click.button();
 		boolean primaryOrSecondary = button == ClickType.PRIMARY_BUTTON || button == ClickType.SECONDARY_BUTTON;
-		ContainerAction action = switch (click.getClickType()) {
+		ContainerAction action = switch (click.clickType()) {
 			case PICKUP -> primaryOrSecondary ? ClickItemAction.from(button) : null;
 			case QUICK_MOVE -> primaryOrSecondary ? ShiftClickItemAction.from(button) : null;
 			case SWAP -> MoveToHotbarAction.from(button);
@@ -169,7 +169,7 @@ public abstract class InventoryTranslation implements PacketTranslation<Packet> 
 			case PICKUP_ALL -> FillStackAction.FILL;
 		};
 		if (action == null)
-			throw new IllegalArgumentException("Invalid button " + button + " for a " + click.getClickType()
+			throw new IllegalArgumentException("Invalid button " + button + " for a " + click.clickType()
 					+ " click");
 
 		return action;

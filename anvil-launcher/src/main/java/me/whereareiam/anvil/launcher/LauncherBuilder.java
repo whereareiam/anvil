@@ -59,9 +59,9 @@ final class LauncherBuilder implements EngineBuilder {
 
 	private ScenarioEngine build(EngineOptions effective, LauncherAssembly assembly) {
 		try {
-			EngineBuilder engine = new AnvilEngineBuilder(assembly.getScenarioFactory()).options(effective)
+			EngineBuilder engine = new AnvilEngineBuilder(assembly.scenarioFactory()).options(effective)
 					.extension(registration -> registration.own(assembly));
-			if (!effective.getDebugProcesses().isEmpty()) engine.extension(new DebuggerAnnouncement(System.err));
+			if (!effective.debugProcesses().isEmpty()) engine.extension(new DebuggerAnnouncement(System.err));
 			extensions.forEach(engine::extension);
 
 			return engine.build();

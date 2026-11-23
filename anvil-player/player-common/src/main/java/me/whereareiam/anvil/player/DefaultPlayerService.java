@@ -69,22 +69,22 @@ public final class DefaultPlayerService implements AutoCloseable {
 			@NotNull ProtocolArtifactResolver artifacts,
 			@NotNull ProtocolWorkerLauncher workers
 	) {
-		if (options.getAccountsDirectory() == null)
+		if (options.accountsDirectory() == null)
 			throw new IllegalArgumentException("The player service requires a resolved account directory");
-		if (options.getProtocolLibrary() != null) libraries.require(options.getProtocolLibrary());
-		for (String library : options.getProtocolReleases().keySet()) libraries.require(library);
+		if (options.protocolLibrary() != null) libraries.require(options.protocolLibrary());
+		for (String library : options.protocolReleases().keySet()) libraries.require(library);
 
 		this.libraries = libraries;
 		this.options = options;
 		this.cacheDirectory = cacheDirectory;
-		this.accountsDirectory = options.getAccountsDirectory();
+		this.accountsDirectory = options.accountsDirectory();
 		this.artifacts = artifacts;
 		this.workers = workers;
-		this.selector = new ProtocolLibrarySelector(libraries.ids(), this::releases, options.getProtocolLibrary(),
-				options.getSupportPolicy(), System.err::println);
+		this.selector = new ProtocolLibrarySelector(libraries.ids(), this::releases, options.protocolLibrary(),
+				options.supportPolicy(), System.err::println);
 		this.accounts = new ProtocolAccountManager(libraries, accountsDirectory, reservations);
 		// User-supplied release data is read now, so invalid files fail the engine instead of a later player.
-		for (String library : options.getProtocolReleases().keySet()) releases(library);
+		for (String library : options.protocolReleases().keySet()) releases(library);
 	}
 
 	/**
@@ -215,7 +215,7 @@ public final class DefaultPlayerService implements AutoCloseable {
 				.accountsDirectory(accountsDirectory)
 				.artifacts(artifacts)
 				.workers(workers)
-				.additionalReleases(options.getProtocolReleases().get(id))
+				.additionalReleases(options.protocolReleases().get(id))
 				.build();
 	}
 

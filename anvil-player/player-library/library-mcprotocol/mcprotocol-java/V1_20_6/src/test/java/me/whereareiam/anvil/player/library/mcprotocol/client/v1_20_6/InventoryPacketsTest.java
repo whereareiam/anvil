@@ -59,7 +59,7 @@ class InventoryPacketsTest {
 
 		assertEquals(new ClientboundOpenScreen(2, "minecraft:generic_9x1", Text.literal("Chest")), packets.decode(chest));
 		assertEquals("minecraft:cartography_table",
-				assertInstanceOf(ClientboundOpenScreen.class, packets.decode(map)).getMenuType());
+				assertInstanceOf(ClientboundOpenScreen.class, packets.decode(map)).menuType());
 	}
 
 	@Test

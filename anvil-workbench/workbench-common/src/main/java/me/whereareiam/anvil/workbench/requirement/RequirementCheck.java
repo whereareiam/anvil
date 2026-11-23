@@ -40,7 +40,7 @@ public final class RequirementCheck {
 	) {
 		List<String> unmet = unmet(scenario, defaultExecutionProviderId, facts);
 		if (!unmet.isEmpty())
-			throw new ScenarioRequirementsException(scenario.getName(), facts.getWorkbenchName(), unmet);
+			throw new ScenarioRequirementsException(scenario.name(), facts.workbenchName(), unmet);
 	}
 
 	/**
@@ -58,24 +58,24 @@ public final class RequirementCheck {
 	) {
 		List<String> unmet = new ArrayList<>();
 		for (String execution : executions(scenario, defaultExecutionProviderId)) {
-			String reason = facts.getUnavailableExecutions().get(execution);
+			String reason = facts.unavailableExecutions().get(execution);
 			if (reason != null) unmet.add("execution provider '" + execution + "' is unavailable: " + reason);
 		}
 
-		if (!facts.isLocal()) unmet.addAll(localOnly(scenario));
+		if (!facts.local()) unmet.addAll(localOnly(scenario));
 
-		ScenarioRequirements requirements = scenario.getRequirements();
-		for (String host : requirements.getReaches())
-			if (facts.getReachableHosts().stream().noneMatch(pattern -> HostPattern.matches(pattern, host)))
+		ScenarioRequirements requirements = scenario.requirements();
+		for (String host : requirements.reaches())
+			if (facts.reachableHosts().stream().noneMatch(pattern -> HostPattern.matches(pattern, host)))
 				unmet.add("its processes may not reach " + host);
 
-		Integer processors = requirements.getProcessors();
-		if (processors != null && processors > facts.getProcessors())
-			unmet.add("it needs " + processors + " processors, but " + facts.getProcessors() + " are available");
+		Integer processors = requirements.processors();
+		if (processors != null && processors > facts.processors())
+			unmet.add("it needs " + processors + " processors, but " + facts.processors() + " are available");
 
-		Integer memory = requirements.getMemoryMegabytes();
-		if (memory != null && memory > facts.getMemoryMegabytes())
-			unmet.add("it needs " + memory + " MiB of memory, but " + facts.getMemoryMegabytes() + " MiB are available");
+		Integer memory = requirements.memoryMegabytes();
+		if (memory != null && memory > facts.memoryMegabytes())
+			unmet.add("it needs " + memory + " MiB of memory, but " + facts.memoryMegabytes() + " MiB are available");
 
 		return List.copyOf(unmet);
 	}
@@ -86,19 +86,19 @@ public final class RequirementCheck {
 	 */
 	private static List<String> localOnly(AnvilScenario scenario) {
 		List<String> unmet = new ArrayList<>();
-		List<MinecraftProcess> processes = new ArrayList<>(scenario.getServers());
-		processes.addAll(scenario.getProxies());
+		List<MinecraftProcess> processes = new ArrayList<>(scenario.servers());
+		processes.addAll(scenario.proxies());
 		for (MinecraftProcess process : processes) {
-			if (process.getPlatform().equals(NEOFORGE))
-				unmet.add("NeoForge process '" + process.getName() + "' runs only on the workbench in the engine's own JVM");
-			if (localJava(process.getJavaSelection()) || localJava(scenario.getJavaSelection()))
-				unmet.add("process '" + process.getName() + "' names a Java installation by its path on the engine's machine");
+			if (process.platform().equals(NEOFORGE))
+				unmet.add("NeoForge process '" + process.name() + "' runs only on the workbench in the engine's own JVM");
+			if (localJava(process.javaSelection()) || localJava(scenario.javaSelection()))
+				unmet.add("process '" + process.name() + "' names a Java installation by its path on the engine's machine");
 		}
 		return unmet;
 	}
 
 	private static boolean localJava(JavaSelection selection) {
-		return selection.getSource() instanceof LocalJavaHome || selection.getSource() instanceof LocalJavaExecutable;
+		return selection.source() instanceof LocalJavaHome || selection.source() instanceof LocalJavaExecutable;
 	}
 
 	/**
@@ -106,13 +106,13 @@ public final class RequirementCheck {
 	 * container on its own when it names one; a scenario of remotes alone runs nothing.
 	 */
 	private static Set<String> executions(AnvilScenario scenario, String defaultExecutionProviderId) {
-		String scenarioExecution = scenario.getExecutionProviderId() == null
-				? defaultExecutionProviderId : scenario.getExecutionProviderId();
+		String scenarioExecution = scenario.executionProviderId() == null
+				? defaultExecutionProviderId : scenario.executionProviderId();
 
 		Set<String> executions = new LinkedHashSet<>();
-		if (!scenario.getServers().isEmpty() || !scenario.getProxies().isEmpty()) executions.add(scenarioExecution);
-		for (ContainerProcess container : scenario.getContainers())
-			executions.add(container.getExecutionProviderId() == null ? scenarioExecution : container.getExecutionProviderId());
+		if (!scenario.servers().isEmpty() || !scenario.proxies().isEmpty()) executions.add(scenarioExecution);
+		for (ContainerProcess container : scenario.containers())
+			executions.add(container.executionProviderId() == null ? scenarioExecution : container.executionProviderId());
 
 		return executions;
 	}

@@ -11,7 +11,7 @@ import java.util.Locale;
  * because the game draws them alike.
  *
  * <pre>{@code
- * assertEquals(TextColor.GOLD, span.getStyle().getColor());
+ * assertEquals(TextColor.GOLD, span.style().color());
  * assertEquals("#ffaa00", TextColor.GOLD.hex());
  * }</pre>
  */

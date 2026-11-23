@@ -91,18 +91,18 @@ public final class JavaEntitiesExtension implements WorkerExtension<Object> {
 
 		private WorkerBinding listen() {
 			Subscription connections = player.bindConnection(this::connected);
-			facts(ClientboundLogin.class, (tracker, login) -> tracker.join(login.getEntityId().getValue()));
+			facts(ClientboundLogin.class, (tracker, login) -> tracker.join(login.entityId().value()));
 			facts(ClientboundRespawn.class, (tracker, respawn) -> tracker.clear());
 			optionalFacts(ClientboundStartConfiguration.class, (tracker, configuration) -> tracker.clear());
-			facts(ClientboundAddEntity.class, (tracker, add) -> tracker.spawn(add.getEntityId().getValue(),
-					add.getUniqueId(), add.getType().toString(), add.getPosition(), add.getYaw(), add.getPitch()));
+			facts(ClientboundAddEntity.class, (tracker, add) -> tracker.spawn(add.entityId().value(),
+					add.uniqueId(), add.type().toString(), add.position(), add.yaw(), add.pitch()));
 			moves();
 			facts(ClientboundSetEntityData.class, (tracker, data) ->
-					tracker.change(data.getEntityId().getValue(), data.getValues()));
+					tracker.change(data.entityId().value(), data.values()));
 			facts(ClientboundSetPassengers.class, (tracker, passengers) ->
-					tracker.mount(passengers.getVehicleId().getValue(), values(passengers.getPassengerIds())));
+					tracker.mount(passengers.vehicleId().value(), values(passengers.passengerIds())));
 			facts(ClientboundRemoveEntities.class, (tracker, removed) ->
-					tracker.remove(values(removed.getEntityIds())));
+					tracker.remove(values(removed.entityIds())));
 
 			Subscription binding = Subscription.all(
 					() -> current.set(null),
@@ -127,40 +127,40 @@ public final class JavaEntitiesExtension implements WorkerExtension<Object> {
 
 		private void moves() {
 			state(ClientboundMoveEntityPos.class, (tracker, move) -> {
-				Vec3d delta = move.getDelta();
-				tracker.move(move.getEntityId().getValue(), delta.getX(), delta.getY(), delta.getZ(), true, true, true);
+				Vec3d delta = move.delta();
+				tracker.move(move.entityId().value(), delta.x(), delta.y(), delta.z(), true, true, true);
 			});
 			state(ClientboundMoveEntityPosRot.class, (tracker, move) -> {
-				Vec3d delta = move.getDelta();
-				tracker.move(move.getEntityId().getValue(), delta.getX(), delta.getY(), delta.getZ(), true, true, true);
-				tracker.turn(move.getEntityId().getValue(), move.getYaw(), move.getPitch(), false, false);
+				Vec3d delta = move.delta();
+				tracker.move(move.entityId().value(), delta.x(), delta.y(), delta.z(), true, true, true);
+				tracker.turn(move.entityId().value(), move.yaw(), move.pitch(), false, false);
 			});
 			state(ClientboundMoveEntityRot.class, (tracker, turn) ->
-					tracker.turn(turn.getEntityId().getValue(), turn.getYaw(), turn.getPitch(), false, false));
+					tracker.turn(turn.entityId().value(), turn.yaw(), turn.pitch(), false, false));
 			state(ClientboundTeleportEntity.class, (tracker, teleport) -> {
-				Vec3d position = teleport.getPosition();
-				Set<Relative> relatives = teleport.getRelatives();
-				tracker.move(teleport.getEntityId().getValue(), position.getX(), position.getY(), position.getZ(),
+				Vec3d position = teleport.position();
+				Set<Relative> relatives = teleport.relatives();
+				tracker.move(teleport.entityId().value(), position.x(), position.y(), position.z(),
 						relatives.contains(Relative.X), relatives.contains(Relative.Y), relatives.contains(Relative.Z));
-				tracker.turn(teleport.getEntityId().getValue(), teleport.getYaw(), teleport.getPitch(),
+				tracker.turn(teleport.entityId().value(), teleport.yaw(), teleport.pitch(),
 						relatives.contains(Relative.YAW), relatives.contains(Relative.PITCH));
 			});
 			if (protocol.supports(ClientboundEntityPositionSync.class))
 				state(ClientboundEntityPositionSync.class, (tracker, sync) -> {
-					Vec3d position = sync.getPosition();
-					tracker.move(sync.getEntityId().getValue(), position.getX(), position.getY(), position.getZ(),
+					Vec3d position = sync.position();
+					tracker.move(sync.entityId().value(), position.x(), position.y(), position.z(),
 							false, false, false);
-					tracker.turn(sync.getEntityId().getValue(), sync.getYaw(), sync.getPitch(), false, false);
+					tracker.turn(sync.entityId().value(), sync.yaw(), sync.pitch(), false, false);
 				});
 			state(ClientboundPlayerPosition.class, (tracker, placed) -> {
-				Vec3d position = placed.getPosition();
-				Set<Relative> relatives = placed.getRelatives();
-				tracker.movePlayer(position.getX(), position.getY(), position.getZ(), relatives.contains(Relative.X),
+				Vec3d position = placed.position();
+				Set<Relative> relatives = placed.relatives();
+				tracker.movePlayer(position.x(), position.y(), position.z(), relatives.contains(Relative.X),
 						relatives.contains(Relative.Y), relatives.contains(Relative.Z));
 			});
 			listening.add(protocol.listenSent(ServerboundMovePlayerPosRot.class, move -> withTracker(tracker -> {
-				Vec3d position = move.getPosition();
-				tracker.movePlayer(position.getX(), position.getY(), position.getZ(), false, false, false);
+				Vec3d position = move.position();
+				tracker.movePlayer(position.x(), position.y(), position.z(), false, false, false);
 			})));
 		}
 
@@ -202,7 +202,7 @@ public final class JavaEntitiesExtension implements WorkerExtension<Object> {
 		 * Reads the numbers of entity IDs, which the tracker and the channel carry.
 		 */
 		private static List<Integer> values(List<EntityId> entityIds) {
-			return entityIds.stream().map(EntityId::getValue).toList();
+			return entityIds.stream().map(EntityId::value).toList();
 		}
 	}
 }

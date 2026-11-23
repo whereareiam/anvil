@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 public final class NeoForgeWorldsOperations extends WorldsAgentOperations {
 	@Override
 	public boolean supports(@NotNull AgentInfo platform) {
-		return MinecraftRelease.within(platform.getVersion(), "1.21.1", "1.21.11");
+		return MinecraftRelease.within(platform.version(), "1.21.1", "1.21.11");
 	}
 
 	@Override

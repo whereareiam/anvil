@@ -6,8 +6,8 @@ package me.whereareiam.anvil.edition.java.protocol.model.entity;
  *
  * <pre>{@code
  * switch (value) {
- *     case SharedFlags flags -> invisible = flags.isInvisible();
- *     case CustomName name -> customName = name.getName();
+ *     case SharedFlags flags -> invisible = flags.invisible();
+ *     case CustomName name -> customName = name.name();
  *     // ...
  * }
  * }</pre>

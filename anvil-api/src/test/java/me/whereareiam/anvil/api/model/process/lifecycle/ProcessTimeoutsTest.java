@@ -15,10 +15,10 @@ class ProcessTimeoutsTest {
 
 		var resolved = scenario.withDefaults(defaults);
 
-		assertEquals(Duration.ofMinutes(5), resolved.getStartup());
-		assertEquals(Duration.ofSeconds(15), resolved.getShutdown());
-		assertNull(scenario.getShutdown());
-		assertEquals(Duration.ofMinutes(2), defaults.getStartup());
+		assertEquals(Duration.ofMinutes(5), resolved.startup());
+		assertEquals(Duration.ofSeconds(15), resolved.shutdown());
+		assertNull(scenario.shutdown());
+		assertEquals(Duration.ofMinutes(2), defaults.startup());
 	}
 
 	@Test
@@ -28,8 +28,8 @@ class ProcessTimeoutsTest {
 
 		var resolved = scenario.withDefaults(defaults);
 
-		assertEquals(Duration.ofMinutes(3), resolved.getStartup());
-		assertEquals(Duration.ofSeconds(30), resolved.getShutdown());
+		assertEquals(Duration.ofMinutes(3), resolved.startup());
+		assertEquals(Duration.ofSeconds(30), resolved.shutdown());
 		assertEquals(defaults, ProcessTimeouts.builder().build().withDefaults(defaults));
 	}
 }

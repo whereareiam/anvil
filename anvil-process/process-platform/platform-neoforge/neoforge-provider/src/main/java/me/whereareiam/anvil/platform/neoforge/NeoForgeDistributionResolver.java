@@ -29,15 +29,15 @@ final class NeoForgeDistributionResolver {
 	private static final String CHECKSUM = "[a-fA-F0-9]{64}";
 
 	void validate(@NotNull MinecraftServer server) {
-		Distribution distribution = server.getDistribution();
+		Distribution distribution = server.distribution();
 		if (distribution.isLocal() || distribution.isArtifact())
 			return;
 
-		String version = distribution.getVersion();
+		String version = distribution.version();
 		if (version == null || !version.matches("[0-9]+(?:\\.[0-9]+){1,2}"))
 			throw new PlatformException("NeoForge requires an exact numeric Minecraft version");
 
-		String release = distribution.getBuild();
+		String release = distribution.build();
 		if (release == null || release.isBlank() || distribution.isLatest())
 			throw new PlatformException("NeoForge requires an exact NeoForge release as its build, "
 					+ "such as Distribution.remote(\"1.21.11\", \"21.11.45\")");
@@ -47,7 +47,7 @@ final class NeoForgeDistributionResolver {
 			throw new PlatformException("NeoForge release " + release + " is not a release for Minecraft " + version
 					+ ", whose releases start with " + prefix);
 
-		String checksum = distribution.getSha256();
+		String checksum = distribution.sha256();
 		if (checksum != null && !checksum.matches(CHECKSUM))
 			throw new PlatformException("NeoForge installer pin must be a 64-digit SHA-256");
 	}
@@ -57,12 +57,12 @@ final class NeoForgeDistributionResolver {
 
 		NeoForgeInstallation installation = installation(server, context);
 		Path installer = installer(server, context);
-		installation.install(installer, context.getArtifactSource());
+		installation.install(installer, context.artifactSource());
 
-		Distribution distribution = server.getDistribution();
+		Distribution distribution = server.distribution();
 		String description = distribution.isLocal()
 				? "local NeoForge installer"
-				: "NeoForge " + distribution.getBuild() + " for Minecraft " + distribution.getVersion();
+				: "NeoForge " + distribution.build() + " for Minecraft " + distribution.version();
 
 		return ResolvedDistribution.builder().jar(installation.serverJar()).description(description).build();
 	}
@@ -71,33 +71,33 @@ final class NeoForgeDistributionResolver {
 	 * Returns where the server of this distribution is, or will be, installed in the cache.
 	 */
 	@NotNull NeoForgeInstallation installation(@NotNull MinecraftServer server, @NotNull PlatformContext context) throws IOException {
-		Distribution distribution = server.getDistribution();
-		Path root = context.getCacheDirectory().resolve("distributions/neoforge");
+		Distribution distribution = server.distribution();
+		Path root = context.cacheDirectory().resolve("distributions/neoforge");
 		if (distribution.isLocal())
 			return new NeoForgeInstallation(root.resolve("local").resolve(sha256(localInstaller(distribution))));
 
-		return new NeoForgeInstallation(root.resolve(distribution.getBuild()));
+		return new NeoForgeInstallation(root.resolve(distribution.build()));
 	}
 
 	private Path installer(MinecraftServer server, PlatformContext context) throws IOException {
-		Distribution distribution = server.getDistribution();
+		Distribution distribution = server.distribution();
 		if (distribution.isLocal())
 			return localInstaller(distribution);
 
-		String release = distribution.getBuild();
+		String release = distribution.build();
 		URI source = URI.create(REPOSITORY + release + "/neoforge-" + release + "-installer.jar");
-		String checksum = distribution.getSha256();
+		String checksum = distribution.sha256();
 		if (checksum == null)
-			checksum = context.getArtifactSource().read(URI.create(source + ".sha256")).strip();
+			checksum = context.artifactSource().read(URI.create(source + ".sha256")).strip();
 		if (!checksum.matches(CHECKSUM))
 			throw new PlatformException("NeoForged Maven returned an invalid SHA-256 for NeoForge " + release);
 
 		Path destination = installation(server, context).directory().resolve("neoforge-" + release + "-installer.jar");
-		return context.getArtifactSource().obtain(source, destination, checksum.toLowerCase(Locale.ROOT));
+		return context.artifactSource().obtain(source, destination, checksum.toLowerCase(Locale.ROOT));
 	}
 
 	private Path localInstaller(Distribution distribution) {
-		Path installer = distribution.getLocalJar().toAbsolutePath().normalize();
+		Path installer = distribution.localJar().toAbsolutePath().normalize();
 		if (!Files.isRegularFile(installer))
 			throw new PlatformException("NeoForge installer does not exist: " + installer);
 

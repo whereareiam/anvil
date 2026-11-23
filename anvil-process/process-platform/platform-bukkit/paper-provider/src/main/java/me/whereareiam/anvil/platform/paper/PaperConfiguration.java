@@ -31,8 +31,8 @@ final class PaperConfiguration {
 			.disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER).build();
 
 	void write(MinecraftServer server, MinecraftVersion version, PlatformContext context) throws IOException {
-		writeProperties(server, context.getFiles(), context);
-		context.getFiles().write("eula.txt", "eula=" + context.isEulaAccepted() + "\n");
+		writeProperties(server, context.files(), context);
+		context.files().write("eula.txt", "eula=" + context.eulaAccepted() + "\n");
 		writeForwarding(version, context);
 	}
 
@@ -43,11 +43,11 @@ final class PaperConfiguration {
 		// Minecraft 26.3 enables the whitelist of a new server; a server keeps it off, as earlier versions did, unless
 		// its settings or its own earlier state say otherwise.
 		properties.putIfAbsent("white-list", "false");
-		server.getSettings().forEach(properties::setProperty);
-		properties.setProperty("server-ip", context.getBindAddress());
-		properties.setProperty("server-port", Integer.toString(context.getPort()));
-		properties.setProperty("online-mode", Boolean.toString(server.isOnlineMode()));
-		properties.setProperty("motd", "Anvil: " + server.getName());
+		server.settings().forEach(properties::setProperty);
+		properties.setProperty("server-ip", context.bindAddress());
+		properties.setProperty("server-port", Integer.toString(context.port()));
+		properties.setProperty("online-mode", Boolean.toString(server.onlineMode()));
+		properties.setProperty("motd", "Anvil: " + server.name());
 		properties.setProperty("spawn-protection", "0");
 		properties.setProperty("enable-rcon", "false");
 		StringWriter content = new StringWriter();
@@ -56,25 +56,25 @@ final class PaperConfiguration {
 	}
 
 	private void writeForwarding(MinecraftVersion version, PlatformContext context) throws IOException {
-		var forwarding = context.getForwarding();
-		boolean modern = forwarding.getMode() == ForwardingMode.MODERN;
+		var forwarding = context.forwarding();
+		boolean modern = forwarding.mode() == ForwardingMode.MODERN;
 		boolean global = version.isAtLeast(GLOBAL_CONFIGURATION_SINCE);
-		ProcessFiles files = context.getFiles();
+		ProcessFiles files = context.files();
 		String paperFile = global ? "config/paper-global.yml" : "paper.yml";
 		ObjectNode paper = read(files, paperFile);
 		ObjectNode velocity = paper.withObject(global ? "/proxies/velocity" : "/settings/velocity-support");
 		velocity.put("enabled", modern);
-		velocity.put("online-mode", forwarding.isProxyOnlineMode());
+		velocity.put("online-mode", forwarding.proxyOnlineMode());
 		velocity.remove("secret");
 		if (modern) {
-			if (forwarding.getSecret() == null)
+			if (forwarding.secret() == null)
 				throw new PlatformException("Modern forwarding requires a negotiated secret");
-			velocity.put("secret", forwarding.getSecret());
+			velocity.put("secret", forwarding.secret());
 		}
 		files.write(paperFile, yaml.writeValueAsString(paper));
 
 		ObjectNode spigot = read(files, SPIGOT_FILE);
-		spigot.withObject("/settings").put("bungeecord", forwarding.getMode() == ForwardingMode.LEGACY);
+		spigot.withObject("/settings").put("bungeecord", forwarding.mode() == ForwardingMode.LEGACY);
 		files.write(SPIGOT_FILE, yaml.writeValueAsString(spigot));
 	}
 

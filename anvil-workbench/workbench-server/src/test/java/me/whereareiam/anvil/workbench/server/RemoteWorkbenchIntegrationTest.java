@@ -80,7 +80,7 @@ class RemoteWorkbenchIntegrationTest {
 
 	@Test
 	void pairsOnceAndPinsTheWorkbenchsCertificate() throws Exception {
-		assertEquals(server.fingerprint(), pairing.getFingerprint());
+		assertEquals(server.fingerprint(), pairing.fingerprint());
 		assertThrows(IOException.class, () -> WorkbenchConnection.pair("bench", "127.0.0.1:" + server.port(), "WRONGCODE00", "intruder"));
 
 		Pairing forged = pairing.toBuilder().fingerprint("0".repeat(64)).build();
@@ -93,8 +93,8 @@ class RemoteWorkbenchIntegrationTest {
 	void reportsItsFactsAndRootsAndStoresEngineFilesOnce() throws Exception {
 		try (RemoteWorkbench workbench = RemoteWorkbench.connect(pairing)) {
 			WorkbenchFacts facts = workbench.facts();
-			assertEquals("bench", facts.getWorkbenchName());
-			assertTrue(facts.getExecutions().contains("local"));
+			assertEquals("bench", facts.workbenchName());
+			assertTrue(facts.executions().contains("local"));
 			assertEquals(temporary.resolve("workbench/work"), workbench.workDirectory());
 
 			Path plugin = Files.writeString(temporary.resolve("plugin.jar"), "plugin content");
@@ -145,7 +145,7 @@ class RemoteWorkbenchIntegrationTest {
 	 * Points an asset at the workbench's copy of its file, as the launcher does when it prepares the workspace.
 	 */
 	private static WorkspaceAsset stored(RemoteWorkbench workbench, WorkspaceAsset asset) {
-		return asset.toBuilder().source(AssetSource.path(workbench.store(asset.getSource().getPath()))).build();
+		return asset.toBuilder().source(AssetSource.path(workbench.store(asset.source().path()))).build();
 	}
 
 	/**
@@ -153,7 +153,7 @@ class RemoteWorkbenchIntegrationTest {
 	 */
 	private static WorkspaceRefresh refresh(RemoteWorkbench workbench, WorkspaceAsset asset) {
 		return WorkspaceRefresh.builder()
-				.asset(new AssetRefresh(asset.getTarget(), stored(workbench, asset).getSource()))
+				.asset(new AssetRefresh(asset.target(), stored(workbench, asset).source()))
 				.build();
 	}
 

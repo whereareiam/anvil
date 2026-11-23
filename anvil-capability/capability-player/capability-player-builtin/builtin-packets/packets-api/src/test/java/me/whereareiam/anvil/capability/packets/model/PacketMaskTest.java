@@ -15,7 +15,7 @@ class PacketMaskTest {
 	void comparesAClassByValueWithoutItsIgnoredFields() {
 		PacketMask mask = PacketMask.strict().ignore(ClientboundSystemChat.class, ClientboundSystemChat.Fields.text);
 
-		assertEquals(Map.of(ClientboundSystemChat.class, Set.of(ClientboundSystemChat.Fields.text)), mask.getFields());
+		assertEquals(Map.of(ClientboundSystemChat.class, Set.of(ClientboundSystemChat.Fields.text)), mask.fields());
 	}
 
 	@Test

@@ -149,7 +149,7 @@ final class PlayerEventDispatcher implements AutoCloseable {
 
 	private void deliver(String event, JsonNode payload, List<Registration> recipients) {
 		for (Registration registration : recipients) {
-			if (cancelNormalCallbacks && !event.equals(PlayerConnectionEvent.DESTROYED.getId())) return;
+			if (cancelNormalCallbacks && !event.equals(PlayerConnectionEvent.DESTROYED.id())) return;
 			if (!registration.active.get()) continue;
 			try {
 				registration.listener.accept(payload);
@@ -182,7 +182,7 @@ final class PlayerEventDispatcher implements AutoCloseable {
 		}
 		stop();
 		Runnable notifyDestroyed = () -> {
-			String event = PlayerConnectionEvent.DESTROYED.getId();
+			String event = PlayerConnectionEvent.DESTROYED.id();
 			List<Registration> recipients = List.copyOf(listeners.getOrDefault(event, new CopyOnWriteArrayList<>()));
 			try { deliver(event, WorkerMessageCodec.emptyEnvelope(), recipients); }
 			finally { clearListeners(); }

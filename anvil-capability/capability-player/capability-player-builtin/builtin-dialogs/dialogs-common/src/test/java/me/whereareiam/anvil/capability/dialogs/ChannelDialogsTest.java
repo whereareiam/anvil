@@ -74,7 +74,7 @@ class ChannelDialogsTest {
 		ChannelDialogs dialogs = new ChannelDialogs(channel, commands);
 		channel.publish(DialogsChannel.SHOWN, notice("Identica: Log in"));
 
-		assertEquals("Identica: Log in", dialogs.shown("Log in").getTitle());
+		assertEquals("Identica: Log in", dialogs.shown("Log in").title());
 		assertEquals("Player did not show a dialog titled 'Register'",
 				assertThrows(IllegalStateException.class, () -> dialogs.shown("Register", TIMEOUT)).getMessage());
 		assertEquals(
@@ -88,7 +88,7 @@ class ChannelDialogsTest {
 		ChannelDialogs dialogs = new ChannelDialogs(channel, commands);
 		channel.publish(DialogsChannel.SHOWN, notice("Log in"));
 		DialogWatch shown = dialogs.watch();
-		Predicate<Dialog> login = dialog -> dialog.getTitle().equals("Log in");
+		Predicate<Dialog> login = dialog -> dialog.title().equals("Log in");
 		Expectation again = shown.expectShown(login);
 
 		shown.neverShown(login, TIMEOUT);
@@ -228,7 +228,7 @@ class ChannelDialogsTest {
 		commands.result = CommandCheck.SIGNATURE_REQUIRED;
 
 		dialogs.press("Submit");
-		assertEquals(CommandCheck.SIGNATURE_REQUIRED, dialogs.confirmation().orElseThrow().getReason());
+		assertEquals(CommandCheck.SIGNATURE_REQUIRED, dialogs.confirmation().orElseThrow().reason());
 		dialogs.confirm();
 
 		assertEquals(List.of(), channel.payloads());
@@ -280,16 +280,16 @@ class ChannelDialogsTest {
 
 		channel.publish(DialogsChannel.SHOWN, Dialog.builder().type("").registryId(0).title("").externalTitle("")
 				.afterAction(DialogAfterAction.CLOSE).build());
-		assertEquals("minecraft:server_links", dialogs.current().orElseThrow().getRegistryName());
+		assertEquals("minecraft:server_links", dialogs.current().orElseThrow().registryName());
 
 		channel.publish(DialogsChannel.SHOWN, Dialog.builder().type("minecraft:dialog_list").title("Menu").externalTitle("Menu")
 				.button(new DialogButton("example:rules", DialogAction.show("example:rules", null), false))
 				.closeWithEscape(true)
 				.afterAction(DialogAfterAction.CLOSE)
 				.build());
-		assertEquals(List.of("Server rules"), dialogs.current().orElseThrow().getButtons().stream().map(DialogButton::getLabel).toList());
+		assertEquals(List.of("Server rules"), dialogs.current().orElseThrow().buttons().stream().map(DialogButton::label).toList());
 		dialogs.press("Server rules");
-		assertEquals("example:rules", dialogs.current().orElseThrow().getRegistryName());
+		assertEquals("example:rules", dialogs.current().orElseThrow().registryName());
 	}
 
 	@Test

@@ -24,8 +24,8 @@ class CommandPacketsTest {
 
 		ClientboundCommands tree = assertInstanceOf(ClientboundCommands.class, packets.decode(declared));
 
-		assertEquals("brigadier:long", tree.getNodes().get(1).getParser());
-		assertEquals(0D, tree.getNodes().get(1).getMin());
-		assertEquals(100D, tree.getNodes().get(1).getMax());
+		assertEquals("brigadier:long", tree.nodes().get(1).parser());
+		assertEquals(0D, tree.nodes().get(1).min());
+		assertEquals(100D, tree.nodes().get(1).max());
 	}
 }

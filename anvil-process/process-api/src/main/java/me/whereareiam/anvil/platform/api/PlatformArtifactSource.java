@@ -11,7 +11,7 @@ import java.nio.file.Path;
  * Providers own vendor selection and destination layout; acquisition policy is supplied externally.
  *
  * <p>Paths it accepts as destinations and returns are the workbench's: they name files on the machine that runs
- * the process, below {@link me.whereareiam.anvil.platform.api.model.PlatformContext#getCacheDirectory()}. A file of
+ * the process, below {@link me.whereareiam.anvil.platform.api.model.PlatformContext#cacheDirectory()}. A file of
  * the engine's own machine, such as a local distribution JAR, reaches the workbench through {@link #store(Path)}.</p>
  */
 public interface PlatformArtifactSource {

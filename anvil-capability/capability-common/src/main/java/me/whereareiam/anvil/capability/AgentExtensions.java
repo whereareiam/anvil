@@ -63,6 +63,6 @@ public final class AgentExtensions {
 	 * @return extensions for the platform
 	 */
 	public @NotNull List<AgentExtension> forPlatform(@NotNull String platformId) {
-		return extensions.stream().filter(extension -> extension.getPlatforms().contains(platformId)).toList();
+		return extensions.stream().filter(extension -> extension.platforms().contains(platformId)).toList();
 	}
 }

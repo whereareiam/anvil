@@ -19,19 +19,19 @@ final class PaperDistributionResolver {
 	private final ObjectMapper mapper = new ObjectMapper();
 
 	ResolvedDistribution resolve(MinecraftServer process, PlatformContext context) throws IOException {
-		var distribution = process.getDistribution();
+		var distribution = process.distribution();
 		if (distribution.isLocal()) {
-			Path jar = distribution.getLocalJar().toAbsolutePath().normalize();
+			Path jar = distribution.localJar().toAbsolutePath().normalize();
 			if (!Files.isRegularFile(jar))
 				throw new PlatformException("Paper JAR does not exist: " + jar);
 
-			return ResolvedDistribution.builder().jar(context.getArtifactSource().store(jar)).description("local Paper").build();
+			return ResolvedDistribution.builder().jar(context.artifactSource().store(jar)).description("local Paper").build();
 		}
 
-		String version = required(distribution.getVersion(), "Paper version");
-		String build = required(distribution.getBuild(), "Paper build");
+		String version = required(distribution.version(), "Paper version");
+		String build = required(distribution.build(), "Paper build");
 		URI metadata = URI.create("https://fill.papermc.io/v3/projects/paper/versions/" + version + "/builds");
-		JsonNode selected = selectBuild(mapper.readTree(context.getArtifactSource().read(metadata)), build);
+		JsonNode selected = selectBuild(mapper.readTree(context.artifactSource().read(metadata)), build);
 		JsonNode download = selected.path("downloads").path("server:default");
 		String name = required(download.path("name").asText(), "artifact filename");
 		if (!Path.of(name).getFileName().toString().equals(name)) {
@@ -40,10 +40,10 @@ final class PaperDistributionResolver {
 
 		String checksum = required(download.path("checksums").path("sha256").asText(), "artifact SHA-256");
 		URI url = URI.create(required(download.path("url").asText(), "artifact URL"));
-		Path destination = context.getCacheDirectory().resolve("distributions/paper")
+		Path destination = context.cacheDirectory().resolve("distributions/paper")
 				.resolve(version).resolve(selected.path("id").asText()).resolve(name);
 
-		Path jar = context.getArtifactSource().obtain(url, destination, checksum);
+		Path jar = context.artifactSource().obtain(url, destination, checksum);
 		return ResolvedDistribution.builder().jar(jar)
 				.description("Paper " + version + " build " + selected.path("id").asText()).build();
 	}

@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * An int array tag. The tag keeps its own copy of the values, so it stays unchanged whatever happens to the array
- * it was created from or to an array {@link #getValues()} returned.
+ * it was created from or to an array {@link #values()} returned.
  */
 @Value
 public class NbtIntArray implements NbtTag {
@@ -28,7 +28,7 @@ public class NbtIntArray implements NbtTag {
 	 *
 	 * @return the values in order
 	 */
-	public int @NotNull [] getValues() {
+	public int @NotNull [] values() {
 		return values.clone();
 	}
 }

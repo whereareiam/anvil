@@ -83,8 +83,8 @@ class ScenarioTree : Tree() {
 	}
 
 	private fun label(node: DefaultMutableTreeNode?): String? = when (val value = node?.userObject) {
-		is ScenarioDescriptor -> value.displayName
-		is ProcessDefinition -> value.displayName
+		is ScenarioDescriptor -> value.displayName()
+		is ProcessDefinition -> value.displayName()
 		else -> null
 	}
 }

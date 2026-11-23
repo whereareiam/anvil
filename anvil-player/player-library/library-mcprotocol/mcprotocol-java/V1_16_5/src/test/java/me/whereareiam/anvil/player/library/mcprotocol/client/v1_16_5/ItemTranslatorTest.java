@@ -24,12 +24,12 @@ class ItemTranslatorTest {
 				lore("{\"text\":\"Costs 64 coins\"}", "\"Click to buy\"")
 		)));
 
-		assertEquals("Buy", item.getCustomName().plain());
-		assertEquals(TextColor.GREEN, item.getCustomName().getStyle().getColor());
-		assertNull(item.getItemName());
-		assertEquals(List.of("Costs 64 coins", "Click to buy"), item.getLore().stream().map(Text::plain).toList());
-		assertEquals(791, item.getId());
-		assertEquals(3, item.getCount());
+		assertEquals("Buy", item.customName().plain());
+		assertEquals(TextColor.GREEN, item.customName().style().color());
+		assertNull(item.itemName());
+		assertEquals(List.of("Costs 64 coins", "Click to buy"), item.lore().stream().map(Text::plain).toList());
+		assertEquals(791, item.id());
+		assertEquals(3, item.count());
 	}
 
 	@Test
@@ -44,15 +44,15 @@ class ItemTranslatorTest {
 	void leavesANameThatIsNoJsonTextOutAsTheVanillaClientDoes() {
 		ItemStack item = items.item(stack(display(new StringTag("Name", "{broken"), lore("\"Kept\""))));
 
-		assertNull(item.getCustomName());
-		assertEquals(List.of("Kept"), item.getLore().stream().map(Text::plain).toList());
+		assertNull(item.customName());
+		assertEquals(List.of("Kept"), item.lore().stream().map(Text::plain).toList());
 	}
 
 	@Test
 	void leavesTheLoreOutWhenALineIsNoJsonText() {
 		ItemStack item = items.item(stack(display(lore("\"First\"", "{broken"))));
 
-		assertEquals(List.of(), item.getLore());
+		assertEquals(List.of(), item.lore());
 	}
 
 	private static com.github.steveice10.mc.protocol.data.game.entity.metadata.ItemStack stack(CompoundTag display) {

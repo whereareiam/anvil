@@ -66,9 +66,9 @@ public final class JavaOverlaysExtension implements WorkerExtension<Object> {
 				protocol.listen(ClientboundSetTitlesAnimation.class, packet -> titles.get().times(packet)),
 				protocol.listen(ClientboundClearTitles.class, packet -> titles.get().cleared(packet)),
 				protocol.listen(ClientboundSetActionBarText.class, packet ->
-						player.emit(OverlaysChannel.ACTION_BAR, packet.getText())),
+						player.emit(OverlaysChannel.ACTION_BAR, packet.text())),
 				protocol.listen(ClientboundSystemChat.class, packet -> {
-					if (packet.isOverlay()) player.emit(OverlaysChannel.ACTION_BAR, packet.getText().plain());
+					if (packet.overlay()) player.emit(OverlaysChannel.ACTION_BAR, packet.text().plain());
 				}),
 				protocol.listen(ClientboundBossEvent.class, bossBars::apply),
 				bossBars::discard,

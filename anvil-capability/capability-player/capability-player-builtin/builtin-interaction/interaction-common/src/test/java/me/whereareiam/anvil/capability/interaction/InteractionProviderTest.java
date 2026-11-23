@@ -20,8 +20,8 @@ class InteractionProviderTest {
 		InteractionProvider provider = new InteractionProvider();
 
 		assertEquals("me.whereareiam.anvil.interaction", InteractionChannel.ID);
-		assertEquals(InteractionChannel.ID, provider.descriptor().getId());
-		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
+		assertEquals(InteractionChannel.ID, provider.descriptor().id());
+		assertTrue(provider.descriptor().requiredCapabilities().isEmpty());
 		assertEquals(Set.of(JavaProtocol.class), provider.requiredProtocols());
 		assertEquals(Interaction.class, provider.capability());
 	}
@@ -35,7 +35,7 @@ class InteractionProviderTest {
 
 		interaction.useItem(Hand.OFF);
 
-		assertEquals(List.of(InteractionChannel.ITEM.getId()), channel.requests());
+		assertEquals(List.of(InteractionChannel.ITEM.id()), channel.requests());
 		assertEquals(List.of(new ItemUse(Hand.OFF)), channel.payloads());
 	}
 }

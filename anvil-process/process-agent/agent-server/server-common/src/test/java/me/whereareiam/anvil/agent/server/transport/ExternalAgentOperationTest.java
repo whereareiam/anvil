@@ -81,7 +81,7 @@ class ExternalAgentOperationTest {
 					new PlatformAgentRequestDispatcher(new TestPlatform(), providers), ignored -> { });
 				 var client = new JsonLineAgentConnectionProvider().connect(port, "secret", Duration.ofSeconds(2))) {
 				assertEquals("echo:hello", client.request(ECHO, "hello"));
-				assertEquals("test", client.request(AgentOperations.PING, Map.of()).getPlatform());
+				assertEquals("test", client.request(AgentOperations.PING, Map.of()).platform());
 			}
 		}
 	}
@@ -107,13 +107,13 @@ class ExternalAgentOperationTest {
 			});
 		})));
 
-		assertEquals("without-input", dispatcher.handle(NO_INPUT.getName(), mapper.nullNode()).asText());
+		assertEquals("without-input", dispatcher.handle(NO_INPUT.name(), mapper.nullNode()).asText());
 		var failure = assertThrows(IllegalArgumentException.class,
-				() -> dispatcher.handle(ECHO.getName(), mapper.nullNode()));
+				() -> dispatcher.handle(ECHO.name(), mapper.nullNode()));
 		assertTrue(failure.getMessage().contains("Missing request"));
-		assertThrows(IllegalArgumentException.class, () -> dispatcher.handle(number.getName(), mapper.nullNode()));
+		assertThrows(IllegalArgumentException.class, () -> dispatcher.handle(number.name(), mapper.nullNode()));
 		assertEquals(0, requiredCalls.get());
-		assertEquals("present", dispatcher.handle(ECHO.getName(), mapper.valueToTree("present")).asText());
+		assertEquals("present", dispatcher.handle(ECHO.name(), mapper.valueToTree("present")).asText());
 		assertEquals(1, requiredCalls.get());
 	}
 

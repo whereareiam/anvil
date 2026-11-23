@@ -110,12 +110,12 @@ public final class ClientMovement implements WorkerBinding {
 
 	private void move(@NotNull Position to) {
 		protocol.send(ServerboundMovePlayerPosRot.builder()
-				.position(new Vec3d(to.getX(), to.getY(), to.getZ()))
-				.yaw(to.getYaw())
-				.pitch(to.getPitch())
-				.onGround(to.isOnGround())
+				.position(new Vec3d(to.x(), to.y(), to.z()))
+				.yaw(to.yaw())
+				.pitch(to.pitch())
+				.onGround(to.onGround())
 				.build());
-		player.viewRotation(new ViewRotation(to.getYaw(), to.getPitch()));
+		player.viewRotation(new ViewRotation(to.yaw(), to.pitch()));
 		position.moveTo(to, enabled ? reader : null);
 	}
 
@@ -123,8 +123,8 @@ public final class ClientMovement implements WorkerBinding {
 		player.viewRotation(rotation);
 		if (position.look(rotation, enabled ? reader : null)) return;
 
-		boolean onGround = position.current() != null && position.current().isOnGround();
-		protocol.send(ServerboundMovePlayerRot.builder().yaw(rotation.getYaw()).pitch(rotation.getPitch())
+		boolean onGround = position.current() != null && position.current().onGround();
+		protocol.send(ServerboundMovePlayerRot.builder().yaw(rotation.yaw()).pitch(rotation.pitch())
 				.onGround(onGround).build());
 	}
 
@@ -157,7 +157,7 @@ public final class ClientMovement implements WorkerBinding {
 	 * with the packets it reports unless it is dead, then the end of the client tick where the release carries it.
 	 */
 	void tick() {
-		if (!enabled || reader == null || state.getEntityId() == null || world.level().isEmpty()) return;
+		if (!enabled || reader == null || state.entityId() == null || world.level().isEmpty()) return;
 
 		if (position.tick(reader, world, input, protocol::send)) ticks++;
 		if (protocol.supports(ServerboundClientTickEnd.class)) protocol.send(new ServerboundClientTickEnd());
@@ -195,13 +195,13 @@ public final class ClientMovement implements WorkerBinding {
 		Teleport.Resolved resolved = Teleport.resolve(from, position.velocity(), packet, rules);
 		Position at = resolved.at();
 		position.teleported(at, resolved.velocity(), enabled ? reader : null);
-		player.viewRotation(new ViewRotation(at.getYaw(), at.getPitch()));
+		player.viewRotation(new ViewRotation(at.yaw(), at.pitch()));
 		if (!rules.has(ClientBehaviour.TELEPORT_CONFIRMATION)) return;
 
 		protocol.send(ServerboundMovePlayerPosRot.builder()
-				.position(new Vec3d(at.getX(), at.getY(), at.getZ()))
-				.yaw(at.getYaw())
-				.pitch(at.getPitch())
+				.position(new Vec3d(at.x(), at.y(), at.z()))
+				.yaw(at.yaw())
+				.pitch(at.pitch())
 				.build());
 	}
 
@@ -209,8 +209,8 @@ public final class ClientMovement implements WorkerBinding {
 	 * Takes the velocity the server gives the player's own entity ({@code handleSetEntityMotion}).
 	 */
 	private void motion(@NotNull ClientboundSetEntityMotion motion) {
-		Vec3d movement = motion.getMovement();
-		if (state.own(motion.getEntityId())) position.velocity(new Vector(movement.getX(), movement.getY(), movement.getZ()));
+		Vec3d movement = motion.movement();
+		if (state.own(motion.entityId())) position.velocity(new Vector(movement.x(), movement.y(), movement.z()));
 	}
 
 	/**

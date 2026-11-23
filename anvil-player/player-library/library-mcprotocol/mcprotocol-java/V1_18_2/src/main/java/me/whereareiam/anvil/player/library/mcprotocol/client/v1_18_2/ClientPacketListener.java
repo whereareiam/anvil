@@ -65,7 +65,7 @@ final class ClientPacketListener extends SessionAdapter {
 		}
 		if (packet instanceof ClientboundLoginPacket game) {
 			entityId = game.getEntityId();
-			session.send(new ServerboundClientInformationPacket(login.getSettings().getLocale(), login.getSettings().getViewDistance(),
+			session.send(new ServerboundClientInformationPacket(login.settings().locale(), login.settings().viewDistance(),
 					ChatVisibility.FULL, true, Arrays.asList(SkinPart.values()), HandPreference.RIGHT_HAND, false, true));
 			session.send(new ServerboundCustomPayloadPacket(ClientBrand.CHANNEL, ClientBrand.payload()));
 			listener.loggedIn(session, Objects.requireNonNull(granted, "The server started the game before it granted a profile"));
@@ -99,7 +99,7 @@ final class ClientPacketListener extends SessionAdapter {
 	@Override
 	public void packetSending(PacketSendingEvent event) {
 		Packet packet = event.getPacket();
-		String virtualHost = login.getConnection().getVirtualHost();
+		String virtualHost = login.connection().virtualHost();
 		if (virtualHost != null && packet instanceof ClientIntentionPacket intention)
 			event.setPacket(intention.withHostname(virtualHost));
 	}

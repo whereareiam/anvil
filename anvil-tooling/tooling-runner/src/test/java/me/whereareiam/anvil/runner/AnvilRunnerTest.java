@@ -43,7 +43,7 @@ final class AnvilRunnerTest {
 		ScenarioEngine engine = new ScenarioEngine() {
 			@Override
 			public @NotNull ScenarioContext prepare(@NotNull AnvilScenario scenario, @Nullable ScenarioObserver observer) {
-				assertEquals("demo", scenario.getName());
+				assertEquals("demo", scenario.name());
 				throw failure;
 			}
 

@@ -1,8 +1,10 @@
 package me.whereareiam.anvil.runner.protocol;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.tooling.api.ToolingSession;
@@ -20,7 +22,11 @@ import java.io.PrintWriter;
 @RequiredArgsConstructor
 final class ToolingProtocolWriter {
 	private final @NotNull PrintWriter output;
-	private final @NotNull ObjectMapper json = new ObjectMapper();
+	// Tooling payloads read through fluent accessors, which are no JavaBean getters: their fields are their members.
+	private final @NotNull ObjectMapper json = new ObjectMapper()
+			.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
+			.setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
+			.setVisibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE);
 
 	void ready() {
 		write(new Ready(Kind.READY, ToolingSession.PROTOCOL_VERSION));

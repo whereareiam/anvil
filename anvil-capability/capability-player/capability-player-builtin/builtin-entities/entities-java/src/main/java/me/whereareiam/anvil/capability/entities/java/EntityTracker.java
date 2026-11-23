@@ -119,9 +119,9 @@ final class EntityTracker {
 				.id(entityId)
 				.uniqueId(uniqueId)
 				.type(type)
-				.x(position.getX())
-				.y(position.getY())
-				.z(position.getZ())
+				.x(position.x())
+				.y(position.y())
+				.z(position.z())
 				.yaw(yaw)
 				.pitch(pitch)
 				.passengerIds(List.of())
@@ -144,9 +144,9 @@ final class EntityTracker {
 			boolean relativeZ
 	) {
 		entities.computeIfPresent(entityId, (id, entity) -> entity.toBuilder()
-				.x(relativeX ? entity.getX() + x : x)
-				.y(relativeY ? entity.getY() + y : y)
-				.z(relativeZ ? entity.getZ() + z : z)
+				.x(relativeX ? entity.x() + x : x)
+				.y(relativeY ? entity.y() + y : y)
+				.z(relativeZ ? entity.z() + z : z)
 				.build());
 	}
 
@@ -155,8 +155,8 @@ final class EntityTracker {
 	 */
 	synchronized void turn(int entityId, float yaw, float pitch, boolean relativeYaw, boolean relativePitch) {
 		entities.computeIfPresent(entityId, (id, entity) -> entity.toBuilder()
-				.yaw(relativeYaw ? entity.getYaw() + yaw : yaw)
-				.pitch(relativePitch ? entity.getPitch() + pitch : pitch)
+				.yaw(relativeYaw ? entity.yaw() + yaw : yaw)
+				.pitch(relativePitch ? entity.pitch() + pitch : pitch)
 				.build());
 	}
 
@@ -175,17 +175,17 @@ final class EntityTracker {
 		for (EntityDataValue value : values) {
 			switch (value) {
 				case SharedFlags flags -> builder
-						.onFire(flags.isOnFire())
-						.sneaking(flags.isSneaking())
-						.sprinting(flags.isSprinting())
-						.swimming(flags.isSwimming())
-						.invisible(flags.isInvisible())
-						.glowing(flags.isGlowing())
-						.gliding(flags.isGliding());
-				case CustomName name -> builder.customName(name.getName());
-				case CustomNameVisible visible -> builder.customNameVisible(visible.isVisible());
-				case DisplayText text -> builder.text(text.getText());
-				case ShownItem item -> builder.item(item(item.getItem()));
+						.onFire(flags.onFire())
+						.sneaking(flags.sneaking())
+						.sprinting(flags.sprinting())
+						.swimming(flags.swimming())
+						.invisible(flags.invisible())
+						.glowing(flags.glowing())
+						.gliding(flags.gliding());
+				case CustomName name -> builder.customName(name.name());
+				case CustomNameVisible visible -> builder.customNameVisible(visible.visible());
+				case DisplayText text -> builder.text(text.text());
+				case ShownItem item -> builder.item(item(item.item()));
 			}
 		}
 		Map<Integer, SeenEntity> next = new LinkedHashMap<>(entities);
@@ -205,7 +205,7 @@ final class EntityTracker {
 		Map<Integer, SeenEntity> next = new LinkedHashMap<>(entities);
 		next.replaceAll((id, entity) -> {
 			boolean rides = passengers.contains(id);
-			boolean rode = entity.getVehicleId() != null && entity.getVehicleId() == vehicleId;
+			boolean rode = entity.vehicleId() != null && entity.vehicleId() == vehicleId;
 			SeenEntity.SeenEntityBuilder builder = entity.toBuilder();
 			if (rides) builder.vehicleId(vehicleId);
 			else if (rode) builder.vehicleId(null);
@@ -225,7 +225,7 @@ final class EntityTracker {
 		Set<Integer> removed = new HashSet<>(entityIds);
 		List<EntityChange> changes = new ArrayList<>();
 		for (SeenEntity entity : entities.values()) {
-			if (!removed.contains(entity.getId())) continue;
+			if (!removed.contains(entity.id())) continue;
 
 			changes.add(new EntityChange(EntityChangeKind.DISAPPEARED, measure(entity, entities), null));
 		}
@@ -235,8 +235,8 @@ final class EntityTracker {
 		next.keySet().removeAll(removed);
 		next.replaceAll((id, entity) -> {
 			SeenEntity.SeenEntityBuilder builder = entity.toBuilder();
-			if (entity.getVehicleId() != null && removed.contains(entity.getVehicleId())) builder.vehicleId(null);
-			List<Integer> passengers = entity.getPassengerIds();
+			if (entity.vehicleId() != null && removed.contains(entity.vehicleId())) builder.vehicleId(null);
+			List<Integer> passengers = entity.passengerIds();
 			if (passengers.stream().anyMatch(removed::contains))
 				builder.passengerIds(passengers.stream().filter(passenger -> !removed.contains(passenger)).toList());
 			return builder.build();
@@ -265,7 +265,7 @@ final class EntityTracker {
 		entities = next;
 		List<EntityChange> changes = new ArrayList<>();
 		for (SeenEntity entity : next.values()) {
-			SeenEntity before = previous.get(entity.getId());
+			SeenEntity before = previous.get(entity.id());
 			if (before == null || facts(before, previous).equals(facts(entity, next))) continue;
 
 			changes.add(new EntityChange(EntityChangeKind.CHANGED, measure(entity, next), measure(before, previous)));
@@ -291,20 +291,20 @@ final class EntityTracker {
 		if (playerId == NO_PLAYER) return false;
 
 		Set<Integer> visited = new HashSet<>();
-		Integer vehicleId = entity.getVehicleId();
+		Integer vehicleId = entity.vehicleId();
 		while (vehicleId != null && visited.add(vehicleId)) {
 			if (vehicleId == playerId) return true;
 
 			SeenEntity vehicle = known.get(vehicleId);
-			vehicleId = vehicle == null ? null : vehicle.getVehicleId();
+			vehicleId = vehicle == null ? null : vehicle.vehicleId();
 		}
 		return false;
 	}
 
 	private double distance(SeenEntity entity) {
-		double x = entity.getX() - playerX;
-		double y = entity.getY() - playerY;
-		double z = entity.getZ() - playerZ;
+		double x = entity.x() - playerX;
+		double y = entity.y() - playerY;
+		double z = entity.z() - playerZ;
 		return Math.sqrt(x * x + y * y + z * z);
 	}
 
@@ -312,8 +312,8 @@ final class EntityTracker {
 	 * An empty stack shows no item, as the client draws none.
 	 */
 	private static @Nullable EntityItem item(@Nullable ItemStack stack) {
-		if (stack == null || stack.getCount() <= 0) return null;
+		if (stack == null || stack.count() <= 0) return null;
 
-		return new EntityItem(stack.getId(), stack.getCount());
+		return new EntityItem(stack.id(), stack.count());
 	}
 }

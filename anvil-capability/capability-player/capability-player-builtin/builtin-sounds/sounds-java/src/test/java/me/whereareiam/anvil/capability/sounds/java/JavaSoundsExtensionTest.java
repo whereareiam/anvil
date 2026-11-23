@@ -122,7 +122,7 @@ class JavaSoundsExtensionTest {
 		}
 
 		assertEquals(Arrays.stream(SoundSource.values()).map(Enum::name).toList(),
-				player.emitted(SoundsChannel.HEARD).stream().map(sound -> sound.getCategory().name()).toList());
+				player.emitted(SoundsChannel.HEARD).stream().map(sound -> sound.category().name()).toList());
 	}
 
 	@Test

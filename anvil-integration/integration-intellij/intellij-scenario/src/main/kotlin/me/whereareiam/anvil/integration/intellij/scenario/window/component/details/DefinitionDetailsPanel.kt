@@ -41,13 +41,13 @@ class DefinitionDetailsPanel(
 	}
 
 	fun showScenario(scenario: ScenarioDescriptor) {
-		if (!begin(ScenarioView(scenario, null), scenario.displayName, scenario.description)) return
+		if (!begin(ScenarioView(scenario, null), scenario.displayName(), scenario.description())) return
 		scenarioSections(scenario, null, null)
 		finish()
 	}
 
 	fun showEnvironment(scenario: ScenarioDescriptor, snapshot: SessionSnapshot, state: EnvironmentSession.Status) {
-		if (!begin(ScenarioView(scenario, snapshot), scenario.displayName, scenario.description)) return
+		if (!begin(ScenarioView(scenario, snapshot), scenario.displayName(), scenario.description())) return
 		scenarioSections(scenario, snapshot, state)
 		finish()
 	}
@@ -60,94 +60,94 @@ class DefinitionDetailsPanel(
 				StatusPresentation.environmentLabel(state),
 				StatusPresentation.environmentDescription(scenario, live, state)
 			)
-			if (scenario.entrypoint != null) overview.fact("Processes", StatusPresentation.processSummary(scenario, live))
-			overview.fact("Players", live.players.size.toString())
-			val entrypoint = live.entrypoint ?: scenario.entrypoint
-			if (live.state == SessionState.RUNNING || live.state == SessionState.STARTING)
-				live.processes.firstOrNull { it.name == entrypoint && it.port > 0 && it.state == ProcessState.READY }
-					?.let { overview.fact("Join address", "${it.host}:${it.port}") }
+			if (scenario.entrypoint() != null) overview.fact("Processes", StatusPresentation.processSummary(scenario, live))
+			overview.fact("Players", live.players().size.toString())
+			val entrypoint = live.entrypoint() ?: scenario.entrypoint()
+			if (live.state() == SessionState.RUNNING || live.state() == SessionState.STARTING)
+				live.processes().firstOrNull { it.name() == entrypoint && it.port() > 0 && it.state() == ProcessState.READY }
+					?.let { overview.fact("Join address", "${it.host()}:${it.port()}") }
 		}
 
-		if (scenario.entrypoint == null) overview.fact("Definition", "Waiting for the project scenarios")
-		if (scenario.entrypoint != null) {
-			if (live == null) overview.fact("Processes", scenario.processes.size.toString())
-			overview.fact("Entrypoint", processName(scenario, scenario.entrypoint))
-			overview.fact("Mode", if (scenario.isManual) "Manual" else "Automated")
+		if (scenario.entrypoint() == null) overview.fact("Definition", "Waiting for the project scenarios")
+		if (scenario.entrypoint() != null) {
+			if (live == null) overview.fact("Processes", scenario.processes().size.toString())
+			overview.fact("Entrypoint", processName(scenario, scenario.entrypoint()))
+			overview.fact("Mode", if (scenario.manual()) "Manual" else "Automated")
 		}
 
-		if (scenario.isSetupAvailable)
-			overview.fact("Setup", if (live?.isSetupComplete == true) "Completed" else "Pending full scenario start")
-		if (scenario.entrypoint != null) {
+		if (scenario.setupAvailable())
+			overview.fact("Setup", if (live?.setupComplete() == true) "Completed" else "Pending full scenario start")
+		if (scenario.entrypoint() != null) {
 			section("Runtime").apply {
-				fact("Execution", scenario.executionProviderId ?: "Project default")
-				fact("Java", scenario.javaRequirement)
-				fact("Startup timeout", timeout(scenario.startupTimeoutMillis))
-				fact("Shutdown timeout", timeout(scenario.shutdownTimeoutMillis))
+				fact("Execution", scenario.executionProviderId() ?: "Project default")
+				fact("Java", scenario.javaRequirement())
+				fact("Startup timeout", timeout(scenario.startupTimeoutMillis()))
+				fact("Shutdown timeout", timeout(scenario.shutdownTimeoutMillis()))
 			}
 		}
 
 		section("Definition").apply {
-			definition(this, scenario.definition)
-			fact("Scenario ID", scenario.name)
-			fact("Category", scenario.category)
-			if (scenario.tags.isNotEmpty()) fact("Tags", scenario.tags.joinToString(", "))
+			definition(this, scenario.definition())
+			fact("Scenario ID", scenario.name())
+			fact("Category", scenario.category())
+			if (scenario.tags().isNotEmpty()) fact("Tags", scenario.tags().joinToString(", "))
 		}
 	}
 
 	fun showProcess(scenario: ScenarioDescriptor, process: ProcessDefinition, live: ProcessSnapshot?, session: SessionState) {
-		if (!begin(ProcessView(scenario, process, live, session), process.displayName, process.description)) return
+		if (!begin(ProcessView(scenario, process, live, session), process.displayName(), process.description())) return
 		section("Overview", true).apply {
 			status(
-				StatusPresentation.processTone(live?.state, session),
-				StatusPresentation.processLabel(live?.state, session),
-				StatusPresentation.processDescription(live?.state, session)
+				StatusPresentation.processTone(live?.state(), session),
+				StatusPresentation.processLabel(live?.state(), session),
+				StatusPresentation.processDescription(live?.state(), session)
 			)
-			if (live != null && live.port > 0) fact("Address", "${live.host}:${live.port}")
-			fact("Role", if (process.role == ProcessRole.PROXY) "Proxy" else "Server")
-			fact("Platform", process.platform.uppercase(Locale.ROOT))
-			fact("Online mode", if (process.isOnlineMode) "Enabled" else "Disabled")
+			if (live != null && live.port() > 0) fact("Address", "${live.host()}:${live.port()}")
+			fact("Role", if (process.role() == ProcessRole.PROXY) "Proxy" else "Server")
+			fact("Platform", process.platform().uppercase(Locale.ROOT))
+			fact("Online mode", if (process.onlineMode()) "Enabled" else "Disabled")
 		}
 
 		section("Runtime").apply {
-			fact("Memory", "${process.memoryMegabytes} MiB")
-			fact("Java", process.javaRequirement)
-			if (live != null) workspace(this, live.workDirectory)
+			fact("Memory", "${process.memoryMegabytes()} MiB")
+			fact("Java", process.javaRequirement())
+			if (live != null) workspace(this, live.workDirectory())
 		}
 
 		section("Distribution").apply {
-			fact("Version", process.distributionVersion)
-			fact("Build", process.distributionBuild)
-			if (process.minecraftVersion != process.distributionVersion) fact("Minecraft version", process.minecraftVersion)
-			fact("Selector", process.distribution)
+			fact("Version", process.distributionVersion())
+			fact("Build", process.distributionBuild())
+			if (process.minecraftVersion() != process.distributionVersion()) fact("Minecraft version", process.minecraftVersion())
+			fact("Selector", process.distribution())
 		}
 
 		section("Routing", true).apply {
-			if (process.backendNames.isNotEmpty())
-				fact("Backends", process.backendNames.joinToString(", ") { processName(scenario, it).orEmpty() })
-			fact("Default backend", processName(scenario, process.defaultBackend))
+			if (process.backendNames().isNotEmpty())
+				fact("Backends", process.backendNames().joinToString(", ") { processName(scenario, it).orEmpty() })
+			fact("Default backend", processName(scenario, process.defaultBackend()))
 		}
 
 		section("Definition").apply {
-			definition(this, scenario.definition)
-			fact("Process ID", process.name)
+			definition(this, scenario.definition())
+			fact("Process ID", process.name())
 		}
 
 		finish()
 	}
 
 	fun showRuntimeProcess(process: ProcessSnapshot, session: SessionState) {
-		if (!begin(RuntimeProcessView(process, session), process.displayName, null)) return
+		if (!begin(RuntimeProcessView(process, session), process.displayName(), null)) return
 		section("Overview", true).apply {
 			status(
-				StatusPresentation.processTone(process.state, session),
-				StatusPresentation.processLabel(process.state, session),
-				StatusPresentation.processDescription(process.state, session)
+				StatusPresentation.processTone(process.state(), session),
+				StatusPresentation.processLabel(process.state(), session),
+				StatusPresentation.processDescription(process.state(), session)
 			)
-			if (process.port > 0) fact("Address", "${process.host}:${process.port}")
-			fact("Process ID", process.name)
+			if (process.port() > 0) fact("Address", "${process.host()}:${process.port()}")
+			fact("Process ID", process.name())
 		}
 
-		workspace(section("Runtime"), process.workDirectory)
+		workspace(section("Runtime"), process.workDirectory())
 		finish()
 	}
 
@@ -200,7 +200,7 @@ class DefinitionDetailsPanel(
 
 	private fun processName(scenario: ScenarioDescriptor, name: String?): String? {
 		if (name.isNullOrBlank()) return null
-		return scenario.processes.firstOrNull { it.name == name }?.displayName ?: name
+		return scenario.processes().firstOrNull { it.name() == name }?.displayName() ?: name
 	}
 
 	override fun getPreferredScrollableViewportSize() = JBUI.size(720, 360)

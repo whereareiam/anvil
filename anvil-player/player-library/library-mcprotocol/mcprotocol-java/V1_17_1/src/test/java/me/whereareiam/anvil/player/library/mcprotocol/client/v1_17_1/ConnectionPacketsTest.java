@@ -30,9 +30,9 @@ class ConnectionPacketsTest {
 	@Test
 	void carriesTheGameModeOfTheLogin() {
 		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.CREATIVE,
-				((ClientboundLogin) packets.decode(login(GameMode.CREATIVE))).getGameMode());
+				((ClientboundLogin) packets.decode(login(GameMode.CREATIVE))).gameMode());
 		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.SURVIVAL,
-				((ClientboundLogin) packets.decode(login(GameMode.UNKNOWN))).getGameMode());
+				((ClientboundLogin) packets.decode(login(GameMode.UNKNOWN))).gameMode());
 	}
 
 	@Test
@@ -41,19 +41,19 @@ class ConnectionPacketsTest {
 
 		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.SPECTATOR,
 				((ClientboundRespawn) packets.decode(new ServerRespawnPacket(overworld(), "minecraft:overworld", 0,
-						GameMode.SPECTATOR, GameMode.SURVIVAL, false, false, true))).getGameMode());
+						GameMode.SPECTATOR, GameMode.SURVIVAL, false, false, true))).gameMode());
 		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.ADVENTURE,
 				((ClientboundRespawn) packets.decode(new ServerRespawnPacket(overworld(), "minecraft:overworld", 0,
-						GameMode.ADVENTURE, GameMode.SPECTATOR, false, false, true))).getGameMode());
+						GameMode.ADVENTURE, GameMode.SPECTATOR, false, false, true))).gameMode());
 	}
 
 	@Test
 	void readsFastLavaFromTheUltrawarmFlagOfTheType() {
 		packets.decode(login(GameMode.SURVIVAL));
 
-		assertFalse(((ClientboundLogin) packets.decode(login(GameMode.SURVIVAL))).getDimensionType().isFastLava());
+		assertFalse(((ClientboundLogin) packets.decode(login(GameMode.SURVIVAL))).dimensionType().fastLava());
 		assertTrue(((ClientboundRespawn) packets.decode(new ServerRespawnPacket(nether(), "minecraft:the_nether", 0,
-				GameMode.SURVIVAL, GameMode.SURVIVAL, false, false, true))).getDimensionType().isFastLava());
+				GameMode.SURVIVAL, GameMode.SURVIVAL, false, false, true))).dimensionType().fastLava());
 	}
 
 	private static ServerJoinGamePacket login(GameMode mode) {

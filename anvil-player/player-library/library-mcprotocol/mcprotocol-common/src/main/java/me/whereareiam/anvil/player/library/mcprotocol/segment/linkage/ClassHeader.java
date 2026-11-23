@@ -85,10 +85,10 @@ final class ClassHeader {
 	 * @return the flags, or {@code null} when the class does not declare the member
 	 */
 	@Nullable Integer accessOf(@NotNull LinkageReference reference) {
-		return switch (reference.getKind()) {
+		return switch (reference.kind()) {
 			case CLASS -> access;
-			case FIELD -> fields.get(reference.getMember());
-			case METHOD -> methods.get(reference.getMember());
+			case FIELD -> fields.get(reference.member());
+			case METHOD -> methods.get(reference.member());
 		};
 	}
 

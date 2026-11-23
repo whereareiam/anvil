@@ -27,7 +27,7 @@ import java.util.List;
  * Packets packets = alice.capability(Packets.class);
  * try (PacketTap tap = packets.tap(PacketSelection.of(ClientboundBlockUpdate.class))) {
  *     console.run("setblock 0 64 0 minecraft:stone");
- *     tap.received(ClientboundBlockUpdate.class, update -> update.getChange().getBlockState() != 0);
+ *     tap.received(ClientboundBlockUpdate.class, update -> update.change().blockState() != 0);
  * }
  *
  * RecordedPackets golden = packets.read(Path.of("src/anvil/resources/chunk-repair.packets.jsonl.gz"));

@@ -48,7 +48,7 @@ final class ClientPosition {
 	 * Returns the simulated player's velocity, zero without physics.
 	 */
 	@NotNull Vector velocity() {
-		return simulation == null ? Vector.ZERO : simulation.body().getDeltaMovement();
+		return simulation == null ? Vector.ZERO : simulation.body().deltaMovement();
 	}
 
 	/**
@@ -74,12 +74,12 @@ final class ClientPosition {
 	boolean look(@NotNull ViewRotation rotation, @Nullable BlockReader physics) {
 		PlayerSimulation simulated = simulate(physics);
 		if (simulated != null) {
-			simulated.look(rotation.getYaw(), rotation.getPitch());
+			simulated.look(rotation.yaw(), rotation.pitch());
 			return true;
 		}
-		if (known != null) known = Position.builder().x(known.getX()).y(known.getY()).z(known.getZ())
-				.yaw(rotation.getYaw()).pitch(rotation.getPitch()).onGround(known.isOnGround()).build();
-		reporter.turned(rotation.getYaw(), rotation.getPitch(), known != null && known.isOnGround());
+		if (known != null) known = Position.builder().x(known.x()).y(known.y()).z(known.z())
+				.yaw(rotation.yaw()).pitch(rotation.pitch()).onGround(known.onGround()).build();
+		reporter.turned(rotation.yaw(), rotation.pitch(), known != null && known.onGround());
 		return false;
 	}
 
@@ -93,15 +93,15 @@ final class ClientPosition {
 		known = position;
 		if (simulation == null && physics != null)
 			simulation = PlayerSimulation.start(rules, state, physics, position, velocity);
-		Vector at = new Vector(position.getX(), position.getY(), position.getZ());
-		if (simulation != null) simulation.place(at, velocity, position.getYaw(), position.getPitch());
+		Vector at = new Vector(position.x(), position.y(), position.z());
+		if (simulation != null) simulation.place(at, velocity, position.yaw(), position.pitch());
 	}
 
 	/**
 	 * Sets the velocity the server gives the simulated player, which has none without physics.
 	 */
 	void velocity(@NotNull Vector velocity) {
-		if (simulation != null) simulation.body().setDeltaMovement(velocity);
+		if (simulation != null) simulation.body().deltaMovement(velocity);
 	}
 
 	/**
@@ -122,7 +122,7 @@ final class ClientPosition {
 
 		ticking.tick(input);
 		ticking.body().abilityUpdates().forEach(send);
-		if (!state.isDead()) reporter.report(ticking.body()).forEach(send);
+		if (!state.dead()) reporter.report(ticking.body()).forEach(send);
 		return true;
 	}
 

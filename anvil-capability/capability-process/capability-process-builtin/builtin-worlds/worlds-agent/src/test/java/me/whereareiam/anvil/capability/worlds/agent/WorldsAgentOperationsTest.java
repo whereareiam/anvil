@@ -1,5 +1,7 @@
 package me.whereareiam.anvil.capability.worlds.agent;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import me.whereareiam.anvil.agent.api.model.AgentInfo;
 import me.whereareiam.anvil.agent.api.model.AgentOperation;
@@ -80,8 +82,8 @@ class WorldsAgentOperationsTest {
 		AgentWorldChanges changes = registry.execute(WorldsOperations.CHANGES,
 				AgentLogRequest.builder().after(0).build());
 
-		assertEquals(1, changes.getChanges().size());
-		assertEquals("minecraft:arena", changes.getChanges().getFirst().getTo());
+		assertEquals(1, changes.changes().size());
+		assertEquals("minecraft:arena", changes.changes().getFirst().to());
 	}
 
 	@Test
@@ -92,15 +94,19 @@ class WorldsAgentOperationsTest {
 
 		AgentWorldEvents read = registry.execute(WorldsOperations.EVENTS, AgentLogRequest.builder().after(1).build());
 
-		assertEquals(2, read.getEvents().size());
-		read = registry.execute(WorldsOperations.EVENTS, AgentLogRequest.builder().log(read.getLog()).after(1).build());
-		assertEquals(List.of("minecraft:arena", "UNLOADED", 2L), List.of(read.getEvents().getFirst().getWorld(),
-				read.getEvents().getFirst().getType(), read.getEvents().getFirst().getPosition()));
+		assertEquals(2, read.events().size());
+		read = registry.execute(WorldsOperations.EVENTS, AgentLogRequest.builder().log(read.log()).after(1).build());
+		assertEquals(List.of("minecraft:arena", "UNLOADED", 2L), List.of(read.events().getFirst().world(),
+				read.events().getFirst().type(), read.events().getFirst().position()));
 	}
 
 	@Test
-	void carriesEveryPayloadThroughAPlainJsonMapperAsTheAgentAndTheHostDo() throws Exception {
-		ObjectMapper mapper = new ObjectMapper();
+	void carriesEveryPayloadThroughTheJsonMapperOfTheAgentAndTheHost() throws Exception {
+		// The agent's and the host's mappers read the payloads' fields, since their accessors are fluent.
+		ObjectMapper mapper = new ObjectMapper()
+				.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
+				.setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
+				.setVisibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE);
 		List<Object> payloads = List.of(
 				AgentWorldList.builder().world(AgentWorld.builder().key("minecraft:arena").kind("CUSTOM").spawn(ARENA).build()).build(),
 				AgentPlacements.builder().placement(placement(SPAWN)).build(),
@@ -223,16 +229,16 @@ class WorldsAgentOperationsTest {
 		public @NotNull AgentWorld create(@NotNull AgentWorldCreation creation) {
 			if (failure != null) throw failure;
 
-			changed.add("create " + creation.getKey());
-			return AgentWorld.builder().key(creation.getKey()).kind(creation.getKind()).spawn(ARENA).build();
+			changed.add("create " + creation.key());
+			return AgentWorld.builder().key(creation.key()).kind(creation.kind()).spawn(ARENA).build();
 		}
 
 		@Override
 		public @NotNull AgentWorld load(@NotNull AgentWorldLoad load) {
 			if (failure != null) throw failure;
 
-			changed.add("load " + load.getKey());
-			return AgentWorld.builder().key(load.getKey()).kind(load.getKind()).spawn(ARENA).build();
+			changed.add("load " + load.key());
+			return AgentWorld.builder().key(load.key()).kind(load.kind()).spawn(ARENA).build();
 		}
 
 		@Override
@@ -278,12 +284,12 @@ class WorldsAgentOperationsTest {
 
 		@Override
 		public <Q, R> void register(@NotNull AgentOperation<Q, R> operation, @NotNull AgentOperationHandler<Q, R> handler) {
-			handlers.put(operation.getName(), handler);
+			handlers.put(operation.name(), handler);
 		}
 
 		@SuppressWarnings("unchecked")
 		private <Q, R> R execute(AgentOperation<Q, R> operation, Q request) throws Exception {
-			return ((AgentOperationHandler<Q, R>) handlers.get(operation.getName())).execute(platform, request);
+			return ((AgentOperationHandler<Q, R>) handlers.get(operation.name())).execute(platform, request);
 		}
 	}
 }

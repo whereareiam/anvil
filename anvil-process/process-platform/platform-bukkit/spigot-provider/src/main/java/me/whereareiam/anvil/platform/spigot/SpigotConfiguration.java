@@ -27,14 +27,14 @@ final class SpigotConfiguration {
 			.disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER).build();
 
 	void write(MinecraftServer server, PlatformContext context) throws IOException {
-		if (context.getForwarding().getMode() == ForwardingMode.MODERN)
+		if (context.forwarding().mode() == ForwardingMode.MODERN)
 			throw new PlatformException("Spigot does not support modern forwarding");
 
-		ProcessFiles files = context.getFiles();
+		ProcessFiles files = context.files();
 		writeProperties(server, files, context);
-		files.write("eula.txt", "eula=" + context.isEulaAccepted() + "\n");
+		files.write("eula.txt", "eula=" + context.eulaAccepted() + "\n");
 		ObjectNode document = read(files);
-		document.withObject("/settings").put("bungeecord", context.getForwarding().getMode() == ForwardingMode.LEGACY);
+		document.withObject("/settings").put("bungeecord", context.forwarding().mode() == ForwardingMode.LEGACY);
 		files.write(SPIGOT_FILE, yaml.writeValueAsString(document));
 	}
 
@@ -46,11 +46,11 @@ final class SpigotConfiguration {
 		// Minecraft 26.3 enables the whitelist of a new server; a server keeps it off, as earlier versions did, unless
 		// its settings or its own earlier state say otherwise.
 		properties.putIfAbsent("white-list", "false");
-		server.getSettings().forEach(properties::setProperty);
-		properties.setProperty("server-ip", context.getBindAddress());
-		properties.setProperty("server-port", Integer.toString(context.getPort()));
-		properties.setProperty("online-mode", Boolean.toString(server.isOnlineMode()));
-		properties.setProperty("motd", "Anvil: " + server.getName());
+		server.settings().forEach(properties::setProperty);
+		properties.setProperty("server-ip", context.bindAddress());
+		properties.setProperty("server-port", Integer.toString(context.port()));
+		properties.setProperty("online-mode", Boolean.toString(server.onlineMode()));
+		properties.setProperty("motd", "Anvil: " + server.name());
 		properties.setProperty("spawn-protection", "0");
 
 		StringWriter content = new StringWriter();

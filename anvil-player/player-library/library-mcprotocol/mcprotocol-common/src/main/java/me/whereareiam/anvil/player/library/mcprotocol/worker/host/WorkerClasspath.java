@@ -87,12 +87,12 @@ final class WorkerClasspath {
 
 		List<Path> clients = kept.stream().filter(Entry::client).map(Entry::path).toList();
 		if (clients.size() != 1 || kept.stream().anyMatch(entry -> entry.client() && entry.segment() == null))
-			throw new IllegalStateException("MCProtocolLib release " + release.getLibraryVersion() + " needs exactly one client segment "
+			throw new IllegalStateException("MCProtocolLib release " + release.libraryVersion() + " needs exactly one client segment "
 					+ "serving Minecraft " + release.version() + ", but the host class path provides " + clients);
 		for (Entry entry : kept)
 			if (!entry.releasePackages().isEmpty())
 				throw new IllegalStateException("Worker class path entry " + entry.path() + " contains " + entry.releasePackages()
-						+ " classes; they must come only from the runtime closure of MCProtocolLib release " + release.getLibraryVersion());
+						+ " classes; they must come only from the runtime closure of MCProtocolLib release " + release.libraryVersion());
 
 		List<Path> classpath = new ArrayList<>(closure.size() + kept.size());
 		closure.forEach(jar -> classpath.add(jar.toAbsolutePath()));
@@ -104,13 +104,13 @@ final class WorkerClasspath {
 		Map<String, Map<MinecraftVersion, Path>> owners = new LinkedHashMap<>();
 		for (Entry entry : entries) {
 			SegmentDescriptor segment = entry.segment();
-			if (segment == null || !segment.getLibrary().equals(McProtocolClient.LIBRARY_ID)) continue;
+			if (segment == null || !segment.library().equals(McProtocolClient.LIBRARY_ID)) continue;
 
-			Path previous = owners.computeIfAbsent(segment.getOwner(), ignored -> new LinkedHashMap<>())
-					.putIfAbsent(segment.getSince(), entry.path());
+			Path previous = owners.computeIfAbsent(segment.owner(), ignored -> new LinkedHashMap<>())
+					.putIfAbsent(segment.since(), entry.path());
 			if (previous != null)
-				throw new IllegalStateException("Segments " + previous + " and " + entry.path() + " of " + segment.getOwner()
-						+ " both start at Minecraft " + segment.getSince());
+				throw new IllegalStateException("Segments " + previous + " and " + entry.path() + " of " + segment.owner()
+						+ " both start at Minecraft " + segment.since());
 		}
 
 		Set<Path> selected = new LinkedHashSet<>();

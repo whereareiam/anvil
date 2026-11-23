@@ -18,8 +18,8 @@ class PacketsProviderTest {
 		PacketsProvider provider = new PacketsProvider();
 
 		assertEquals("me.whereareiam.anvil.packets", PacketsChannel.ID);
-		assertEquals(PacketsChannel.ID, provider.descriptor().getId());
-		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
+		assertEquals(PacketsChannel.ID, provider.descriptor().id());
+		assertTrue(provider.descriptor().requiredCapabilities().isEmpty());
 		assertEquals(Set.of(JavaProtocol.class), provider.requiredProtocols());
 		assertEquals(Packets.class, provider.capability());
 	}
@@ -30,7 +30,7 @@ class PacketsProviderTest {
 
 		new PacketsProvider().create(new TestProtocolPlayerCapabilityContext(channel));
 
-		assertEquals(List.of(PacketsChannel.FRAMES.getId()), channel.subscriptions());
+		assertEquals(List.of(PacketsChannel.FRAMES.id()), channel.subscriptions());
 		assertTrue(channel.requests().isEmpty());
 	}
 }

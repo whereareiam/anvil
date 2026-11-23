@@ -36,7 +36,7 @@ class AgentRpcTest {
 			}
 		}, ignored -> {});
 		     AgentClient client = provider.connect(port, "correct", Duration.ofSeconds(2))) {
-			assertEquals("test", client.request(AgentOperations.PING, Map.of()).getPlatform());
+			assertEquals("test", client.request(AgentOperations.PING, Map.of()).platform());
 		}
 
 		int deniedPort = freePort();

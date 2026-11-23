@@ -52,7 +52,7 @@ public interface PlatformAgent {
 	 * @throws AgentException when the platform does not expose the requested service
 	 */
 	default <T> @NotNull T requireService(@NotNull Class<T> type) {
-		return findService(type).orElseThrow(() -> new AgentException("Platform '" + info().getPlatform()
+		return findService(type).orElseThrow(() -> new AgentException("Platform '" + info().platform()
 				+ "' does not expose " + type.getName()));
 	}
 

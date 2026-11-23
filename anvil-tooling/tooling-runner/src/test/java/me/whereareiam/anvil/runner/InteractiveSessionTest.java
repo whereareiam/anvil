@@ -55,8 +55,8 @@ class InteractiveSessionTest {
 				new StringReader("action fixture.echo player alice {\"text\":\"hello world\",\"amount\":4}\nquit\n"),
 				new RunnerTerminal(new PrintWriter(output))).run();
 
-		assertEquals("hello world", session.invocation.getArguments().get("text"));
-		assertEquals("4", session.invocation.getArguments().get("amount"));
+		assertEquals("hello world", session.invocation.arguments().get("text"));
+		assertEquals("4", session.invocation.arguments().get("amount"));
 		assertTrue(output.toString().contains("fixture result"));
 	}
 
@@ -93,7 +93,7 @@ class InteractiveSessionTest {
 			actions.add("start " + definition);
 			snapshot = SessionSnapshot.builder().sessionId("fixture").definition(definition).scenario(
 					definition.equals(FirstScenario.class.getName()) ? "first" : "second")
-					.displayName(snapshot.getScenario()).state(SessionState.RUNNING).build();
+					.displayName(snapshot.scenario()).state(SessionState.RUNNING).build();
 		}
 
 		@Override

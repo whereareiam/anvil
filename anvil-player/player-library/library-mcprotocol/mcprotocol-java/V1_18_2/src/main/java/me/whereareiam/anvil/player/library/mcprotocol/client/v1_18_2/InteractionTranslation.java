@@ -54,11 +54,11 @@ public abstract class InteractionTranslation implements PacketTranslation<Packet
 	@Override
 	public final @Nullable Packet encode(@NotNull ServerboundPacket packet) {
 		return switch (packet) {
-			case ServerboundSwing swing -> new ServerboundSwingPacket(ValueTranslator.hand(swing.getHand()));
+			case ServerboundSwing swing -> new ServerboundSwingPacket(ValueTranslator.hand(swing.hand()));
 			case ServerboundUseItem use -> useItem(use);
 			case ServerboundUseItemOn use -> useItemOn(use);
 			case ServerboundInteract interact -> interact(interact);
-			case ServerboundAttack attack -> new ServerboundInteractPacket(attack.getEntityId().getValue(),
+			case ServerboundAttack attack -> new ServerboundInteractPacket(attack.entityId().value(),
 					InteractAction.ATTACK, ATTACK_HAND, ATTACK_SNEAKING);
 			default -> null;
 		};
@@ -81,15 +81,15 @@ public abstract class InteractionTranslation implements PacketTranslation<Packet
 	protected abstract @NotNull Packet useItemOn(@NotNull ServerboundUseItemOn use);
 
 	private static Packet interact(ServerboundInteract interact) {
-		Hand hand = ValueTranslator.hand(interact.getHand());
-		return switch (interact.getAction()) {
-			case INTERACT -> new ServerboundInteractPacket(interact.getEntityId().getValue(),
-					InteractAction.INTERACT, hand, interact.isSneaking());
+		Hand hand = ValueTranslator.hand(interact.hand());
+		return switch (interact.action()) {
+			case INTERACT -> new ServerboundInteractPacket(interact.entityId().value(),
+					InteractAction.INTERACT, hand, interact.sneaking());
 			case INTERACT_AT -> {
-				Vec3d point = interact.getPoint() == null ? Vec3d.ZERO : interact.getPoint();
-				yield new ServerboundInteractPacket(interact.getEntityId().getValue(), InteractAction.INTERACT_AT,
-						(float) point.getX(), (float) point.getY(), (float) point.getZ(), hand,
-						interact.isSneaking());
+				Vec3d point = interact.point() == null ? Vec3d.ZERO : interact.point();
+				yield new ServerboundInteractPacket(interact.entityId().value(), InteractAction.INTERACT_AT,
+						(float) point.x(), (float) point.y(), (float) point.z(), hand,
+						interact.sneaking());
 			}
 		};
 	}

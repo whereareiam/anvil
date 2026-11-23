@@ -92,7 +92,7 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 	) {
 		this.id = id;
 		this.options = options;
-		this.clientVersion = MinecraftVersion.parse(options.getMinecraftVersion());
+		this.clientVersion = MinecraftVersion.parse(options.minecraftVersion());
 		this.client = client;
 		this.segments = segments;
 		this.events = events;
@@ -131,12 +131,12 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 	}
 
 	private <Q, R> JsonNode execute(WorkerOperation<Q, R> operation, JsonNode arguments) {
-		return codec.handler(operation.getDescriptor(), operation::apply).apply(arguments);
+		return codec.handler(operation.descriptor(), operation::apply).apply(arguments);
 	}
 
 	@Override
 	public @NotNull UUID uniqueId() {
-		return options.getProfile().getUniqueId();
+		return options.profile().uniqueId();
 	}
 
 	@Override
@@ -146,7 +146,7 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 
 	@Override
 	public @NotNull String name() {
-		return options.getProfile().getName();
+		return options.profile().name();
 	}
 
 	@Override
@@ -167,22 +167,22 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 	 * settings.
 	 */
 	private ClientLogin login() {
-		WorkerProfile profile = options.getProfile();
-		WorkerCredentials credentials = options.getCredentials();
-		WorkerConnection connection = options.getConnection();
+		WorkerProfile profile = options.profile();
+		WorkerCredentials credentials = options.credentials();
+		WorkerConnection connection = options.connection();
 		return ClientLogin.builder()
-				.profile(ClientProfile.builder().name(profile.getName()).uniqueId(profile.getUniqueId()).build())
+				.profile(ClientProfile.builder().name(profile.name()).uniqueId(profile.uniqueId()).build())
 				.credentials(credentials == null ? null : ClientCredentials.builder()
-						.accessToken(credentials.getAccessToken())
-						.sessionServer(credentials.getSessionServer())
+						.accessToken(credentials.accessToken())
+						.sessionServer(credentials.sessionServer())
 						.build())
-				.minecraftVersion(options.getMinecraftVersion())
-				.settings(ClientSettings.builder().locale(options.getLanguage()).viewDistance(VIEW_DISTANCE).build())
+				.minecraftVersion(options.minecraftVersion())
+				.settings(ClientSettings.builder().locale(options.language()).viewDistance(VIEW_DISTANCE).build())
 				.connection(ClientConnection.builder()
-						.host(connection.getHost())
-						.port(connection.getPort())
-						.virtualHost(connection.getVirtualHost())
-						.sourceAddress(connection.getSourceAddress())
+						.host(connection.host())
+						.port(connection.port())
+						.virtualHost(connection.virtualHost())
+						.sourceAddress(connection.sourceAddress())
 						.build())
 				.build();
 	}
@@ -207,7 +207,7 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 	public @NotNull Object nativeSession() {
 		Object current = session;
 		if (current == null || !client.connected(current))
-			throw new IllegalStateException("Player '" + options.getProfile().getName() + "' is not connected");
+			throw new IllegalStateException("Player '" + options.profile().name() + "' is not connected");
 		return current;
 	}
 
@@ -223,7 +223,7 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 
 	@Override
 	public <E> void emit(@NotNull EventDescriptor<E> event, @Nullable E payload) {
-		events.event(id, event.getId(), codec.envelope(event.getPayloadType().cast(payload)));
+		events.event(id, event.id(), codec.envelope(event.payloadType().cast(payload)));
 	}
 
 	@Override
@@ -283,13 +283,13 @@ final class McProtocolPlayer implements PlayerBindingContext<Object>, AutoClosea
 		@Override
 		public void granted(@NotNull Object current, @NotNull ClientProfile granted) {
 			if (current != session) return;
-			emit(PlayerConnectionEvent.GRANTED, new PlayerProfile(granted.getName(), granted.getUniqueId()));
+			emit(PlayerConnectionEvent.GRANTED, new PlayerProfile(granted.name(), granted.uniqueId()));
 		}
 
 		@Override
 		public void loggedIn(@NotNull Object current, @NotNull ClientProfile granted) {
 			if (current != session) return;
-			PlayerProfile profile = new PlayerProfile(granted.getName(), granted.getUniqueId());
+			PlayerProfile profile = new PlayerProfile(granted.name(), granted.uniqueId());
 			emit(PlayerConnectionEvent.CHANGED, new PlayerConnectionEvent(true, null, null, profile));
 		}
 

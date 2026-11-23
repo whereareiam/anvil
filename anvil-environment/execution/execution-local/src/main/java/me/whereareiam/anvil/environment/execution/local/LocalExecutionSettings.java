@@ -39,7 +39,7 @@ public class LocalExecutionSettings {
 	}
 
 	private String key(JavaRequirement requirement) {
-		return (requirement.getDistribution() == null ? "default" : requirement.getDistribution())
-				+ ":" + requirement.getFeatureVersion();
+		return (requirement.distribution() == null ? "default" : requirement.distribution())
+				+ ":" + requirement.featureVersion();
 	}
 }

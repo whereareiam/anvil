@@ -18,8 +18,8 @@ public final class DisplayNameResolver {
 	 * split into words and the first letter in upper case
 	 */
 	public static @NotNull String resolve(@NotNull String identity, @Nullable PresentationMetadata metadata) {
-		if (metadata != null && metadata.getDisplayName() != null && !metadata.getDisplayName().isBlank())
-			return metadata.getDisplayName();
+		if (metadata != null && metadata.displayName() != null && !metadata.displayName().isBlank())
+			return metadata.displayName();
 
 		String words = identity.replaceAll("([a-z0-9])([A-Z])", "$1 $2").replaceAll("[-_]+", " ");
 		return words.isEmpty() ? identity : Character.toUpperCase(words.charAt(0)) + words.substring(1);

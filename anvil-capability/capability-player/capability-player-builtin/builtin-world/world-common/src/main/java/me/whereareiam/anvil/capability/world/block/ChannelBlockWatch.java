@@ -53,7 +53,7 @@ final class ChannelBlockWatch implements BlockWatch {
 		Predicate<BlockChange> matcher = matcher(position, condition);
 		channel.await(() -> cursor.find(matcher) != null, description(position, condition), timeout);
 
-		return Objects.requireNonNull(cursor.take(matcher)).getBlock();
+		return Objects.requireNonNull(cursor.take(matcher)).block();
 	}
 
 	@Override
@@ -69,9 +69,9 @@ final class ChannelBlockWatch implements BlockWatch {
 			if (cursor.find(matcher) == null) return;
 		}
 
-		Block block = Objects.requireNonNull(cursor.find(matcher)).getBlock();
+		Block block = Objects.requireNonNull(cursor.find(matcher)).block();
 		throw new IllegalStateException("Player saw the block at " + describe(position) + " change, which it must not: "
-				+ "it became state " + block.getState() + block.identity().map(name -> " (" + name.getName() + ")")
+				+ "it became state " + block.state() + block.identity().map(name -> " (" + name.name() + ")")
 				.orElse(""));
 	}
 
@@ -95,16 +95,16 @@ final class ChannelBlockWatch implements BlockWatch {
 	 * Keeps the blocks of one packet's changes in the watch's area, in the order the worker sent them.
 	 */
 	void receive(@NotNull WatchedChanges received) {
-		for (BlockReading reading : received.getBlocks())
-			changes.add(new BlockChange(received.getLevel(), ChannelBlockView.block(reading)));
+		for (BlockReading reading : received.blocks())
+			changes.add(new BlockChange(received.level(), ChannelBlockView.block(reading)));
 	}
 
 	private Predicate<BlockChange> matcher(BlockPosition position, Predicate<Block> condition) {
 		if (!area.contains(position))
 			throw new IllegalArgumentException("Block " + describe(position) + " lies outside the watched area from "
-					+ describe(area.getMin()) + " to " + describe(area.getMax()));
+					+ describe(area.min()) + " to " + describe(area.max()));
 
-		return change -> change.getBlock().getPosition().equals(position) && condition.test(change.getBlock());
+		return change -> change.block().position().equals(position) && condition.test(change.block());
 	}
 
 	private static String description(BlockPosition position, Predicate<Block> condition) {
@@ -113,6 +113,6 @@ final class ChannelBlockWatch implements BlockWatch {
 	}
 
 	private static String describe(BlockPosition position) {
-		return position.getX() + " " + position.getY() + " " + position.getZ();
+		return position.x() + " " + position.y() + " " + position.z();
 	}
 }

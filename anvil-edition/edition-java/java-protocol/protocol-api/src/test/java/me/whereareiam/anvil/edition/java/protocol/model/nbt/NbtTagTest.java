@@ -34,11 +34,11 @@ class NbtTagTest {
 		NbtByteArray array = new NbtByteArray(bytes);
 
 		bytes[0] = 9;
-		array.getValues()[1] = 9;
+		array.values()[1] = 9;
 
-		assertArrayEquals(new byte[]{1, 2}, array.getValues());
-		assertArrayEquals(new int[]{1, 2}, new NbtIntArray(new int[]{1, 2}).getValues());
-		assertArrayEquals(new long[]{1, 2}, new NbtLongArray(new long[]{1, 2}).getValues());
+		assertArrayEquals(new byte[]{1, 2}, array.values());
+		assertArrayEquals(new int[]{1, 2}, new NbtIntArray(new int[]{1, 2}).values());
+		assertArrayEquals(new long[]{1, 2}, new NbtLongArray(new long[]{1, 2}).values());
 	}
 
 	@Test
@@ -55,9 +55,9 @@ class NbtTagTest {
 
 		elements.add(new NbtString("hard"));
 
-		assertEquals(List.of(new NbtString("easy")), list.getElements());
-		assertThrows(UnsupportedOperationException.class, () -> list.getElements().add(new NbtInt(1)));
-		assertTrue(NbtList.EMPTY.getElements().isEmpty());
+		assertEquals(List.of(new NbtString("easy")), list.elements());
+		assertThrows(UnsupportedOperationException.class, () -> list.elements().add(new NbtInt(1)));
+		assertTrue(NbtList.EMPTY.elements().isEmpty());
 	}
 
 	@Test

@@ -61,8 +61,8 @@ public final class WorkbenchServer implements AutoCloseable {
 	 */
 	public WorkbenchServer(@NotNull ServerSettings settings) throws IOException {
 		this.settings = settings;
-		Path data = settings.getDataDirectory();
-		identity = ServerIdentity.open(data, mapper, settings.getName());
+		Path data = settings.dataDirectory();
+		identity = ServerIdentity.open(data, mapper, settings.name());
 		uploads = new UploadStore(data.resolve("store"));
 		workbench = new LocalWorkbench(EngineDefaults.resolve(EngineOptions.builder()
 				.cacheDirectory(data.resolve("cache"))
@@ -71,7 +71,7 @@ public final class WorkbenchServer implements AutoCloseable {
 				.build()), executions(settings));
 		try {
 			listener = (SSLServerSocket) identity.tls().getServerSocketFactory()
-					.createServerSocket(settings.getPort(), 50, InetAddress.getByName(settings.getBindAddress()));
+					.createServerSocket(settings.port(), 50, InetAddress.getByName(settings.bindAddress()));
 		} catch (IOException | RuntimeException failure) {
 			workbench.close();
 			throw failure;
@@ -156,7 +156,7 @@ public final class WorkbenchServer implements AutoCloseable {
 	}
 
 	private void serve(SSLSocket socket, EngineConnection connection) throws IOException {
-		String token = connection.getToken();
+		String token = connection.token();
 		String engine = identity.engine(token);
 		if (engine == null) {
 			refuse(socket, "This workbench is not paired with the engine; pair it again");
@@ -168,25 +168,25 @@ public final class WorkbenchServer implements AutoCloseable {
 				accept(socket);
 				new EngineSession(socket, mapper, token, engine, workbench, settings, handles, uploads, waitingReverse).serve();
 			}
-			case Stdio stdio -> stdio(socket, token, stdio.getHandle());
-			case Stderr stderr -> stderr(socket, token, stderr.getHandle());
+			case Stdio stdio -> stdio(socket, token, stdio.handle());
+			case Stderr stderr -> stderr(socket, token, stderr.handle());
 			case Upload upload -> upload(socket, upload);
-			case Tunnel tunnel -> tunnel(socket, tunnel.getPort());
-			case Reverse reverse -> reverse(socket, reverse.getId());
+			case Tunnel tunnel -> tunnel(socket, tunnel.port());
+			case Reverse reverse -> reverse(socket, reverse.id());
 		}
 	}
 
 	private void pair(Socket socket, Pair pair) throws IOException {
 		try (socket) {
-			String token = identity.pair(pair.getCode(), pair.getEngine());
+			String token = identity.pair(pair.code(), pair.engine());
 			if (token == null) {
 				WireLines.write(mapper, socket.getOutputStream(),
 						new Refused("The pairing code is wrong or expired; create a new one with 'pair' on the workbench"));
 				return;
 			}
 
-			System.out.println("Paired with engine '" + pair.getEngine() + "'");
-			WireLines.write(mapper, socket.getOutputStream(), new Paired(token, settings.getName()));
+			System.out.println("Paired with engine '" + pair.engine() + "'");
+			WireLines.write(mapper, socket.getOutputStream(), new Paired(token, settings.name()));
 		}
 	}
 
@@ -223,8 +223,8 @@ public final class WorkbenchServer implements AutoCloseable {
 	private void upload(Socket socket, Upload upload) throws IOException {
 		try (socket) {
 			accept(socket);
-			Path stored = uploads.receive(upload.getSha256(), upload.getName(), upload.isDirectory(),
-					new BoundedInput(socket.getInputStream(), upload.getSize()));
+			Path stored = uploads.receive(upload.sha256(), upload.name(), upload.directory(),
+					new BoundedInput(socket.getInputStream(), upload.size()));
 			WireLines.write(mapper, socket.getOutputStream(), new Uploaded(stored));
 		}
 	}
@@ -282,7 +282,7 @@ public final class WorkbenchServer implements AutoCloseable {
 				.forEach(provider -> installed.put(provider.id(), provider));
 
 		Map<String, ExecutionProvider> allowed = new LinkedHashMap<>();
-		for (String id : settings.getExecutions()) {
+		for (String id : settings.executions()) {
 			ExecutionProvider provider = installed.get(id);
 			if (provider == null) throw new IllegalArgumentException("The policy allows execution '" + id + "', which is not installed");
 			allowed.put(id, provider);

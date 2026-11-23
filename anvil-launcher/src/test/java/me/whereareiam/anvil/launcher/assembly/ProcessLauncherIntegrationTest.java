@@ -101,7 +101,7 @@ class ProcessLauncherIntegrationTest {
 					@NotNull MinecraftProcess process,
 					@NotNull PlatformContext context
 			) throws IOException {
-				assertEquals("first", Files.readString(context.getWorkDirectory().resolve("installed.txt")));
+				assertEquals("first", Files.readString(context.workDirectory().resolve("installed.txt")));
 				preparation.add("resolve");
 				resolutions.incrementAndGet();
 				return ResolvedDistribution.builder().jar(executable).description("fixture").build();
@@ -296,7 +296,7 @@ class ProcessLauncherIntegrationTest {
 			return new ExecutionSession() {
 				@Override
 				public @NotNull ProcessTarget prepare(@NotNull ProcessRequest request) {
-					assertNotNull(request.getImage());
+					assertNotNull(request.image());
 					var address = new InetSocketAddress("127.0.0.1", ports.reserve("127.0.0.1"));
 					return new ProcessTarget() {
 						@Override
@@ -317,7 +317,7 @@ class ProcessLauncherIntegrationTest {
 						public @NotNull Map<String, InetSocketAddress> peerListeners() { return Map.of("6379", peerAddress()); }
 						@Override
 						public @NotNull ProcessExecution start(@NotNull ProcessLaunch launch) {
-							environment = ((ImageLaunch) launch).getEnvironment();
+							environment = ((ImageLaunch) launch).environment();
 							started.incrementAndGet();
 							try {
 								return new LocalProcess(new ProcessBuilder("sh", "-c", "echo READY; exec sleep 60")

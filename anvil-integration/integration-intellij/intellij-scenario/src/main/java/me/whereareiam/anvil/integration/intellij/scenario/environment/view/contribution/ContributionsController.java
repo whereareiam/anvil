@@ -61,12 +61,12 @@ final class ContributionsController {
 		SessionSnapshot snapshot = session.getSnapshot();
 		view.setMultipleScopes(targets.size() > 1);
 		List<ActionDescriptor> currentActions =
-				snapshot.getActions().stream()
-						.filter(action -> targets.contains(action.getTarget()))
+				snapshot.actions().stream()
+						.filter(action -> targets.contains(action.target()))
 						.toList();
 		List<ObservationDescriptor> currentObservations =
-				snapshot.getObservations().stream()
-						.filter(value -> targets.contains(value.getTarget()))
+				snapshot.observations().stream()
+						.filter(value -> targets.contains(value.target()))
 						.toList();
 
 		updateActions(currentActions);
@@ -117,14 +117,14 @@ final class ContributionsController {
 			@NotNull ActionDescriptor first,
 			@NotNull ActionDescriptor second
 	) {
-		return first.getTarget().equals(second.getTarget()) && sameDefinition(first, second);
+		return first.target().equals(second.target()) && sameDefinition(first, second);
 	}
 
 	private static boolean sameDefinition(
 			@NotNull ActionDescriptor first,
 			@NotNull ActionDescriptor second
 	) {
-		return first.getDefinition().getId().equals(second.getDefinition().getId());
+		return first.definition().id().equals(second.definition().id());
 	}
 
 	private void updateAvailability() {
@@ -134,13 +134,13 @@ final class ContributionsController {
 	private void updateAvailability(@NotNull SessionSnapshot snapshot) {
 		ActionDescriptor action = (ActionDescriptor) actions.getSelectedItem();
 		boolean active = session.isActive()
-				&& snapshot.getSessionId() != null
-				&& snapshot.getState() == SessionState.RUNNING;
+				&& snapshot.sessionId() != null
+				&& snapshot.state() == SessionState.RUNNING;
 
-		invoke.setEnabled(active && action != null && action.getAvailability().isEnabled());
-		String reason = action == null || action.getAvailability().isEnabled()
+		invoke.setEnabled(active && action != null && action.availability().enabled());
+		String reason = action == null || action.availability().enabled()
 				? ""
-				: action.getAvailability().getReason();
+				: action.availability().reason();
 
 		availability.setText(
 				!active ? "Environment is not running" : reason == null ? "Action unavailable" : reason);

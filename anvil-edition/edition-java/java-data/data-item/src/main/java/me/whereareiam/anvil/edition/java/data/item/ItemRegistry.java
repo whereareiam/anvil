@@ -19,7 +19,7 @@ import java.util.OptionalInt;
  *
  * <pre>{@code
  * ItemRegistry registry = JavaItemData.shipped().require(774);
- * String key = registry.key(stack.getId()).orElse("unknown");
+ * String key = registry.key(stack.id()).orElse("unknown");
  * }</pre>
  */
 public final class ItemRegistry {

@@ -67,7 +67,7 @@ class ConnectionPacketsTest {
 				20, 10, 10, false, false, false, spawnIn(Key.key("minecraft", "overworld"), 0), false)));
 		assertEquals(DimensionType.withEffects("example:void", "minecraft:the_end", 0, 256),
 				((ClientboundRespawn) packets.decode(new ClientboundRespawnPacket(spawnIn(Key.key("example", "arena"), 1),
-						false, false))).getDimensionType());
+						false, false))).dimensionType());
 		assertEquals(new ClientboundStartConfiguration(), packets.decode(new ClientboundStartConfigurationPacket()));
 	}
 
@@ -90,7 +90,7 @@ class ConnectionPacketsTest {
 
 		assertEquals(DimensionType.known("minecraft:the_nether"),
 				((ClientboundRespawn) packets.decode(new ClientboundRespawnPacket(spawnIn(Key.key("minecraft", "the_nether"), 0),
-						false, false))).getDimensionType());
+						false, false))).dimensionType());
 		assertEquals(DimensionType.builder()
 						.key("example:plain")
 						.skybox(Skybox.OVERWORLD)
@@ -99,7 +99,7 @@ class ConnectionPacketsTest {
 						.height(384)
 						.build(),
 				((ClientboundRespawn) packets.decode(new ClientboundRespawnPacket(spawnIn(Key.key("example", "plain"), 1),
-						false, false))).getDimensionType());
+						false, false))).dimensionType());
 	}
 
 	@Test
@@ -145,10 +145,10 @@ class ConnectionPacketsTest {
 		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.CREATIVE,
 				((ClientboundLogin) packets.decode(new ClientboundLoginPacket(42, false,
 						new Key[]{Key.key("minecraft", "overworld")}, 20, 10, 10, false, false, false,
-						spawnIn(Key.key("minecraft", "overworld"), 0, GameMode.CREATIVE), false))).getGameMode());
+						spawnIn(Key.key("minecraft", "overworld"), 0, GameMode.CREATIVE), false))).gameMode());
 		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.SPECTATOR,
 				((ClientboundRespawn) packets.decode(new ClientboundRespawnPacket(
-						spawnIn(Key.key("minecraft", "overworld"), 0, GameMode.SPECTATOR), false, false))).getGameMode());
+						spawnIn(Key.key("minecraft", "overworld"), 0, GameMode.SPECTATOR), false, false))).gameMode());
 	}
 
 	private void types(NbtMap... descriptions) {
@@ -161,7 +161,7 @@ class ConnectionPacketsTest {
 
 	private List<Boolean> fastLava(int types) {
 		List<Boolean> fastLava = new ArrayList<>();
-		for (int type = 0; type < types; type++) fastLava.add(respawnInto(type).getDimensionType().isFastLava());
+		for (int type = 0; type < types; type++) fastLava.add(respawnInto(type).dimensionType().fastLava());
 		return fastLava;
 	}
 

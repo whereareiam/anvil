@@ -33,7 +33,7 @@ public final class SynchronizedRegistries {
 	 * @param registry the registry data the server sent
 	 */
 	void record(@NotNull ClientboundRegistryData registry) {
-		registries.put(registry.getRegistry(), registry.getEntries());
+		registries.put(registry.registry(), registry.entries());
 	}
 
 	/**

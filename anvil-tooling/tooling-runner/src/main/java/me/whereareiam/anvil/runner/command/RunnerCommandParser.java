@@ -18,9 +18,9 @@ public final class RunnerCommandParser {
 		if (line.isBlank()) throw new IllegalArgumentException("Command line must not be blank");
 
 		String token = line.trim().split("\\s+", 2)[0];
-		String[] parts = line.trim().split("\\s+", RunnerCommandType.fromName(token) == RunnerCommandType.ACTION ? 5 : 3);
+		String[] parts = line.trim().split("\\s+", RunnerCommandType.fromToken(token) == RunnerCommandType.ACTION ? 5 : 3);
 		RunnerCommand.RunnerCommandBuilder command = RunnerCommand.builder()
-				.type(RunnerCommandType.fromName(parts[0]))
+				.type(RunnerCommandType.fromToken(parts[0]))
 				.token(parts[0]);
 
 		for (int index = 1; index < parts.length; index++) command.argument(parts[index]);

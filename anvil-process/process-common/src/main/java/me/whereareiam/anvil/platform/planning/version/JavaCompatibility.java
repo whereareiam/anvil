@@ -7,14 +7,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Java feature versions one platform starts on, from {@link #getSince() since} until the next row
+ * Java feature versions one platform starts on, from {@link #since() since} until the next row
  * of its {@link PlatformVersions} starts.
  *
- * <p>The {@link #getPreferred() preferred} version is an LTS release inside
- * [{@link #getMinimum() minimum}, {@link #getMaximum() maximum}]; planning selects it when no
+ * <p>The {@link #preferred() preferred} version is an LTS release inside
+ * [{@link #minimum() minimum}, {@link #maximum() maximum}]; planning selects it when no
  * declaration requests a Java version and the platform's agent runs on it. A maximum is the
  * platform's own startup refusal: Java above it runs only when the platform names a
- * {@link #getMaximumBypassProperty() bypass property}, and planning adds that property only for an
+ * {@link #maximumBypassProperty() bypass property}, and planning adds that property only for an
  * explicitly requested version.</p>
  */
 @Value
@@ -44,7 +44,7 @@ public class JavaCompatibility {
 	int preferred;
 
 	/**
-	 * Boolean system property that makes the platform start above {@link #getMaximum() maximum},
+	 * Boolean system property that makes the platform start above {@link #maximum() maximum},
 	 * or null when the platform has no bypass.
 	 */
 	@Nullable String maximumBypassProperty;
@@ -78,7 +78,7 @@ public class JavaCompatibility {
 
 	/**
 	 * Tests whether this row applies to a platform version on its own start: the version is not
-	 * older than {@link #getSince() since}.
+	 * older than {@link #since() since}.
 	 *
 	 * @param version platform version
 	 * @return whether the version starts no earlier than this row

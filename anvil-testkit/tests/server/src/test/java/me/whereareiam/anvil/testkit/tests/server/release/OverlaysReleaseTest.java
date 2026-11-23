@@ -31,9 +31,9 @@ class OverlaysReleaseTest {
 		server.console("title " + player.name() + " subtitle \"anvil:subtitle\"");
 		server.console("title " + player.name() + " title \"anvil:title\"");
 
-		Title title = titles.shown(shown -> shown.getTitle().equals("anvil:title")
-				&& shown.getSubtitle().equals("anvil:subtitle"), Duration.ofSeconds(10));
-		assertEquals(40, title.getStayTicks());
+		Title title = titles.shown(shown -> shown.title().equals("anvil:title")
+				&& shown.subtitle().equals("anvil:subtitle"), Duration.ofSeconds(10));
+		assertEquals(40, title.stayTicks());
 	}
 
 	@Test
@@ -58,12 +58,12 @@ class OverlaysReleaseTest {
 		server.console("bossbar add " + id + " \"anvil:boss-bar\"");
 		server.console("bossbar set " + id + " players " + player.name());
 		server.console("bossbar set " + id + " value 50");
-		BossBar bar = bossBars.shown(shown -> shown.getText().equals("anvil:boss-bar") && shown.getProgress() == 0.5F,
+		BossBar bar = bossBars.shown(shown -> shown.text().equals("anvil:boss-bar") && shown.progress() == 0.5F,
 				Duration.ofSeconds(10));
 		assertEquals(List.of(bar), overlays.bossBars());
 		server.console("bossbar remove " + id);
 
-		bossBars.removed(removed -> removed.getId().equals(bar.getId()), Duration.ofSeconds(10));
+		bossBars.removed(removed -> removed.id().equals(bar.id()), Duration.ofSeconds(10));
 		assertTrue(overlays.bossBars().isEmpty());
 	}
 }

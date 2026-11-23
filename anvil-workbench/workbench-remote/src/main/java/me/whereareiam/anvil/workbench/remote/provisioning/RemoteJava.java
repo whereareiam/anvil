@@ -26,17 +26,17 @@ public final class RemoteJava implements JavaProvisioner {
 
 	@Override
 	public @NotNull Path resolve(@NotNull JavaRequirement requirement, @Nullable JavaSource source) {
-		return connection.call(new ResolveJava(requirement, source)).getExecutable();
+		return connection.call(new ResolveJava(requirement, source)).executable();
 	}
 
 	@Override
 	public @NotNull Optional<JavaInstallation> inspect(@NotNull JavaSource source) {
-		return Optional.ofNullable(connection.call(new InspectJavaSource(source)).getInstallation());
+		return Optional.ofNullable(connection.call(new InspectJavaSource(source)).installation());
 	}
 
 	@Override
 	public @NotNull JavaInstallation inspect(@NotNull String properties, @NotNull Path executable) {
-		return Objects.requireNonNull(connection.call(new InspectJava(properties, executable)).getInstallation(),
+		return Objects.requireNonNull(connection.call(new InspectJava(properties, executable)).installation(),
 				"The workbench inspected no installation at " + executable);
 	}
 

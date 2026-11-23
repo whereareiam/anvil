@@ -304,7 +304,7 @@ public final class WorkerExtensions {
 				if (!installing || !open)
 					throw new IllegalStateException("Worker operations may only be registered while binding a player");
 
-				String id = operation.getId();
+				String id = operation.id();
 				validate(id);
 				boolean duplicate = operations.containsKey(id)
 						|| pending.putIfAbsent(id, new WorkerOperation<>(operation, handler)) != null;

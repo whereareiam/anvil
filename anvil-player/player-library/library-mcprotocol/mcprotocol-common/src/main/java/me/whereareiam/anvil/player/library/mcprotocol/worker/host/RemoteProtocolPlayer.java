@@ -64,11 +64,11 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 	) {
 		this.worker = worker;
 		this.request = request;
-		this.events = new PlayerEventDispatcher(request.getName(), worker::recordDiagnostic);
+		this.events = new PlayerEventDispatcher(request.name(), worker::recordDiagnostic);
 		this.requested = authentication == null
-				? new PlayerProfile(request.getUsername(),
-						UUID.nameUUIDFromBytes((OFFLINE_UUID_PREFIX + request.getUsername()).getBytes(StandardCharsets.UTF_8)))
-				: new PlayerProfile(authentication.getUsername(), authentication.getUuid());
+				? new PlayerProfile(request.username(),
+						UUID.nameUUIDFromBytes((OFFLINE_UUID_PREFIX + request.username()).getBytes(StandardCharsets.UTF_8)))
+				: new PlayerProfile(authentication.username(), authentication.uuid());
 
 		worker.register(id, this);
 		try {
@@ -80,23 +80,23 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 	}
 
 	private WorkerPlayerCapabilities create(@Nullable AuthenticationSession authentication) {
-		GameConnection connection = request.getConnection();
+		GameConnection connection = request.connection();
 		WorkerPlayerOptions options = WorkerPlayerOptions.builder()
 				.profile(WorkerProfile.builder()
-						.name(requested.getUsername())
-						.uniqueId(requested.getUniqueId())
+						.name(requested.username())
+						.uniqueId(requested.uniqueId())
 						.build())
 				.credentials(authentication == null ? null : WorkerCredentials.builder()
-						.accessToken(authentication.getAccessToken())
-						.sessionServer(authentication.getSessionServer())
+						.accessToken(authentication.accessToken())
+						.sessionServer(authentication.sessionServer())
 						.build())
-				.minecraftVersion(request.getClientVersion().toString())
-				.language(request.getLanguage())
+				.minecraftVersion(request.clientVersion().toString())
+				.language(request.language())
 				.connection(WorkerConnection.builder()
-						.host(connection.getAddress().getHostString())
-						.port(connection.getAddress().getPort())
-						.virtualHost(connection.getVirtualHost())
-						.sourceAddress(connection.getSourceAddress() == null ? null : connection.getSourceAddress().getHostAddress())
+						.host(connection.address().getHostString())
+						.port(connection.address().getPort())
+						.virtualHost(connection.virtualHost())
+						.sourceAddress(connection.sourceAddress() == null ? null : connection.sourceAddress().getHostAddress())
 						.build())
 				.build();
 
@@ -110,13 +110,13 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 	 * client enters the game, and again with the connection.
 	 */
 	void event(@NotNull String type, @NotNull JsonNode payload) {
-		if (type.equals(PlayerConnectionEvent.GRANTED.getId())) {
+		if (type.equals(PlayerConnectionEvent.GRANTED.id())) {
 			PlayerProfile login = codec.open(payload, PlayerProfile.class);
 			granted = login;
 			if (login != null) grantedProfiles.addIfAbsent(login);
 		}
-		if (type.equals(PlayerConnectionEvent.CHANGED.getId())) {
-			PlayerProfile login = codec.open(payload, PlayerConnectionEvent.class).getGranted();
+		if (type.equals(PlayerConnectionEvent.CHANGED.id())) {
+			PlayerProfile login = codec.open(payload, PlayerConnectionEvent.class).granted();
 			granted = login;
 			if (login != null) grantedProfiles.addIfAbsent(login);
 		}
@@ -125,12 +125,12 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 
 	@Override
 	public @NotNull String name() {
-		return request.getName();
+		return request.name();
 	}
 
 	@Override
 	public @NotNull MinecraftVersion clientVersion() {
-		return request.getClientVersion();
+		return request.clientVersion();
 	}
 
 	@Override
@@ -186,19 +186,19 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 
 	@Override
 	public <Q, R> @Nullable R request(@NotNull OperationDescriptor<Q, R> operation, @Nullable Q request) {
-		if (request == null && operation.getRequestType() != Void.class)
-			throw new IllegalArgumentException("Operation '" + operation.getId() + "' requires a "
-					+ operation.getRequestType().getName() + " request");
+		if (request == null && operation.requestType() != Void.class)
+			throw new IllegalArgumentException("Operation '" + operation.id() + "' requires a "
+					+ operation.requestType().getName() + " request");
 
 		ensureOpen();
-		JsonNode result = worker.request(operation.getId(), id, arguments -> arguments.setAll(codec.envelope(request)));
-		return codec.open(result, operation.getResponseType());
+		JsonNode result = worker.request(operation.id(), id, arguments -> arguments.setAll(codec.envelope(request)));
+		return codec.open(result, operation.responseType());
 	}
 
 	@Override
 	public <E> @NotNull Subscription subscribe(@NotNull EventDescriptor<E> event, @NotNull Consumer<E> listener) {
 		ensureOpen();
-		return events.subscribe(event.getId(), payload -> listener.accept(codec.open(payload, event.getPayloadType())));
+		return events.subscribe(event.id(), payload -> listener.accept(codec.open(payload, event.payloadType())));
 	}
 
 	@Override
@@ -233,7 +233,7 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 	 */
 	@Override
 	public @NotNull Set<String> installedCapabilities() {
-		return Set.copyOf(capabilities.getCapabilities());
+		return Set.copyOf(capabilities.capabilities());
 	}
 
 	/**
@@ -245,7 +245,7 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 	@Override
 	public @NotNull Map<String, String> unavailableCapabilities() {
 		Map<String, String> reasons = new LinkedHashMap<>(worker.unavailableCapabilities());
-		reasons.putAll(capabilities.getUnavailable());
+		reasons.putAll(capabilities.unavailable());
 		return Map.copyOf(reasons);
 	}
 

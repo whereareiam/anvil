@@ -22,7 +22,7 @@ class ChatBufferTest {
 		chat.add(2, "trailing\n");
 		chat.add(3, "\n");
 
-		assertEquals(List.of("first", "second", "", "trailing", "", "", ""), chat.lines().getLines());
+		assertEquals(List.of("first", "second", "", "trailing", "", "", ""), chat.lines().lines());
 	}
 
 	@Test
@@ -32,7 +32,7 @@ class ChatBufferTest {
 		chat.add(0, "oldest\nkept");
 		IntStream.range(1, ChatLines.MAX_LINES).forEach(index -> chat.add(index, "line " + index));
 
-		List<String> lines = chat.lines().getLines();
+		List<String> lines = chat.lines().lines();
 		assertEquals(ChatLines.MAX_LINES, lines.size());
 		assertEquals("kept", lines.getFirst());
 		assertEquals("line 99", lines.getLast());
@@ -47,7 +47,7 @@ class ChatBufferTest {
 
 		IntStream.range(2, 2 + ChatLines.MAX_LINES).forEach(index -> chat.add(index, ""));
 
-		assertEquals(Collections.nCopies(ChatLines.MAX_LINES, ""), chat.lines().getLines());
+		assertEquals(Collections.nCopies(ChatLines.MAX_LINES, ""), chat.lines().lines());
 		assertFalse(chat.lines().contains("history"));
 	}
 
@@ -58,7 +58,7 @@ class ChatBufferTest {
 
 		chat.add(1, "\n".repeat(ChatLines.MAX_LINES - 1));
 
-		assertEquals(Collections.nCopies(ChatLines.MAX_LINES, ""), chat.lines().getLines());
+		assertEquals(Collections.nCopies(ChatLines.MAX_LINES, ""), chat.lines().lines());
 	}
 
 	@Test
@@ -72,7 +72,7 @@ class ChatBufferTest {
 		chat.delete(1);
 		chat.delete(7);
 
-		assertEquals(List.of("hello", ChatLines.DELETED_MARKER, "bye"), chat.lines().getLines());
+		assertEquals(List.of("hello", ChatLines.DELETED_MARKER, "bye"), chat.lines().lines());
 	}
 
 	@Test
@@ -84,7 +84,7 @@ class ChatBufferTest {
 
 		chat.delete(1);
 
-		assertEquals(List.of("oldest", ChatLines.DELETED_MARKER), chat.lines().getLines());
+		assertEquals(List.of("oldest", ChatLines.DELETED_MARKER), chat.lines().lines());
 	}
 
 	@Test
@@ -100,7 +100,7 @@ class ChatBufferTest {
 				.mapToObj(index -> "message " + index).toList());
 		expected.add(ChatLines.DELETED_MARKER);
 		expected.add(ChatLines.DELETED_MARKER);
-		assertEquals(expected, chat.lines().getLines());
+		assertEquals(expected, chat.lines().lines());
 	}
 
 	@Test
@@ -111,7 +111,7 @@ class ChatBufferTest {
 		chat.clear();
 		chat.add(1, "after");
 
-		assertEquals(List.of("after"), chat.lines().getLines());
+		assertEquals(List.of("after"), chat.lines().lines());
 		assertTrue(chat.lines().contains("aft"));
 	}
 }

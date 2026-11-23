@@ -54,13 +54,13 @@ final class McProtocolClientPool implements ProtocolLibrary {
 		if (closed) throw new IllegalStateException("MCProtocol client pool is closed");
 
 		// The engine refused unlaunchable releases already; this guards the library against a request it cannot serve.
-		ReleaseDefinition definition = catalog.require(request.getClientVersion());
-		ProtocolRelease release = definition.getRelease();
-		if (!release.isLaunchable()) throw new IllegalStateException(release.getLaunchRefusal());
+		ReleaseDefinition definition = catalog.require(request.clientVersion());
+		ProtocolRelease release = definition.release();
+		if (!release.isLaunchable()) throw new IllegalStateException(release.launchRefusal());
 
 		AuthenticationSession session = session(request);
-		ProtocolWorkerProcess worker = workers.computeIfAbsent(release.getLibraryVersion(),
-				ignored -> new ProtocolWorkerProcess(definition.getRelease(), closure(definition), launcher));
+		ProtocolWorkerProcess worker = workers.computeIfAbsent(release.libraryVersion(),
+				ignored -> new ProtocolWorkerProcess(definition.release(), closure(definition), launcher));
 
 		return worker.create(request, session);
 	}
@@ -70,27 +70,27 @@ final class McProtocolClientPool implements ProtocolLibrary {
 	 * one, and otherwise the stored account.
 	 */
 	private @Nullable AuthenticationSession session(PlayerRequest request) {
-		PlayerLogin login = request.getLogin();
-		if (!login.getAuthentication().usesAccount()) return null;
+		PlayerLogin login = request.login();
+		if (!login.authentication().usesAccount()) return null;
 
-		SessionIdentity identity = login.getSessionIdentity();
-		if (identity == null) return authentication.resolve(Objects.requireNonNull(login.getAccountId(), "accountId"));
+		SessionIdentity identity = login.sessionIdentity();
+		if (identity == null) return authentication.resolve(Objects.requireNonNull(login.accountId(), "accountId"));
 
 		return AuthenticationSession.builder()
-				.username(identity.getUsername())
-				.uuid(identity.getUniqueId())
-				.accessToken(identity.getAccessToken())
-				.sessionServer(identity.getSessionServer())
+				.username(identity.username())
+				.uuid(identity.uniqueId())
+				.accessToken(identity.accessToken())
+				.sessionServer(identity.sessionServer())
 				.build();
 	}
 
 	private List<Path> closure(ReleaseDefinition definition) {
 		Path directory = cacheDirectory.resolve("protocol")
 				.resolve(McProtocolClient.LIBRARY_ID)
-				.resolve(definition.getRelease().getLibraryVersion());
+				.resolve(definition.release().libraryVersion());
 
-		return definition.getArtifacts().stream()
-				.map(artifact -> artifacts.resolve(artifact.getUrl(), directory.resolve(artifact.fileName()), artifact.getSha256()))
+		return definition.artifacts().stream()
+				.map(artifact -> artifacts.resolve(artifact.url(), directory.resolve(artifact.fileName()), artifact.sha256()))
 				.toList();
 	}
 

@@ -48,14 +48,14 @@ class ConsoleProcessRenderer(
 		}
 
 		val live = liveProcesses.get()[choice.name()]
-		val statusLabel = StatusPresentation.processLabel(live?.state, snapshot.state)
+		val statusLabel = StatusPresentation.processLabel(live?.state(), snapshot.state())
 		icon = StatusIcon.overlay(
-			StatusPresentation.processTone(live?.state, snapshot.state),
+			StatusPresentation.processTone(live?.state(), snapshot.state()),
 			statusLabel,
 			choice.role()?.let { ScenarioPresentation.processIcon(it) } ?: AllIcons.Debugger.Console
 		)
 		append(choice.displayName())
 
-		toolTipText = "${choice.displayName()} · ${StatusPresentation.processDescription(live?.state, snapshot.state)}"
+		toolTipText = "${choice.displayName()} · ${StatusPresentation.processDescription(live?.state(), snapshot.state())}"
 	}
 }

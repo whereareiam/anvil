@@ -28,8 +28,8 @@ final class ToolingOperationRegistry {
 		register(ScenarioOperations.DISCOVER, ignored -> session.scenarios());
 		register(EnvironmentOperations.SNAPSHOT, ignored -> session.snapshot());
 		register(ScenarioOperations.START, Policy.CANCELLABLE, request -> {
-			String definition = request.getDefinition() == null ? request.getScenario() : request.getDefinition();
-			String target = request.getTarget();
+			String definition = request.definition() == null ? request.scenario() : request.definition();
+			String target = request.target();
 			if (target != null) requiredText(target, "target");
 			session.start(requiredText(definition, "definition"), target);
 			return session.snapshot();
@@ -43,26 +43,26 @@ final class ToolingOperationRegistry {
 			return session.snapshot();
 		});
 		register(ProcessOperations.START, Policy.CANCELLABLE, request -> {
-			session.startProcess(requiredText(request.getTarget(), "target"));
+			session.startProcess(requiredText(request.target(), "target"));
 			return session.snapshot();
 		});
 		register(ProcessOperations.STOP, Policy.CANCELLABLE, request -> {
-			session.stopProcess(requiredText(request.getTarget(), "target"));
+			session.stopProcess(requiredText(request.target(), "target"));
 			return session.snapshot();
 		});
 		register(ProcessOperations.RESTART, Policy.CANCELLABLE, request -> {
-			session.restartProcess(requiredText(request.getTarget(), "target"));
+			session.restartProcess(requiredText(request.target(), "target"));
 			return session.snapshot();
 		});
 		register(ProcessOperations.CONSOLE, request -> {
-			session.console(requiredText(request.getTarget(), "target"), requiredText(request.getText(), "text"));
+			session.console(requiredText(request.target(), "target"), requiredText(request.text(), "text"));
 			return ConsoleCommandResult.builder().accepted(true).build();
 		});
 		register(EnvironmentOperations.INVOKE, Policy.CANCELLABLE, request -> {
-			requiredText(request.getSessionId(), "sessionId");
-			requiredText(request.getActionId(), "actionId");
-			requiredText(request.getTarget() == null ? null : request.getTarget().getName(), "target.name");
-			request.getArguments().values().forEach(value -> Objects.requireNonNull(value, "Action arguments must be strings"));
+			requiredText(request.sessionId(), "sessionId");
+			requiredText(request.actionId(), "actionId");
+			requiredText(request.target() == null ? null : request.target().name(), "target.name");
+			request.arguments().values().forEach(value -> Objects.requireNonNull(value, "Action arguments must be strings"));
 			return session.invoke(request);
 		});
 	}
@@ -76,7 +76,7 @@ final class ToolingOperationRegistry {
 	}
 
 	private <Q, R> void register(ToolingOperation<Q, R> operation, Policy policy, Function<Q, R> handler) {
-		String name = requiredText(operation.getName(), "operation");
+		String name = requiredText(operation.name(), "operation");
 		if (operations.putIfAbsent(name, new Binding<>(operation, policy, handler)) != null)
 			throw new IllegalArgumentException("Duplicate tooling operation: " + name);
 	}
@@ -110,9 +110,9 @@ final class ToolingOperationRegistry {
 				@NotNull ToolingRequestReader.Request request,
 				@NotNull ToolingRequestReader reader
 		) throws IOException {
-			Q payload = reader.decode(request, operation.getRequestType());
+			Q payload = reader.decode(request, operation.requestType());
 			return Objects.requireNonNull(handler.apply(payload),
-					"Missing response for tooling operation '" + operation.getName() + "'");
+					"Missing response for tooling operation '" + operation.name() + "'");
 		}
 	}
 }

@@ -34,7 +34,7 @@ class ConnectionPacketsTest {
 	void recordsTheLevelOfEachLoginForTheConnectionsOtherTranslations() {
 		ClientboundLogin login = (ClientboundLogin) packets.decode(login("minecraft:overworld"));
 
-		assertEquals(Optional.of(new Level(login.getDimension(), login.getDimensionType())), level.current());
+		assertEquals(Optional.of(new Level(login.dimension(), login.dimensionType())), level.current());
 	}
 
 	@Test
@@ -68,8 +68,8 @@ class ConnectionPacketsTest {
 		ClientboundRespawn respawn = (ClientboundRespawn) packets.decode(new ClientboundRespawnPacket("example:void",
 				"minecraft:the_end", 0, GameMode.CREATIVE, null, false, true, false, false, null));
 
-		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.ADVENTURE, login.getGameMode());
-		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.CREATIVE, respawn.getGameMode());
+		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.ADVENTURE, login.gameMode());
+		assertEquals(me.whereareiam.anvil.edition.java.protocol.type.player.GameMode.CREATIVE, respawn.gameMode());
 	}
 
 	@Test
@@ -98,8 +98,8 @@ class ConnectionPacketsTest {
 
 	@Test
 	void readsFastLavaFromTheUltrawarmFlagOfEachTypeOfTheLoginsRegistry() {
-		assertFalse(((ClientboundLogin) packets.decode(login("example:void"))).getDimensionType().isFastLava());
-		assertTrue(((ClientboundLogin) packets.decode(login("example:hot"))).getDimensionType().isFastLava());
+		assertFalse(((ClientboundLogin) packets.decode(login("example:void"))).dimensionType().fastLava());
+		assertTrue(((ClientboundLogin) packets.decode(login("example:hot"))).dimensionType().fastLava());
 	}
 
 	@Test
@@ -120,8 +120,8 @@ class ConnectionPacketsTest {
 
 	@Test
 	void carriesWhetherTheClientShowsTheDeathScreen() {
-		assertTrue(((ClientboundLogin) packets.decode(login("minecraft:overworld"))).isShowDeathScreen());
-		assertFalse(((ClientboundLogin) packets.decode(login("minecraft:overworld").withEnableRespawnScreen(false))).isShowDeathScreen());
+		assertTrue(((ClientboundLogin) packets.decode(login("minecraft:overworld"))).showDeathScreen());
+		assertFalse(((ClientboundLogin) packets.decode(login("minecraft:overworld").withEnableRespawnScreen(false))).showDeathScreen());
 	}
 
 	private static ClientboundLoginPacket login(String type) {

@@ -92,7 +92,7 @@ public final class ConnectionPackets implements PacketTranslation<Packet> {
 	 * Records the level a login names for the connection's other translations.
 	 */
 	private ClientboundLogin entered(ClientboundLogin login) {
-		level.enter(new Level(login.getDimension(), login.getDimensionType()));
+		level.enter(new Level(login.dimension(), login.dimensionType()));
 		return login;
 	}
 
@@ -100,7 +100,7 @@ public final class ConnectionPackets implements PacketTranslation<Packet> {
 	 * Records the level a respawn names for the connection's other translations.
 	 */
 	private ClientboundRespawn entered(ClientboundRespawn respawn) {
-		level.enter(new Level(respawn.getDimension(), respawn.getDimensionType()));
+		level.enter(new Level(respawn.dimension(), respawn.dimensionType()));
 		return respawn;
 	}
 

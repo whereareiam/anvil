@@ -29,7 +29,7 @@ final class ChannelClientPhysics implements ClientPhysics {
 
 	@Override
 	public void enable() {
-		String refusal = Objects.requireNonNull(channel.request(MovementChannel.PHYSICS, true)).getRefusal();
+		String refusal = Objects.requireNonNull(channel.request(MovementChannel.PHYSICS, true)).refusal();
 		if (refusal != null)
 			throw new CapabilityUnavailableException("Client physics is unavailable for player '" + playerName + "': "
 					+ refusal);
@@ -41,13 +41,13 @@ final class ChannelClientPhysics implements ClientPhysics {
 	}
 
 	@Override
-	public boolean isEnabled() {
-		return ChannelMovement.state(channel).isPhysics();
+	public boolean enabled() {
+		return ChannelMovement.state(channel).physics();
 	}
 
 	@Override
 	public @NotNull Optional<String> failure() {
-		return Optional.ofNullable(ChannelMovement.state(channel).getFailure());
+		return Optional.ofNullable(ChannelMovement.state(channel).failure());
 	}
 
 	@Override
@@ -57,7 +57,7 @@ final class ChannelClientPhysics implements ClientPhysics {
 
 	@Override
 	public @NotNull Motion motion() {
-		return ChannelMovement.state(channel).getMotion();
+		return ChannelMovement.state(channel).motion();
 	}
 
 	@Override
@@ -67,20 +67,20 @@ final class ChannelClientPhysics implements ClientPhysics {
 		MovementState start = ChannelMovement.state(channel);
 		requireOn(start);
 
-		long target = start.getTicks() + ticks;
+		long target = start.ticks() + ticks;
 		AtomicReference<MovementState> last = new AtomicReference<>(start);
 		channel.await(() -> {
 			MovementState now = ChannelMovement.state(channel);
 			last.set(now);
-			return !now.isPhysics() || now.getTicks() >= target;
+			return !now.physics() || now.ticks() >= target;
 		}, "run " + ticks + " physics ticks", timeout);
 		requireOn(last.get());
 	}
 
 	private void requireOn(MovementState state) {
-		if (state.isPhysics()) return;
+		if (state.physics()) return;
 
-		String reason = state.getFailure() == null ? "it is off" : "it turned off: " + state.getFailure();
+		String reason = state.failure() == null ? "it is off" : "it turned off: " + state.failure();
 		throw new IllegalStateException("Player '" + playerName + "' runs no client physics ticks: " + reason);
 	}
 }

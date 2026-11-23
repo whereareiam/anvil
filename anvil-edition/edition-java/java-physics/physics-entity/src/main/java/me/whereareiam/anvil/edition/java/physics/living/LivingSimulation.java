@@ -22,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
  * <pre>{@code
  * LivingSimulation zombie = new LivingSimulation(body);
  * for (int tick = 0; tick < 20; tick++) zombie.tick();
- * Vector landed = body.getPosition();
+ * Vector landed = body.position();
  * }</pre>
  *
  * <p>Not thread-safe; its owner serializes ticks and placements.</p>
@@ -52,8 +52,8 @@ public class LivingSimulation {
 	 * entity's own step.
 	 */
 	public void tick() {
-		body.getLevel().read(() -> {
-			body.setOldPosition(body.getPosition());
+		body.level().read(() -> {
+			body.oldPosition(body.position());
 			baseTick();
 			aiStep();
 		});
@@ -64,7 +64,7 @@ public class LivingSimulation {
 	 */
 	public final void baseTick() {
 		fluids.baseTick();
-		body.setFirstTick(false);
+		body.firstTick(false);
 	}
 
 	/**
@@ -77,12 +77,12 @@ public class LivingSimulation {
 		controls();
 		jumping.jump();
 		if (body.has(EntityBehaviour.DAMPED_INPUT)) {
-			body.setXxa(body.getXxa() * 0.98F);
-			body.setZza(body.getZza() * 0.98F);
+			body.xxa(body.xxa() * 0.98F);
+			body.zza(body.zza() * 0.98F);
 		}
-		Effects effects = body.getEffects();
+		Effects effects = body.effects();
 		if (effects.has(MobEffect.SLOW_FALLING) || effects.has(MobEffect.LEVITATION)) body.resetFallDistance();
-		travel(new Vector(body.getXxa(), 0.0, body.getZza()));
+		travel(new Vector(body.xxa(), 0.0, body.zza()));
 		if (body.has(EntityBehaviour.PATH_BLOCK_EFFECTS)) blocks.afterMove();
 	}
 
@@ -134,14 +134,14 @@ public class LivingSimulation {
 	 * The entity's controls set its input, unless it cannot act, which leaves it without input and jump.
 	 */
 	private void controls() {
-		if (!body.isImmobile()) {
+		if (!body.immobile()) {
 			serverAiStep();
 			return;
 		}
 
-		body.setJumping(false);
-		body.setXxa(0.0F);
-		body.setZza(0.0F);
+		body.jumping(false);
+		body.xxa(0.0F);
+		body.zza(0.0F);
 	}
 
 	/**
@@ -149,12 +149,12 @@ public class LivingSimulation {
 	 * horizontal component below {@code 0.003}; a vertical one below {@code 0.003} always.
 	 */
 	private void deadZone() {
-		Vector delta = body.getDeltaMovement();
+		Vector delta = body.deltaMovement();
 		boolean squared = body.has(EntityBehaviour.SQUARED_DEAD_ZONE);
 		boolean stillHorizontally = squared && delta.horizontalDistanceSqr() < 9.0E-6;
 		double x = stillHorizontally || !squared && Math.abs(delta.x) < 0.003 ? 0.0 : delta.x;
 		double z = stillHorizontally || !squared && Math.abs(delta.z) < 0.003 ? 0.0 : delta.z;
 		double y = Math.abs(delta.y) < 0.003 ? 0.0 : delta.y;
-		body.setDeltaMovement(new Vector(x, y, z));
+		body.deltaMovement(new Vector(x, y, z));
 	}
 }

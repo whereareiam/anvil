@@ -28,7 +28,7 @@ import java.util.Optional;
  * WorldChangeWatch changes = worlds.watch();
  * worlds.send(alice, "minecraft:the_nether");
  * changes.changed(alice, "minecraft:the_nether");
- * assertEquals("minecraft:the_nether", worlds.location(alice).orElseThrow().getWorld());
+ * assertEquals("minecraft:the_nether", worlds.location(alice).orElseThrow().world());
  * }</pre>
  */
 public interface Worlds extends ProcessCapability {

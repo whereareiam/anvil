@@ -206,7 +206,7 @@ public final class ScenarioCatalog implements Disposable {
 		 * Returns the loaded scenario declared by a definition class, or null when it is not loaded.
 		 */
 		public @Nullable ScenarioDescriptor find(@NotNull String definition) {
-			return scenarios.stream().filter(scenario -> scenario.getDefinition().equals(definition)).findFirst().orElse(null);
+			return scenarios.stream().filter(scenario -> scenario.definition().equals(definition)).findFirst().orElse(null);
 		}
 	}
 

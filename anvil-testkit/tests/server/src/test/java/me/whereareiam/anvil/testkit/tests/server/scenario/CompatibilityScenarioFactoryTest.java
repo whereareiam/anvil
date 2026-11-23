@@ -55,30 +55,30 @@ class CompatibilityScenarioFactoryTest {
 	void platformVerifiedDataListsExactlyTheJavaEachMatrixScenarioRunsPerPlatformVersion() {
 		Map<String, Map<MinecraftVersion, Set<Integer>>> matrix = new TreeMap<>();
 		for (AnvilScenario scenario : CompatibilityScenarioFactory.scenarios())
-			for (ProcessPlan plan : planner().plan(scenario).getProcesses().values()) {
-				MinecraftProcess process = plan.getDeclaration();
+			for (ProcessPlan plan : planner().plan(scenario).processes().values()) {
+				MinecraftProcess process = plan.declaration();
 				Optional<MinecraftVersion> version = version(process);
 				if (version.isEmpty()) continue;
 
-				matrix.computeIfAbsent(process.getPlatform(), platform -> new TreeMap<>())
+				matrix.computeIfAbsent(process.platform(), platform -> new TreeMap<>())
 						.computeIfAbsent(version.get(), ignored -> new TreeSet<>())
-						.add(plan.getJavaSelection().getRequirement().getFeatureVersion());
+						.add(plan.javaSelection().requirement().featureVersion());
 			}
 
 		PLATFORMS.forEach((id, provider) -> assertEquals(matrix.getOrDefault(id, Map.of()),
-				new TreeMap<>(new PlatformVersionsReader().read(id, provider.versionData()).getVerifiedJavaVersions()),
+				new TreeMap<>(new PlatformVersionsReader().read(id, provider.versionData()).verifiedJavaVersions()),
 				"Verified data of " + id));
 	}
 
 	@Test
 	void mcprotocolVerifiedVersionsAreExactlyTheMatrixServerVersions() {
 		Set<MinecraftVersion> servers = CompatibilityScenarioFactory.scenarios().stream()
-				.flatMap(scenario -> scenario.getServers().stream())
+				.flatMap(scenario -> scenario.servers().stream())
 				.map(MinecraftServer::nativeVersion)
 				.collect(Collectors.toCollection(TreeSet::new));
 
 		Set<MinecraftVersion> verified = mcprotocolReleases().stream()
-				.map(ProtocolRelease::getVerifiedVersions)
+				.map(ProtocolRelease::verifiedVersions)
 				.flatMap(Set::stream)
 				.collect(Collectors.toCollection(TreeSet::new));
 
@@ -89,17 +89,17 @@ class CompatibilityScenarioFactoryTest {
 	void releaseScenariosRunEveryMcprotocolReleaseDirectOnPaperWithinTheMatrix() {
 		List<AnvilScenario> releases = CompatibilityScenarioFactory.releaseScenarios();
 		Set<String> matrix = CompatibilityScenarioFactory.scenarios().stream()
-				.map(AnvilScenario::getName)
+				.map(AnvilScenario::name)
 				.collect(Collectors.toSet());
 		for (AnvilScenario scenario : releases) {
-			assertTrue(matrix.contains(scenario.getName()), scenario.getName() + " is not a matrix scenario");
-			assertEquals(List.of(), scenario.getProxies(), scenario.getName() + " proxies");
-			assertEquals(List.of(Platforms.PAPER), scenario.getServers().stream().map(MinecraftServer::getPlatform).toList(),
-					scenario.getName() + " server platforms");
+			assertTrue(matrix.contains(scenario.name()), scenario.name() + " is not a matrix scenario");
+			assertEquals(List.of(), scenario.proxies(), scenario.name() + " proxies");
+			assertEquals(List.of(Platforms.PAPER), scenario.servers().stream().map(MinecraftServer::platform).toList(),
+					scenario.name() + " server platforms");
 		}
 
 		List<MinecraftVersion> versions = releases.stream()
-				.map(scenario -> scenario.getServers().getFirst().nativeVersion())
+				.map(scenario -> scenario.servers().getFirst().nativeVersion())
 				.sorted()
 				.toList();
 		List<MinecraftVersion> releaseKeys = mcprotocolReleases().stream()
@@ -131,7 +131,7 @@ class CompatibilityScenarioFactoryTest {
 	}
 
 	private static Optional<MinecraftVersion> version(MinecraftProcess process) {
-		String version = process.getDistribution().getVersion();
+		String version = process.distribution().version();
 		if (version == null) return Optional.empty();
 
 		try {

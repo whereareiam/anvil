@@ -18,14 +18,14 @@ public final class AgentRequestChannel implements RequestChannel {
 
 	@Override
 	public @Nullable <Q, R> R request(@NotNull ChannelOperation<Q, R> operation, @Nullable Q request) {
-		Q checked = operation.getRequestType().cast(request);
-		if (checked == null && operation.getRequestType() != Void.class)
-			throw new IllegalArgumentException("Missing request for capability operation '" + operation.getId() + "'");
+		Q checked = operation.requestType().cast(request);
+		if (checked == null && operation.requestType() != Void.class)
+			throw new IllegalArgumentException("Missing request for capability operation '" + operation.id() + "'");
 
 		try {
-			return connection.request(operation.getId(), checked, operation.getResponseType());
+			return connection.request(operation.id(), checked, operation.responseType());
 		} catch (AgentUnavailableException unavailable) {
-			throw new ChannelUnavailableException("Capability operation '" + operation.getId() + "' is unavailable: "
+			throw new ChannelUnavailableException("Capability operation '" + operation.id() + "' is unavailable: "
 					+ unavailable.getMessage(), unavailable);
 		}
 	}

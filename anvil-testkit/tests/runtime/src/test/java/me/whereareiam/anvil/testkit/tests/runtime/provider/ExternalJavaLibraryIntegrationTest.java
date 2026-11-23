@@ -69,7 +69,7 @@ class ExternalJavaLibraryIntegrationTest {
 			assertEquals("minecraft:stone", blocks.until(floor, BlockQuery.named("stone")).name());
 			assertEquals(Set.of(new ChunkPosition(0, 0)), blocks.loadedChunks());
 			Movement movement = alice.capability(Movement.class);
-			assertFalse(movement.physics().isEnabled(), "Movement binds on the physics kit");
+			assertFalse(movement.physics().enabled(), "Movement binds on the physics kit");
 			assertEquals(Optional.empty(), movement.position());
 			Messages messages = alice.capability(Messages.class);
 			messages.chat("hello");

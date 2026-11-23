@@ -213,37 +213,37 @@ public final class EngineProperties {
 	public static @NotNull EngineOptions from(@NotNull Properties properties) {
 		EngineOptions defaults = EngineDefaults.resolve(EngineOptions.builder().build());
 		var builder = EngineOptions.builder()
-				.executionProviderId(properties.getProperty(EXECUTION_PROPERTY, defaults.getExecutionProviderId()))
+				.executionProviderId(properties.getProperty(EXECUTION_PROPERTY, defaults.executionProviderId()))
 				.protocolLibrary(properties.getProperty(PROTOCOL_LIBRARY_PROPERTY))
 				.workbench(properties.getProperty(WORKBENCH_PROPERTY))
 				.debugProcesses(names(properties.getProperty(DEBUG_PROPERTY)))
 				.debugSuspend(booleanValue(properties, DEBUG_SUSPEND_PROPERTY, false))
-				.supportPolicy(supportPolicy(properties, defaults.getSupportPolicy()))
+				.supportPolicy(supportPolicy(properties, defaults.supportPolicy()))
 				.javaSelection(javaSelection(properties))
-				.downloadJava(booleanValue(properties, AUTO_DOWNLOAD_JAVA_PROPERTY, defaults.isDownloadJava()))
-				.cacheDirectory(pathValue(properties, CACHE_DIRECTORY_PROPERTY, defaults.getCacheDirectory()))
-				.accountsDirectory(pathValue(properties, ACCOUNTS_DIRECTORY_PROPERTY, defaults.getAccountsDirectory()))
-				.workDirectory(pathValue(properties, WORK_DIRECTORY_PROPERTY, defaults.getWorkDirectory()))
-				.keepFailedWorkspaces(booleanValue(properties, KEEP_FAILED_WORKSPACES_PROPERTY, defaults.isKeepFailedWorkspaces()))
+				.downloadJava(booleanValue(properties, AUTO_DOWNLOAD_JAVA_PROPERTY, defaults.downloadJava()))
+				.cacheDirectory(pathValue(properties, CACHE_DIRECTORY_PROPERTY, defaults.cacheDirectory()))
+				.accountsDirectory(pathValue(properties, ACCOUNTS_DIRECTORY_PROPERTY, defaults.accountsDirectory()))
+				.workDirectory(pathValue(properties, WORK_DIRECTORY_PROPERTY, defaults.workDirectory()))
+				.keepFailedWorkspaces(booleanValue(properties, KEEP_FAILED_WORKSPACES_PROPERTY, defaults.keepFailedWorkspaces()))
 				.offline(booleanValue(properties, OFFLINE_PROPERTY, false))
 				.refresh(booleanValue(properties, REFRESH_PROPERTY, false))
-				.downloadParallelism(positive(properties, DOWNLOAD_PARALLELISM_PROPERTY, defaults.getDownloadParallelism()))
-				.eulaAccepted(booleanValue(properties, EULA_ACCEPTED_PROPERTY, defaults.isEulaAccepted()))
+				.downloadParallelism(positive(properties, DOWNLOAD_PARALLELISM_PROPERTY, defaults.downloadParallelism()))
+				.eulaAccepted(booleanValue(properties, EULA_ACCEPTED_PROPERTY, defaults.eulaAccepted()))
 				.processScheduling(ProcessScheduling.builder()
-						.parallelism(positive(properties, PARALLELISM_PROPERTY, defaults.getProcessScheduling().getParallelism()))
+						.parallelism(positive(properties, PARALLELISM_PROPERTY, defaults.processScheduling().parallelism()))
 						.startupMemoryMegabytes(positive(
 								properties,
 								STARTUP_MEMORY_PROPERTY,
-								defaults.getProcessScheduling().getStartupMemoryMegabytes()
+								defaults.processScheduling().startupMemoryMegabytes()
 						))
 						.processors(optionalPositive(properties, PROCESSORS_PROPERTY))
-						.priority(processPriority(properties, defaults.getProcessScheduling().getPriority()))
+						.priority(processPriority(properties, defaults.processScheduling().priority()))
 						.build())
 				.processTimeouts(ProcessTimeouts.builder()
-						.startup(durationValue(properties, STARTUP_TIMEOUT_PROPERTY, defaults.getProcessTimeouts().getStartup()))
-						.shutdown(durationValue(properties, STOP_TIMEOUT_PROPERTY, defaults.getProcessTimeouts().getShutdown()))
+						.startup(durationValue(properties, STARTUP_TIMEOUT_PROPERTY, defaults.processTimeouts().startup()))
+						.shutdown(durationValue(properties, STOP_TIMEOUT_PROPERTY, defaults.processTimeouts().shutdown()))
 						.build())
-				.consoleColors(booleanValue(properties, CONSOLE_COLORS_PROPERTY, defaults.isConsoleColors()));
+				.consoleColors(booleanValue(properties, CONSOLE_COLORS_PROPERTY, defaults.consoleColors()));
 
 		for (String name : properties.stringPropertyNames().stream().sorted().toList()) {
 			if (name.startsWith(ARTIFACT_PROPERTY_PREFIX)) {

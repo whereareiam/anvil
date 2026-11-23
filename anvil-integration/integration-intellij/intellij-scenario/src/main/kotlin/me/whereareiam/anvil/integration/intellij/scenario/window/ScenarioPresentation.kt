@@ -24,7 +24,7 @@ object ScenarioPresentation {
 	/**
 	 * Returns the server or proxy icon of a declared process.
 	 */
-	@JvmStatic fun processIcon(process: ProcessDefinition): Icon = processIcon(process.role)
+	@JvmStatic fun processIcon(process: ProcessDefinition): Icon = processIcon(process.role())
 
 	/**
 	 * Returns the server or proxy icon of a process role.
@@ -38,10 +38,10 @@ object ScenarioPresentation {
 	 * Returns the platform with its distribution version, or its build when the version repeats the platform.
 	 */
 	@JvmStatic fun platformLabel(process: ProcessDefinition): String {
-		val platform = process.platform.uppercase(Locale.ROOT)
-		val version = process.distributionVersion ?: return platform
-		if (version.equals(process.platform, ignoreCase = true))
-			return platform + (process.distributionBuild?.let { " (build $it)" } ?: "")
+		val platform = process.platform().uppercase(Locale.ROOT)
+		val version = process.distributionVersion() ?: return platform
+		if (version.equals(process.platform(), ignoreCase = true))
+			return platform + (process.distributionBuild()?.let { " (build $it)" } ?: "")
 		return "$platform $version"
 	}
 
@@ -49,7 +49,7 @@ object ScenarioPresentation {
 	 * Returns the stable identity of a scenario within one source: its definition class, which declares exactly
 	 * one scenario.
 	 */
-	@JvmStatic fun identity(scenario: ScenarioDescriptor): String = scenario.definition
+	@JvmStatic fun identity(scenario: ScenarioDescriptor): String = scenario.definition()
 
 	/**
 	 * Returns the only process of a scenario that is shown as that process rather than as a group.
@@ -57,17 +57,17 @@ object ScenarioPresentation {
 	 * @return the process, or null when the scenario has several processes or a setup phase
 	 */
 	@JvmStatic fun standaloneProcess(scenario: ScenarioDescriptor): ProcessDefinition? =
-		scenario.processes.singleOrNull()?.takeUnless { scenario.isSetupAvailable }
+		scenario.processes().singleOrNull()?.takeUnless { scenario.setupAvailable() }
 
 	/**
 	 * Merges declared processes with live snapshots in declaration order, followed by undeclared live processes.
 	 */
 	@JvmStatic fun processes(scenario: ScenarioDescriptor, snapshot: SessionSnapshot): List<ScenarioProcess> {
 		val merged = LinkedHashMap<String, ScenarioProcess>()
-		for (definition in scenario.processes)
-			merged[definition.name] = ScenarioProcess(definition.name, definition.displayName, definition, null)
-		for (live in snapshot.processes)
-			merged[live.name] = ScenarioProcess(live.name, live.displayName, merged[live.name]?.definition, live)
+		for (definition in scenario.processes())
+			merged[definition.name()] = ScenarioProcess(definition.name(), definition.displayName(), definition, null)
+		for (live in snapshot.processes())
+			merged[live.name()] = ScenarioProcess(live.name(), live.displayName(), merged[live.name()]?.definition, live)
 
 		return merged.values.toList()
 	}

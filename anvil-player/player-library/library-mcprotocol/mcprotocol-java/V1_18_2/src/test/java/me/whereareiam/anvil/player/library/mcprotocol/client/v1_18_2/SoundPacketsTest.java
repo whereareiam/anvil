@@ -56,7 +56,7 @@ class SoundPacketsTest {
 				.pitch(1F)
 				.build(), packets.decode(alert));
 		assertEquals("minecraft:ui.toast.in", assertInstanceOf(ClientboundSound.class,
-				packets.decode(toast)).getSound());
+				packets.decode(toast)).sound());
 	}
 
 	@Test
@@ -65,7 +65,7 @@ class SoundPacketsTest {
 				SoundCategory.BLOCK, 0D, 0D, 0D, 1F, 1F);
 
 		assertEquals("minecraft:block.note_block.pling", assertInstanceOf(ClientboundSound.class,
-				packets.decode(sound)).getSound());
+				packets.decode(sound)).sound());
 	}
 
 	@Test
@@ -83,14 +83,14 @@ class SoundPacketsTest {
 				.pitch(1F)
 				.build(), packets.decode(known));
 		assertEquals(Integer.toString(BuiltinSound.VALUES.length),
-				assertInstanceOf(ClientboundSoundEntity.class, packets.decode(unknown)).getSound());
+				assertInstanceOf(ClientboundSoundEntity.class, packets.decode(unknown)).sound());
 	}
 
 	@Test
 	void mapsEveryCategoryOfTheRelease() {
 		List<SoundSource> sources = Arrays.stream(SoundCategory.values())
 				.map(category -> new ClientboundSoundEntityPacket(0, category, 42, 1F, 1F))
-				.map(sound -> assertInstanceOf(ClientboundSoundEntity.class, packets.decode(sound)).getSource())
+				.map(sound -> assertInstanceOf(ClientboundSoundEntity.class, packets.decode(sound)).source())
 				.toList();
 
 		assertEquals(List.of(

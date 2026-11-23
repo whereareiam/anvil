@@ -51,7 +51,7 @@ public final class NeoForgePlatformProvider implements PlatformProvider {
 	@Override
 	public void configure(@NotNull MinecraftProcess process, @NotNull PlatformContext context) throws IOException {
 		MinecraftServer server = (MinecraftServer) process;
-		distributions.installation(server, context).linkInto(context.getWorkDirectory());
+		distributions.installation(server, context).linkInto(context.workDirectory());
 		configuration.write(server, context);
 	}
 

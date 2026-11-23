@@ -47,11 +47,11 @@ class ProtocolAccountManagerTest {
 
 		var accounts = manager.list();
 
-		assertEquals(List.of("alice", "bob", "carol", "alice"), accounts.stream().map(AuthenticationAccount::getAccountId).toList());
-		assertEquals(List.of("fixture", "fixture", "other", "other"), accounts.stream().map(AuthenticationAccount::getLibraryId).toList());
+		assertEquals(List.of("alice", "bob", "carol", "alice"), accounts.stream().map(AuthenticationAccount::accountId).toList());
+		assertEquals(List.of("fixture", "fixture", "other", "other"), accounts.stream().map(AuthenticationAccount::libraryId).toList());
 		AccountPool pool = manager.pool(List.of("carol", "bob"));
-		assertEquals(List.of("other", "fixture"), pool.accounts().stream().map(AuthenticationAccount::getLibraryId).toList());
-		assertEquals("carol", pool.lease().account().getAccountId());
+		assertEquals(List.of("other", "fixture"), pool.accounts().stream().map(AuthenticationAccount::libraryId).toList());
+		assertEquals("carol", pool.lease().account().accountId());
 	}
 
 	@Test
@@ -72,12 +72,12 @@ class ProtocolAccountManagerTest {
 	void leasesEachAccountOnceAndReleasesItWhenClosed() {
 		AccountPool pool = manager().pool(List.of("alice", "bob"));
 		var lease = pool.lease();
-		assertEquals("alice", lease.account().getAccountId());
-		assertEquals("bob", pool.lease().account().getAccountId());
+		assertEquals("alice", lease.account().accountId());
+		assertEquals("bob", pool.lease().account().accountId());
 		assertThrows(IllegalStateException.class, pool::lease);
 
 		lease.close();
-		assertEquals("alice", pool.lease().account().getAccountId());
+		assertEquals("alice", pool.lease().account().accountId());
 	}
 
 	@Test
@@ -87,8 +87,8 @@ class ProtocolAccountManagerTest {
 		AccountPool second = manager(reservations).pool(List.of("alice", "bob"));
 
 		var alice = first.lease();
-		assertEquals("alice", alice.account().getAccountId());
-		assertEquals("bob", second.lease().account().getAccountId());
+		assertEquals("alice", alice.account().accountId());
+		assertEquals("bob", second.lease().account().accountId());
 		assertThrows(IllegalStateException.class, first::lease);
 
 		assertTrue(reservations.reserve("charlie"));
@@ -120,8 +120,8 @@ class ProtocolAccountManagerTest {
 		pools("schemaVersion=1\npool.ci=bob, alice\n");
 
 		AccountPool pool = manager().pool("ci");
-		assertEquals("bob", pool.lease().account().getAccountId());
-		assertEquals("alice", pool.lease().account().getAccountId());
+		assertEquals("bob", pool.lease().account().accountId());
+		assertEquals("alice", pool.lease().account().accountId());
 	}
 
 	@Test

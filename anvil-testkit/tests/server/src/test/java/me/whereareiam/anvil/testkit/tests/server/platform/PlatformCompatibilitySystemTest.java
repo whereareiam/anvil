@@ -37,7 +37,7 @@ class PlatformCompatibilitySystemTest {
 	@TestFactory
 	Stream<DynamicTest> runsEveryPlatformScenario() {
 		return PlatformSelection.select(CompatibilityScenarioFactory.platformScenarios()).stream()
-				.map(scenario -> DynamicTest.dynamicTest(scenario.getName(), () -> verify(scenario)));
+				.map(scenario -> DynamicTest.dynamicTest(scenario.name(), () -> verify(scenario)));
 	}
 
 	private void verify(AnvilScenario scenario) {
@@ -48,17 +48,17 @@ class PlatformCompatibilitySystemTest {
 				assertEquals("external:matrix", process.capability(FixtureAgentProbeProvider.Probe.class).echo("matrix"));
 				assertTrue(process.capability(Dispatch.class).execute("list"), process.name() + " must accept a console command");
 			}
-			for (var proxy : scenario.getProxies()) {
-				String command = proxy.getPlatform().equals(Platforms.VELOCITY) ? "velocity version" : "glist";
-				assertTrue(context.processes().get(proxy.getName()).capability(Dispatch.class).execute(command),
-						proxy.getName() + " must accept a console command");
+			for (var proxy : scenario.proxies()) {
+				String command = proxy.platform().equals(Platforms.VELOCITY) ? "velocity version" : "glist";
+				assertTrue(context.processes().get(proxy.name()).capability(Dispatch.class).execute(command),
+						proxy.name() + " must accept a console command");
 			}
 			Session session = alice.capability(Session.class);
 			Messages messages = alice.capability(Messages.class);
-			Players first = context.processes().server(scenario.getProxies().isEmpty() ? "server" : "lobby").capability(Players.class);
+			Players first = context.processes().server(scenario.proxies().isEmpty() ? "server" : "lobby").capability(Players.class);
 			PlayerWatch arrivals = first.watch();
-			Players proxy = scenario.getProxies().isEmpty() ? null
-					: context.processes().proxy(scenario.getProxies().getFirst().getName()).capability(Players.class);
+			Players proxy = scenario.proxies().isEmpty() ? null
+					: context.processes().proxy(scenario.proxies().getFirst().name()).capability(Players.class);
 			PlayerWatch moves = proxy == null ? null : proxy.watch();
 			session.connect();
 			session.connected(Duration.ofSeconds(30));
@@ -66,13 +66,13 @@ class PlatformCompatibilitySystemTest {
 			messages.command("anvil-fixture ping");
 			messages.received("anvil:pong", Duration.ofSeconds(10));
 			arrivals.joined(alice, Duration.ofSeconds(10));
-			assertEquals("Alice", first.profile(alice).orElseThrow().getUsername());
-			Worlds worlds = context.processes().server(scenario.getProxies().isEmpty() ? "server" : "lobby").capability(Worlds.class);
+			assertEquals("Alice", first.profile(alice).orElseThrow().username());
+			Worlds worlds = context.processes().server(scenario.proxies().isEmpty() ? "server" : "lobby").capability(Worlds.class);
 			World world = alice.capability(World.class);
 			DimensionWatch dimensions = world.dimensions();
 			worlds.send(alice, WorldLocation.builder().world("minecraft:the_nether").x(0.5).y(140).z(0.5).build());
 			dimensions.entered("minecraft:the_nether", Duration.ofSeconds(10));
-			assertEquals("minecraft:the_nether", worlds.location(alice).orElseThrow().getWorld());
+			assertEquals("minecraft:the_nether", worlds.location(alice).orElseThrow().world());
 			worlds.create(WorldCreation.builder().key("anvil_platform").generator(WorldGenerator.FLAT).build());
 			worlds.send(alice, "anvil_platform");
 			dimensions.entered("minecraft:anvil_platform", Duration.ofSeconds(10));
@@ -80,7 +80,7 @@ class PlatformCompatibilitySystemTest {
 			dimensions.entered("minecraft:overworld", Duration.ofSeconds(10));
 			worlds.delete("anvil_platform");
 			assertEquals(Optional.empty(), worlds.world("anvil_platform"));
-			if (scenario.getProxies().isEmpty()) return;
+			if (scenario.proxies().isEmpty()) return;
 
 			moves.joined(alice, Duration.ofSeconds(10));
 			moves.joined(alice, "lobby", Duration.ofSeconds(10));
@@ -89,14 +89,14 @@ class PlatformCompatibilitySystemTest {
 			DimensionWatch switches = world.dimensions();
 			messages.command("anvil-fixture transfer game");
 			transfers.joined(alice, Duration.ofSeconds(15));
-			switches.changed(change -> change.getTo().equals("minecraft:overworld"), Duration.ofSeconds(15));
+			switches.changed(change -> change.to().equals("minecraft:overworld"), Duration.ofSeconds(15));
 			assertEquals(Optional.of("minecraft:overworld"), world.dimension());
 			arrivals.left(alice, Duration.ofSeconds(10));
 			moves.left(alice, "lobby", Duration.ofSeconds(10));
 			moves.joined(alice, "game", Duration.ofSeconds(10));
 			moves.neverJoined(alice, "lobby", Duration.ofSeconds(1));
 			assertEquals(Optional.of("game"), proxy.backend(alice));
-			assertEquals("Alice", proxy.profile(alice).orElseThrow().getUsername());
+			assertEquals("Alice", proxy.profile(alice).orElseThrow().username());
 			messages.command("anvil-fixture ping");
 			messages.received("anvil:pong", Duration.ofSeconds(10));
 		}

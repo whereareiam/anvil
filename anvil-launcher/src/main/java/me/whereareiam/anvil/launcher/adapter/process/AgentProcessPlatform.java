@@ -62,17 +62,17 @@ final class AgentProcessPlatform implements ProcessPlatform {
 
 	@Override
 	public boolean execute(@NotNull String command) {
-		AgentCommandResponse response = request(AgentOperations.COMMAND.getName(), AgentCommandRequest.builder().command(command).build(),
+		AgentCommandResponse response = request(AgentOperations.COMMAND.name(), AgentCommandRequest.builder().command(command).build(),
 				AgentCommandResponse.class);
 		if (response == null) throw new IllegalStateException("Agent of '" + process + "' answered no command result");
 
-		return response.isAccepted();
+		return response.accepted();
 	}
 
 	@Override
 	public synchronized @NotNull List<PlatformEvent> events() {
 		AgentPlayerEventsResponse response = fetch(read);
-		if (response != null && generation != null && !response.getGeneration().equals(generation)) {
+		if (response != null && generation != null && !response.generation().equals(generation)) {
 			read = 0;
 			response = fetch(0);
 			if (response == null) return List.copyOf(events);
@@ -81,30 +81,30 @@ final class AgentProcessPlatform implements ProcessPlatform {
 		}
 		if (response == null) return List.copyOf(events);
 
-		generation = response.getGeneration();
-		boolean proxy = response.isProxy();
-		response.getEvents().forEach(event -> keep(event, proxy));
+		generation = response.generation();
+		boolean proxy = response.proxy();
+		response.events().forEach(event -> keep(event, proxy));
 
 		return List.copyOf(events);
 	}
 
 	private void keep(AgentPlayerEvent event, boolean proxy) {
-		read = Math.max(read, event.getPosition());
-		if (event.getAt() < since.toEpochMilli()) return;
+		read = Math.max(read, event.position());
+		if (event.at() < since.toEpochMilli()) return;
 
 		PlatformEvent kept = PlatformEvent.builder()
 				.process(process)
 				.proxy(proxy)
 				.position(++position)
-				.at(notBeforeLast(Instant.ofEpochMilli(event.getAt())))
-				.type(event.getType() == AgentPlayerEventType.JOINED ? PlatformEventType.JOINED : PlatformEventType.LEFT)
-				.profile(new PlayerProfile(event.getProfile().getUsername(), event.getProfile().getUniqueId()))
-				.server(event.getServer())
+				.at(notBeforeLast(Instant.ofEpochMilli(event.at())))
+				.type(event.type() == AgentPlayerEventType.JOINED ? PlatformEventType.JOINED : PlatformEventType.LEFT)
+				.profile(new PlayerProfile(event.profile().username(), event.profile().uniqueId()))
+				.server(event.server())
 				.build();
 		events.add(kept);
 
-		String stay = event.getProfile().getUniqueId() + "@" + event.getServer();
-		if (kept.getType() == PlatformEventType.JOINED) open.put(stay, kept);
+		String stay = event.profile().uniqueId() + "@" + event.server();
+		if (kept.type() == PlatformEventType.JOINED) open.put(stay, kept);
 		else open.remove(stay);
 	}
 
@@ -113,9 +113,9 @@ final class AgentProcessPlatform implements ProcessPlatform {
 	 */
 	private Instant ended(AgentPlayerEventsResponse generation) {
 		Instant now = Instant.now();
-		Instant ended = generation.getEvents().stream()
+		Instant ended = generation.events().stream()
 				.findFirst()
-				.map(first -> Instant.ofEpochMilli(first.getAt()))
+				.map(first -> Instant.ofEpochMilli(first.at()))
 				.filter(first -> first.isBefore(now))
 				.orElse(now);
 
@@ -129,19 +129,19 @@ final class AgentProcessPlatform implements ProcessPlatform {
 	private Instant notBeforeLast(Instant at) {
 		if (events.isEmpty()) return at;
 
-		Instant last = events.getLast().getAt();
+		Instant last = events.getLast().at();
 		return at.isBefore(last) ? last : at;
 	}
 
 	private void restarted(Instant ended) {
 		open.values().forEach(joined -> events.add(PlatformEvent.builder()
 				.process(process)
-				.proxy(joined.isProxy())
+				.proxy(joined.proxy())
 				.position(++position)
 				.at(ended)
 				.type(PlatformEventType.LEFT)
-				.profile(joined.getProfile())
-				.server(joined.getServer())
+				.profile(joined.profile())
+				.server(joined.server())
 				.build()));
 		open.clear();
 	}
@@ -152,7 +152,7 @@ final class AgentProcessPlatform implements ProcessPlatform {
 	private @Nullable AgentPlayerEventsResponse fetch(long after) {
 		try {
 			return request(
-					AgentOperations.PLAYER_EVENTS.getName(),
+					AgentOperations.PLAYER_EVENTS.name(),
 					AgentPlayerEventsRequest.builder().after(after).build(),
 					AgentPlayerEventsResponse.class
 			);

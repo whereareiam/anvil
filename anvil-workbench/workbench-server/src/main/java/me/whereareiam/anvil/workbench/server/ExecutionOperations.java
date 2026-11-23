@@ -42,50 +42,50 @@ final class ExecutionOperations {
 		return switch (request) {
 			case OpenSession open -> open(open);
 			case CloseSession close -> {
-				ExecutionSession session = handles.get(owner, close.getHandle(), ExecutionSession.class);
-				handles.remove(owner, close.getHandle());
+				ExecutionSession session = handles.get(owner, close.handle(), ExecutionSession.class);
+				handles.remove(owner, close.handle());
 				session.close();
 				yield new Done();
 			}
 			case PrepareTarget prepare -> prepare(prepare);
 			case CloseTarget close -> {
-				ProcessTarget target = handles.get(owner, close.getHandle(), ProcessTarget.class);
-				handles.remove(owner, close.getHandle());
+				ProcessTarget target = handles.get(owner, close.handle(), ProcessTarget.class);
+				handles.remove(owner, close.handle());
 				target.close();
 				yield new Done();
 			}
 			case StartProcess start -> {
-				ProcessExecution execution = handles.get(owner, start.getTarget(), ProcessTarget.class).start(start.getLaunch());
+				ProcessExecution execution = handles.get(owner, start.target(), ProcessTarget.class).start(start.launch());
 				yield new Handle(handles.register(owner, execution, () -> execution.terminate(true)));
 			}
-			case CheckProcess check -> new ProcessLiveness(execution(check.getHandle()).isAlive());
-			case AwaitProcess await -> new ProcessEnd(execution(await.getHandle()).await(Duration.ofMillis(await.getTimeoutMillis())));
+			case CheckProcess check -> new ProcessLiveness(execution(check.handle()).alive());
+			case AwaitProcess await -> new ProcessEnd(execution(await.handle()).await(Duration.ofMillis(await.timeoutMillis())));
 			case TerminateProcess terminate -> {
-				execution(terminate.getHandle()).terminate(terminate.isForce());
+				execution(terminate.handle()).terminate(terminate.force());
 				yield new Done();
 			}
 			case FreezeProcess freeze -> {
-				execution(freeze.getHandle()).freeze();
+				execution(freeze.handle()).freeze();
 				yield new Done();
 			}
 			case ThawProcess thaw -> {
-				execution(thaw.getHandle()).thaw();
+				execution(thaw.handle()).thaw();
 				yield new Done();
 			}
 			case ExecuteInProcess execute -> {
-				RunningContainer.CommandResult result = execution(execute.getHandle())
-						.execute(Duration.ofMillis(execute.getTimeoutMillis()), execute.getCommand().toArray(String[]::new));
+				RunningContainer.CommandResult result = execution(execute.handle())
+						.execute(Duration.ofMillis(execute.timeoutMillis()), execute.command().toArray(String[]::new));
 				yield new CommandOutput(result.exitCode(), result.output());
 			}
 		};
 	}
 
 	private Handle open(OpenSession open) {
-		BoundExecutionProvider provider = workbench.executions().get(open.getProvider());
+		BoundExecutionProvider provider = workbench.executions().get(open.provider());
 		if (provider == null)
-			throw new IllegalArgumentException("The workbench offers no execution provider '" + open.getProvider() + "'");
+			throw new IllegalArgumentException("The workbench offers no execution provider '" + open.provider() + "'");
 
-		ExecutionSession session = provider.open(open.getContext());
+		ExecutionSession session = provider.open(open.context());
 		return new Handle(handles.register(owner, session, session::close));
 	}
 
@@ -93,7 +93,7 @@ final class ExecutionOperations {
 	 * Prepares a process; one that runs no agent, such as a container, is reported without agent addresses.
 	 */
 	private PreparedTarget prepare(PrepareTarget prepare) {
-		ProcessTarget target = handles.get(owner, prepare.getSession(), ExecutionSession.class).prepare(prepare.getRequest());
+		ProcessTarget target = handles.get(owner, prepare.session(), ExecutionSession.class).prepare(prepare.request());
 		String handle = handles.register(owner, target, target::close);
 		try {
 			return new PreparedTarget(handle, target.address(), target.peerAddress(), target.bindAddress(), target.agentAddress(),

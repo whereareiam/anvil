@@ -30,12 +30,12 @@ public enum PropertyType {
 		@Override
 		public @NotNull List<String> values(@NotNull MinecraftDataProperty property, @Nullable Integer start) {
 			int lowest = start == null ? 0 : start;
-			List<String> counted = IntStream.range(lowest, lowest + property.getValueCount())
+			List<String> counted = IntStream.range(lowest, lowest + property.valueCount())
 					.mapToObj(Integer::toString)
 					.toList();
-			List<String> listed = property.getValues();
+			List<String> listed = property.values();
 			if (listed != null && !listed.equals(counted))
-				throw new IllegalStateException("integer property " + property.getName() + " lists " + listed + ", but "
+				throw new IllegalStateException("integer property " + property.name() + " lists " + listed + ", but "
 						+ "block-facts.toml gives it the start " + lowest + "; add or fix its property-start");
 
 			return counted;
@@ -50,8 +50,8 @@ public enum PropertyType {
 	ENUM {
 		@Override
 		public @NotNull List<String> values(@NotNull MinecraftDataProperty property, @Nullable Integer start) {
-			List<String> listed = property.getValues();
-			if (listed == null) throw new IllegalStateException("enum property " + property.getName() + " lists no values");
+			List<String> listed = property.values();
+			if (listed == null) throw new IllegalStateException("enum property " + property.name() + " lists no values");
 			if (start != null) return INT.values(property, start);
 
 			return List.copyOf(listed);

@@ -112,10 +112,10 @@ class WorkerMessageCodecTest {
 				.connection(WorkerConnection.builder().host("localhost").port(25565)
 						.virtualHost("lobby.example.test").sourceAddress("127.0.0.2").build())
 				.build();
-		var request = WorkerRequest.builder().id(1).operation(WorkerControlOperation.CREATE_PLAYER.getWireName())
+		var request = WorkerRequest.builder().id(1).operation(WorkerControlOperation.CREATE_PLAYER.wireName())
 				.player("player").arguments(codec.payload(options)).build();
 		var decoded = codec.decodeRequest(codec.encodeRequest(request));
-		assertEquals(options, codec.decodePayload(decoded.getArguments(), WorkerPlayerOptions.class));
+		assertEquals(options, codec.decodePayload(decoded.arguments(), WorkerPlayerOptions.class));
 		assertFalse(options.toString().contains("private-token"));
 		assertFalse(request.toString().contains("private-token"));
 	}
@@ -234,7 +234,7 @@ class WorkerMessageCodecTest {
 		var operation = new OperationDescriptor<>("test.slot", SlotSelection.class, MessageText.class);
 		var handler = codec.handler(operation, request -> {
 			invoked.incrementAndGet();
-			return new MessageText("slot:" + request.getSlot());
+			return new MessageText("slot:" + request.slot());
 		});
 
 		assertEquals(new MessageText("slot:3"), codec.open(handler.apply(codec.envelope(new SlotSelection(3))), MessageText.class));

@@ -20,7 +20,7 @@ class ScenarioPresentationTest {
 	void scenarioIdentityIsItsDefinitionClass() {
 		ScenarioDescriptor scenario = ScenarioFixtures.scenario();
 		ScenarioDescriptor saved = ScenarioDescriptor.builder()
-				.definition(scenario.getDefinition())
+				.definition(scenario.definition())
 				.name("renamed")
 				.displayName("Saved configuration")
 				.build();
@@ -32,10 +32,10 @@ class ScenarioPresentationTest {
 	@Test
 	void onlySingleProcessScenariosWithoutSetupAreStandalone() {
 		ScenarioDescriptor grouped = ScenarioFixtures.scenario();
-		ScenarioDescriptor single = grouped.toBuilder().clearProcesses().process(grouped.getProcesses().getFirst()).build();
+		ScenarioDescriptor single = grouped.toBuilder().clearProcesses().process(grouped.processes().getFirst()).build();
 
 		assertNull(ScenarioPresentation.standaloneProcess(grouped));
-		assertSame(single.getProcesses().getFirst(), ScenarioPresentation.standaloneProcess(single));
+		assertSame(single.processes().getFirst(), ScenarioPresentation.standaloneProcess(single));
 		assertNull(ScenarioPresentation.standaloneProcess(single.toBuilder().setupAvailable(true).build()));
 	}
 
@@ -48,8 +48,8 @@ class ScenarioPresentationTest {
 
 		assertEquals(List.of("paper", "proxy", "extra"), processes.stream().map(ScenarioPresentation.ScenarioProcess::getName).toList());
 		assertNull(processes.get(0).getLive());
-		assertSame(scenario.getProcesses().getLast(), processes.get(1).getDefinition());
-		assertEquals(ProcessState.READY, processes.get(1).getLive().getState());
+		assertSame(scenario.processes().getLast(), processes.get(1).getDefinition());
+		assertEquals(ProcessState.READY, processes.get(1).getLive().state());
 		assertNull(processes.get(2).getDefinition());
 	}
 

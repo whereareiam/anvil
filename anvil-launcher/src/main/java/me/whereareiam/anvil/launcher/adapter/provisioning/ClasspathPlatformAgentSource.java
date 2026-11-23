@@ -21,13 +21,13 @@ public final class ClasspathPlatformAgentSource implements PlatformAgentSource {
 
 	@Override
 	public @NotNull Path locate(@NotNull PlatformAgentDescriptor agent) {
-		return locator.locate(agent.getEntrypointClassName());
+		return locator.locate(agent.entrypointClassName());
 	}
 
 	@Override
 	public @NotNull List<Path> extensions(@NotNull String platformId) {
 		return extensions.forPlatform(platformId).stream()
-				.map(extension -> locator.locate(extension.getEntrypoint()))
+				.map(extension -> locator.locate(extension.entrypoint()))
 				.distinct()
 				.toList();
 	}

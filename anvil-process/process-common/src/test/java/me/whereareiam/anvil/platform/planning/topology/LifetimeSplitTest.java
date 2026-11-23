@@ -35,12 +35,12 @@ class LifetimeSplitTest {
 		assertNotNull(split);
 
 		PlatformPlan retained = split.retained();
-		assertEquals(Set.of("lobby", "auth"), retained.getProcesses().keySet());
-		assertEquals("engine-lobby-auth", retained.getScenario().getName());
-		assertEquals("lobby", retained.getScenario().getEntrypoint(), "The scenario's proxy entrypoint is not part of the kept processes");
-		assertEquals(List.of(), retained.getScenario().getProxies());
-		assertEquals(List.of(), retained.getScenario().getRemotes(), "Remotes stay with the scenario");
-		assertNull(retained.getScenario().getSetupHook());
+		assertEquals(Set.of("lobby", "auth"), retained.processes().keySet());
+		assertEquals("engine-lobby-auth", retained.scenario().name());
+		assertEquals("lobby", retained.scenario().entrypoint(), "The scenario's proxy entrypoint is not part of the kept processes");
+		assertEquals(List.of(), retained.scenario().proxies());
+		assertEquals(List.of(), retained.scenario().remotes(), "Remotes stay with the scenario");
+		assertNull(retained.scenario().setupHook());
 	}
 
 	@Test
@@ -52,11 +52,11 @@ class LifetimeSplitTest {
 
 		PlatformPlan own = later.own(running.retained());
 
-		assertEquals(Set.of("proxy", "fresh"), own.getProcesses().keySet());
+		assertEquals(Set.of("proxy", "fresh"), own.processes().keySet());
 		assertEquals("first",
-				own.getProcesses().get("proxy").getForwarding().getSecret(), "The proxy adopts the secret its servers run with");
-		assertEquals("first", own.getProcesses().get("fresh").getForwarding().getSecret(), "So does a server of the same forwarding group");
-		assertEquals("second", own.getScenario().getName());
+				own.processes().get("proxy").forwarding().secret(), "The proxy adopts the secret its servers run with");
+		assertEquals("first", own.processes().get("fresh").forwarding().secret(), "So does a server of the same forwarding group");
+		assertEquals("second", own.scenario().name());
 	}
 
 	@Test
@@ -91,9 +91,9 @@ class LifetimeSplitTest {
 
 		PlatformPlan.PlatformPlanBuilder plan = PlatformPlan.builder().scenario(scenario);
 		for (MinecraftProcess process : List.of(lobby, authServer, fresh, proxy))
-			plan.process(process.getName(), ProcessPlan.builder()
+			plan.process(process.name(), ProcessPlan.builder()
 					.declaration(process)
-					.workspace(process.getWorkspace())
+					.workspace(process.workspace())
 					.forwarding(forwarding)
 					.javaSelection(JavaSelection.builder().build())
 					.proxy(process instanceof MinecraftProxy)

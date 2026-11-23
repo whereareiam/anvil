@@ -59,17 +59,17 @@ final class PositionReporter {
 	 */
 	@NotNull List<ServerboundPacket> report(@NotNull PlayerBody player) {
 		List<ServerboundPacket> packets = new ArrayList<>();
-		MovementInput keys = player.getKeys();
+		MovementInput keys = player.keys();
 		if (inputPackets && !keys.equals(lastSentInput)) {
 			packets.add(input(keys));
 			lastSentInput = keys;
 		}
-		if (player.isSprinting() != wasSprinting) {
-			wasSprinting = player.isSprinting();
+		if (player.sprinting() != wasSprinting) {
+			wasSprinting = player.sprinting();
 			packets.add(command(wasSprinting ? PlayerCommandAction.START_SPRINTING : PlayerCommandAction.STOP_SPRINTING));
 		}
-		if (!inputPackets && keys.isSneak() != wasSneaking) {
-			wasSneaking = keys.isSneak();
+		if (!inputPackets && keys.sneak() != wasSneaking) {
+			wasSneaking = keys.sneak();
 			packets.add(command(wasSneaking ? PlayerCommandAction.PRESS_SHIFT_KEY : PlayerCommandAction.RELEASE_SHIFT_KEY));
 		}
 
@@ -78,24 +78,24 @@ final class PositionReporter {
 	}
 
 	private void movement(@NotNull PlayerBody player, @NotNull List<ServerboundPacket> packets) {
-		double dx = player.getPosition().x - last.getX();
-		double dy = player.getPosition().y - last.getY();
-		double dz = player.getPosition().z - last.getZ();
+		double dx = player.position().x - last.x();
+		double dy = player.position().y - last.y();
+		double dz = player.position().z - last.z();
 		positionReminder++;
 		boolean moved = dx * dx + dy * dy + dz * dz > MOVED || positionReminder >= 20;
-		boolean turned = player.getYaw() != last.getYaw() || player.getPitch() != last.getPitch();
-		boolean collision = rules.has(ClientBehaviour.REPORTED_HORIZONTAL_COLLISION) && player.isHorizontalCollision();
+		boolean turned = player.yaw() != last.yaw() || player.pitch() != last.pitch();
+		boolean collision = rules.has(ClientBehaviour.REPORTED_HORIZONTAL_COLLISION) && player.horizontalCollision();
 		Packet packet = Packet.of(moved, turned);
-		if (packet != Packet.NONE || last.isOnGround() != player.isOnGround() || lastHorizontalCollision != collision)
+		if (packet != Packet.NONE || last.onGround() != player.onGround() || lastHorizontalCollision != collision)
 			packets.add(packet.build(player, collision));
 
 		last = Position.builder()
-				.x(moved ? player.getPosition().x : last.getX())
-				.y(moved ? player.getPosition().y : last.getY())
-				.z(moved ? player.getPosition().z : last.getZ())
-				.yaw(turned ? player.getYaw() : last.getYaw())
-				.pitch(turned ? player.getPitch() : last.getPitch())
-				.onGround(player.isOnGround())
+				.x(moved ? player.position().x : last.x())
+				.y(moved ? player.position().y : last.y())
+				.z(moved ? player.position().z : last.z())
+				.yaw(turned ? player.yaw() : last.yaw())
+				.pitch(turned ? player.pitch() : last.pitch())
+				.onGround(player.onGround())
 				.build();
 		if (moved) positionReminder = 0;
 		lastHorizontalCollision = collision;
@@ -113,12 +113,12 @@ final class PositionReporter {
 	 * Remembers the rotation a test's look sent outside a tick.
 	 */
 	void turned(float yaw, float pitch, boolean onGround) {
-		last = Position.builder().x(last.getX()).y(last.getY()).z(last.getZ()).yaw(yaw).pitch(pitch).onGround(onGround)
+		last = Position.builder().x(last.x()).y(last.y()).z(last.z()).yaw(yaw).pitch(pitch).onGround(onGround)
 				.build();
 	}
 
 	private @NotNull ServerboundPacket command(@NotNull PlayerCommandAction action) {
-		EntityId entityId = state.getEntityId();
+		EntityId entityId = state.entityId();
 		if (entityId == null) throw new IllegalStateException("The player has not joined a level on its connection");
 
 		return new ServerboundPlayerCommand(entityId, action);
@@ -126,13 +126,13 @@ final class PositionReporter {
 
 	private static @NotNull ServerboundPacket input(@NotNull MovementInput keys) {
 		return ServerboundPlayerInput.builder()
-				.forward(keys.isForward())
-				.backward(keys.isBackward())
-				.left(keys.isLeft())
-				.right(keys.isRight())
-				.jump(keys.isJump())
-				.shift(keys.isSneak())
-				.sprint(keys.isSprint())
+				.forward(keys.forward())
+				.backward(keys.backward())
+				.left(keys.left())
+				.right(keys.right())
+				.jump(keys.jump())
+				.shift(keys.sneak())
+				.sprint(keys.sprint())
 				.build();
 	}
 
@@ -144,7 +144,7 @@ final class PositionReporter {
 			@Override
 			ServerboundPacket build(@NotNull PlayerBody player, boolean collision) {
 				return ServerboundMovePlayerStatusOnly.builder()
-						.onGround(player.isOnGround())
+						.onGround(player.onGround())
 						.horizontalCollision(collision)
 						.build();
 			}
@@ -154,7 +154,7 @@ final class PositionReporter {
 			ServerboundPacket build(@NotNull PlayerBody player, boolean collision) {
 				return ServerboundMovePlayerPos.builder()
 						.position(position(player))
-						.onGround(player.isOnGround())
+						.onGround(player.onGround())
 						.horizontalCollision(collision)
 						.build();
 			}
@@ -163,9 +163,9 @@ final class PositionReporter {
 			@Override
 			ServerboundPacket build(@NotNull PlayerBody player, boolean collision) {
 				return ServerboundMovePlayerRot.builder()
-						.yaw(player.getYaw())
-						.pitch(player.getPitch())
-						.onGround(player.isOnGround())
+						.yaw(player.yaw())
+						.pitch(player.pitch())
+						.onGround(player.onGround())
 						.horizontalCollision(collision)
 						.build();
 			}
@@ -175,9 +175,9 @@ final class PositionReporter {
 			ServerboundPacket build(@NotNull PlayerBody player, boolean collision) {
 				return ServerboundMovePlayerPosRot.builder()
 						.position(position(player))
-						.yaw(player.getYaw())
-						.pitch(player.getPitch())
-						.onGround(player.isOnGround())
+						.yaw(player.yaw())
+						.pitch(player.pitch())
+						.onGround(player.onGround())
 						.horizontalCollision(collision)
 						.build();
 			}
@@ -190,7 +190,7 @@ final class PositionReporter {
 		}
 
 		private static @NotNull Vec3d position(@NotNull PlayerBody player) {
-			return new Vec3d(player.getPosition().x, player.getPosition().y, player.getPosition().z);
+			return new Vec3d(player.position().x, player.position().y, player.position().z);
 		}
 
 		abstract ServerboundPacket build(@NotNull PlayerBody player, boolean collision);

@@ -52,6 +52,6 @@ class SoundPacketsTest {
 				.build(), packets.decode(new ServerEntitySoundEffectPacket(levelUp, SoundCategory.MASTER, 42, 1F,
 				0.5F)));
 		assertEquals("999999", ((ClientboundSoundEntity) packets.decode(new ServerEntitySoundEffectPacket(999999,
-				SoundCategory.MASTER, 42, 1F, 1F))).getSound());
+				SoundCategory.MASTER, 42, 1F, 1F))).sound());
 	}
 }

@@ -35,10 +35,10 @@ final class ItemDataCodec {
 		try (DataOutputStream data = new DataOutputStream(new GZIPOutputStream(output))) {
 			data.writeInt(registry.protocol());
 			ItemDataSource source = registry.source();
-			data.writeUTF(source.getRepository());
-			data.writeUTF(source.getVersion());
-			data.writeUTF(source.getCommit());
-			data.writeUTF(source.getItems());
+			data.writeUTF(source.repository());
+			data.writeUTF(source.version());
+			data.writeUTF(source.commit());
+			data.writeUTF(source.items());
 
 			List<String> keys = registry.keys();
 			data.writeInt(keys.size());

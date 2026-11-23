@@ -138,16 +138,16 @@ public final class ClassPath implements AutoCloseable {
 	 */
 	public @Nullable String linkageFailure(@NotNull LinkageReference reference) {
 		String owner = reference.binaryOwner();
-		ClassHeader header = header(reference.getOwner());
+		ClassHeader header = header(reference.owner());
 		if (header == null) return "missing class " + owner;
 
-		Set<Requirement> requirements = reference.getRequirements();
+		Set<Requirement> requirements = reference.requirements();
 		if (requirements.contains(Requirement.CLASS) && header.isInterface()) return owner + " is an interface, linked as a class";
 		if (requirements.contains(Requirement.INTERFACE) && !header.isInterface()) return owner + " is a class, linked as an interface";
 
-		String described = reference.getKind() == Kind.CLASS
+		String described = reference.kind() == Kind.CLASS
 				? "class " + owner
-				: reference.getKind().keyword() + " " + owner + " " + reference.getMember();
+				: reference.kind().keyword() + " " + owner + " " + reference.member();
 		Integer access = declaredAccess(reference);
 		if (access == null) return "missing " + described;
 
@@ -185,11 +185,11 @@ public final class ClassPath implements AutoCloseable {
 	 */
 	public @Nullable String declaringClass(@NotNull LinkageReference reference) {
 		if (isInitializer(reference)) {
-			ClassHeader header = header(reference.getOwner());
-			return header != null && header.declares(reference) ? reference.getOwner() : null;
+			ClassHeader header = header(reference.owner());
+			return header != null && header.declares(reference) ? reference.owner() : null;
 		}
 
-		return declaringClass(reference, reference.getOwner(), new HashSet<>());
+		return declaringClass(reference, reference.owner(), new HashSet<>());
 	}
 
 	@Override
@@ -240,7 +240,7 @@ public final class ClassPath implements AutoCloseable {
 	}
 
 	private static boolean isInitializer(LinkageReference reference) {
-		return reference.getKind() == Kind.METHOD && (reference.getMember().startsWith("<init>(") || reference.getMember().startsWith("<clinit>("));
+		return reference.kind() == Kind.METHOD && (reference.member().startsWith("<init>(") || reference.member().startsWith("<clinit>("));
 	}
 
 	private static void listDirectory(Path root, Map<String, ClassFile> files) throws IOException {

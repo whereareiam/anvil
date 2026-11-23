@@ -122,7 +122,7 @@ class JavaInteractionExtensionTest {
 			operations.call(InteractionChannel.BLOCK, new BlockUse(4, -60, -7, face, Hand.MAIN));
 
 		assertEquals(List.of(Direction.DOWN, Direction.UP, Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST),
-				player.sent(ServerboundUseItemOn.class).stream().map(ServerboundUseItemOn::getFace).toList());
+				player.sent(ServerboundUseItemOn.class).stream().map(ServerboundUseItemOn::face).toList());
 	}
 
 	@Test
@@ -227,8 +227,8 @@ class JavaInteractionExtensionTest {
 	private static List<Integer> sequences(TestJavaPlayer player) {
 		List<Integer> sequences = new ArrayList<>();
 		for (ServerboundPacket packet : player.sent()) {
-			if (packet instanceof ServerboundUseItem use) sequences.add(use.getSequence());
-			if (packet instanceof ServerboundUseItemOn use) sequences.add(use.getSequence());
+			if (packet instanceof ServerboundUseItem use) sequences.add(use.sequence());
+			if (packet instanceof ServerboundUseItemOn use) sequences.add(use.sequence());
 		}
 
 		return sequences;

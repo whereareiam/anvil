@@ -35,7 +35,7 @@ public final class LocalProcess implements ProcessExecution {
 	}
 
 	@Override
-	public boolean isAlive() {
+	public boolean alive() {
 		return process.isAlive();
 	}
 

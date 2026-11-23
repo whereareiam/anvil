@@ -31,7 +31,7 @@ final class ScreenHistory {
 	 * @param snapshot the state the worker reported
 	 */
 	synchronized void record(@NotNull InventorySnapshot snapshot) {
-		if (screens.getLast().getScreen() == snapshot.getScreen()) {
+		if (screens.getLast().screen() == snapshot.screen()) {
 			screens.set(screens.size() - 1, snapshot);
 			return;
 		}
@@ -56,7 +56,7 @@ final class ScreenHistory {
 	 */
 	synchronized @Nullable InventorySnapshot screen(int screen) {
 		for (int index = screens.size() - 1; index >= 0; index--)
-			if (screens.get(index).getScreen() == screen) return screens.get(index);
+			if (screens.get(index).screen() == screen) return screens.get(index);
 
 		return null;
 	}

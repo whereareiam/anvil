@@ -43,11 +43,11 @@ public final class AnvilAuthentication {
 		String accountId = required(arguments, "--account-id");
 		String accounts = optional(arguments, "--accounts-dir");
 		String library = optional(arguments, "--library");
-		Path directory = accounts == null ? defaults.getAccountsDirectory() : Path.of(accounts);
+		Path directory = accounts == null ? defaults.accountsDirectory() : Path.of(accounts);
 
 		ProtocolAuthentication authentication = authentication(
 				ProtocolLibraryRegistry.discover(),
-				library == null ? defaults.getProtocolLibrary() : library,
+				library == null ? defaults.protocolLibrary() : library,
 				directory
 		);
 		if (options.contains("--logout")) {

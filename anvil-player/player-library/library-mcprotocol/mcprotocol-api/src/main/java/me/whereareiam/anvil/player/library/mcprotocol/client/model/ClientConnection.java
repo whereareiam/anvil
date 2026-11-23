@@ -32,7 +32,7 @@ public class ClientConnection {
 	int port;
 
 	/**
-	 * Host the handshake announces instead of {@link #getHost() host}, or null for that host. The session still
+	 * Host the handshake announces instead of {@link #host() host}, or null for that host. The session still
 	 * connects to the host and port, and the handshake still announces the port.
 	 */
 	@Nullable String virtualHost;

@@ -37,7 +37,7 @@ public final class BlockEffects {
 	 */
 	public BlockEffects(@NotNull EntityBody body) {
 		this.body = body;
-		this.reader = body.getLevel();
+		this.reader = body.level();
 		this.collisions = new Collisions(reader);
 		this.inside = new InsideBlocks(body);
 	}
@@ -50,15 +50,15 @@ public final class BlockEffects {
 	 * @return the block's position
 	 */
 	public int @NotNull [] onPos(float offset) {
-		Vector position = body.getPosition();
+		Vector position = body.position();
 		int[] below = {Coordinates.floor(position.x), Coordinates.floor(position.y - offset), Coordinates.floor(position.z)};
 		if (!body.has(EntityBehaviour.SUPPORTING_BLOCK)) return legacyOnPos(below);
 
-		int[] supporting = body.getSupportingBlock();
+		int[] supporting = body.supportingBlock();
 		if (supporting == null) return below;
 		if (!(offset > 1.0E-5F)) return supporting;
 
-		BlockKind kind = state(supporting).getBlock().getKind();
+		BlockKind kind = state(supporting).block().kind();
 		boolean keep = offset <= 0.5 && kind == BlockKind.FENCE || kind == BlockKind.WALL || kind == BlockKind.FENCE_GATE;
 		return keep ? supporting : new int[] {supporting[0], below[1], supporting[2]};
 	}
@@ -67,7 +67,7 @@ public final class BlockEffects {
 		if (!state(below).isAir()) return below;
 
 		int[] lower = {below[0], below[1] - 1, below[2]};
-		return TALL.contains(state(lower).getBlock().getKind()) ? lower : below;
+		return TALL.contains(state(lower).block().kind()) ? lower : below;
 	}
 
 	/**
@@ -76,7 +76,7 @@ public final class BlockEffects {
 	 * @return the friction
 	 */
 	public float friction() {
-		return movement(below()).getFriction();
+		return movement(below()).friction();
 	}
 
 	/**
@@ -95,8 +95,8 @@ public final class BlockEffects {
 	 * @return the factor
 	 */
 	public float jumpFactor() {
-		float inside = movement(body.blockPosition()).getJumpFactor();
-		return inside == 1.0 ? movement(below()).getJumpFactor() : inside;
+		float inside = movement(body.blockPosition()).jumpFactor();
+		return inside == 1.0 ? movement(below()).jumpFactor() : inside;
 	}
 
 	/**
@@ -107,28 +107,28 @@ public final class BlockEffects {
 	 */
 	public float speedFactor() {
 		BlockState inside = state(body.blockPosition());
-		float factor = inside.getBlock().getMovement().getSpeedFactor();
-		boolean water = inside.getBlock().getKind() == BlockKind.WATER
-				|| inside.getBlock().getMovement().has(MovementBehaviour.BUBBLE_COLUMN);
-		float block = water || factor != 1.0 ? factor : movement(below()).getSpeedFactor();
+		float factor = inside.block().movement().speedFactor();
+		boolean water = inside.block().kind() == BlockKind.WATER
+				|| inside.block().movement().has(MovementBehaviour.BUBBLE_COLUMN);
+		float block = water || factor != 1.0 ? factor : movement(below()).speedFactor();
 		return body.blockSpeedFactor(block);
 	}
 
 	/**
 	 * Stops or bounces the entity's fall on a block it landed on ({@code updateEntityMovementAfterFallOn}): slime blocks
-	 * and beds bounce an entity that does not suppress the bounce ({@link EntityBody#isSuppressingBounce}), other blocks
+	 * and beds bounce an entity that does not suppress the bounce ({@link EntityBody#suppressingBounce}), other blocks
 	 * stop its vertical movement.
 	 *
 	 * @param landed the block's position
 	 */
 	public void fallOn(int @NotNull [] landed) {
-		double bounce = movement(landed).getBounceFactor();
-		Vector delta = body.getDeltaMovement();
-		if (bounce == 0.0 || body.isSuppressingBounce()) {
-			body.setDeltaMovement(delta.multiply(1.0, 0.0, 1.0));
+		double bounce = movement(landed).bounceFactor();
+		Vector delta = body.deltaMovement();
+		if (bounce == 0.0 || body.suppressingBounce()) {
+			body.deltaMovement(delta.multiply(1.0, 0.0, 1.0));
 			return;
 		}
-		if (delta.y < 0.0) body.setDeltaMovement(new Vector(delta.x, -delta.y * bounce * 1.0, delta.z));
+		if (delta.y < 0.0) body.deltaMovement(new Vector(delta.x, -delta.y * bounce * 1.0, delta.z));
 	}
 
 	/**
@@ -140,11 +140,11 @@ public final class BlockEffects {
 	public void stepOn(int @NotNull [] block) {
 		if (!movement(block).has(MovementBehaviour.SLIME_STEP)) return;
 
-		double vertical = Math.abs(body.getDeltaMovement().y);
-		if (!(vertical < 0.1) || body.isShiftKeyDown()) return;
+		double vertical = Math.abs(body.deltaMovement().y);
+		if (!(vertical < 0.1) || body.shiftKeyDown()) return;
 
 		double factor = 0.4 + vertical * 0.2;
-		body.setDeltaMovement(body.getDeltaMovement().multiply(factor, 1.0, factor));
+		body.deltaMovement(body.deltaMovement().multiply(factor, 1.0, factor));
 	}
 
 	/**
@@ -153,19 +153,19 @@ public final class BlockEffects {
 	 * @param movement the movement that collided
 	 */
 	public void checkSupportingBlock(@NotNull Vector movement) {
-		if (!body.isOnGround()) {
-			body.setOnGroundNoBlocks(false);
-			body.setSupportingBlock(null);
+		if (!body.onGround()) {
+			body.onGroundNoBlocks(false);
+			body.supportingBlock(null);
 			return;
 		}
 
-		Box box = body.getBox();
+		Box box = body.box();
 		Box below = new Box(new Vector(box.minX, box.minY - 1.0E-6, box.minZ), new Vector(box.maxX, box.minY, box.maxZ));
-		int[] found = collisions.supportingBlock(below, body.getPosition(), body.context());
-		if (found == null && !body.isOnGroundNoBlocks())
-			found = collisions.supportingBlock(below.move(-movement.x, 0.0, -movement.z), body.getPosition(), body.context());
-		body.setSupportingBlock(found);
-		body.setOnGroundNoBlocks(found == null);
+		int[] found = collisions.supportingBlock(below, body.position(), body.context());
+		if (found == null && !body.onGroundNoBlocks())
+			found = collisions.supportingBlock(below.move(-movement.x, 0.0, -movement.z), body.position(), body.context());
+		body.supportingBlock(found);
+		body.onGroundNoBlocks(found == null);
 	}
 
 	/**
@@ -173,7 +173,7 @@ public final class BlockEffects {
 	 * ({@code checkInsideBlocks}), with the box inset by {@code 0.001}, from 1.20 by {@code 1.0E-7}.
 	 */
 	public void insideDuringMove() {
-		inside.apply(body.getBox().deflate(body.has(EntityBehaviour.SUPPORTING_BLOCK) ? 1.0E-7 : 0.001));
+		inside.apply(body.box().deflate(body.has(EntityBehaviour.SUPPORTING_BLOCK) ? 1.0E-7 : 0.001));
 	}
 
 	/**
@@ -182,18 +182,18 @@ public final class BlockEffects {
 	 * everything between them.
 	 */
 	public void afterMove() {
-		if (body.isOnGround()) stepOn(onPos(0.2F));
+		if (body.onGround()) stepOn(onPos(0.2F));
 
-		EntityDimensions dimensions = body.getDimensions();
-		Box from = Box.at(body.getOldPosition(), dimensions.getWidth(), dimensions.getHeight()).deflate(1.0E-5F);
-		inside.apply(from.union(body.getBox().deflate(1.0E-5F)));
+		EntityDimensions dimensions = body.dimensions();
+		Box from = Box.at(body.oldPosition(), dimensions.width(), dimensions.height()).deflate(1.0E-5F);
+		inside.apply(from.union(body.box().deflate(1.0E-5F)));
 	}
 
 	private int @NotNull [] below() {
 		if (body.has(EntityBehaviour.SUPPORTING_BLOCK)) return onPos(0.500001F);
 
-		Vector position = body.getPosition();
-		return new int[] {Coordinates.floor(position.x), Coordinates.floor(body.getBox().minY - 0.5000001),
+		Vector position = body.position();
+		return new int[] {Coordinates.floor(position.x), Coordinates.floor(body.box().minY - 0.5000001),
 				Coordinates.floor(position.z)};
 	}
 
@@ -202,6 +202,6 @@ public final class BlockEffects {
 	}
 
 	private @NotNull BlockMovement movement(int @NotNull [] block) {
-		return state(block).getBlock().getMovement();
+		return state(block).block().movement();
 	}
 }

@@ -80,7 +80,7 @@ class ChannelItemLocatorTest {
 		assertEquals(List.of(SELL), inventory.items().named("Sell").all());
 		assertEquals(List.of(BUY), inventory.items().nameContaining("u").all());
 		assertEquals(List.of(BUY), inventory.items()
-				.named("green", name -> name.getStyle().getColor() == TextColor.GREEN)
+				.named("green", name -> name.style().color() == TextColor.GREEN)
 				.all());
 		assertEquals(List.of(), inventory.items().named("Bu").all());
 	}
@@ -100,7 +100,7 @@ class ChannelItemLocatorTest {
 		channel.publish(InventoryChannel.CHANGED, SHOP);
 
 		assertEquals(List.of(FILLER), inventory.items().type("minecraft:gray_stained_glass_pane").all());
-		assertEquals(List.of(FILLER), inventory.items().matching("in the first slot", item -> item.getSlot() == 0).all());
+		assertEquals(List.of(FILLER), inventory.items().matching("in the first slot", item -> item.slot() == 0).all());
 		assertEquals(3, inventory.items().count());
 	}
 

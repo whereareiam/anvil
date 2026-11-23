@@ -46,7 +46,7 @@ class LocalExecutionSessionTest {
 		List<ProcessRequest> requests = new ArrayList<>();
 		LocalRuntimePreparation runtime = (request, source) -> {
 			requests.add(request);
-			return Path.of("java-" + request.getJavaSelection().getRequirement().getDistribution());
+			return Path.of("java-" + request.javaSelection().requirement().distribution());
 		};
 		JavaRequirement temurin = JavaRequirement.builder().distribution("temurin").featureVersion(21).build();
 		JavaRequirement graal = JavaRequirement.builder().distribution("graalvm-community").featureVersion(21).build();

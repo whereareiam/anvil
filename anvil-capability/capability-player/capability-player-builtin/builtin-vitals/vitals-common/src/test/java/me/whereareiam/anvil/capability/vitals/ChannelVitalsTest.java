@@ -90,7 +90,7 @@ class ChannelVitalsTest {
 
 		channel.publish(VitalsChannel.DIED, FELL);
 		channel.publish(VitalsChannel.DIED, KILLED);
-		assertEquals(KILLED, deaths.died(death -> death.getMessage().contains("genericKill"), TIMEOUT));
+		assertEquals(KILLED, deaths.died(death -> death.message().contains("genericKill"), TIMEOUT));
 		assertEquals(List.of(), deaths.unread());
 		assertThrows(IllegalStateException.class, () -> deaths.died(TIMEOUT));
 	}
@@ -101,7 +101,7 @@ class ChannelVitalsTest {
 		deaths.neverDied(TIMEOUT);
 
 		channel.publish(VitalsChannel.DIED, FELL);
-		deaths.neverDied(death -> death.getMessage().contains("genericKill"), TIMEOUT);
+		deaths.neverDied(death -> death.message().contains("genericKill"), TIMEOUT);
 		assertEquals("Player died when it must not: death.fell.accident.generic Alice",
 				assertThrows(IllegalStateException.class, () -> deaths.neverDied(TIMEOUT)).getMessage());
 		assertEquals(List.of(FELL), deaths.unread());
@@ -124,7 +124,7 @@ class ChannelVitalsTest {
 
 		vitals.respawn(TIMEOUT);
 
-		assertEquals(List.of(VitalsChannel.RESPAWN.getId()), channel.requests());
+		assertEquals(List.of(VitalsChannel.RESPAWN.id()), channel.requests());
 		assertFalse(vitals.dead());
 	}
 

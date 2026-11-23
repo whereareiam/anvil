@@ -31,14 +31,14 @@ import java.util.stream.Collectors;
  *
  * <pre>{@code
  * Text welcome = chat.received("Welcome");
- * SpanStyle arbor = welcome.span("Arbor").orElseThrow().getStyle();
- * assertEquals(TextColor.GOLD, arbor.getColor());
+ * SpanStyle arbor = welcome.span("Arbor").orElseThrow().style();
+ * assertEquals(TextColor.GOLD, arbor.color());
  * assertTrue(arbor.isBold());
- * assertEquals(new RunCommandClick("/arbor help"), arbor.getClick());
+ * assertEquals(new RunCommandClick("/arbor help"), arbor.click());
  *
  * TranslatedContent joined = welcome.find(TranslatedContent.class).orElseThrow();
  * assertEquals("multiplayer.player.joined", joined.getKey());
- * assertEquals("Ivan", joined.getArguments().getFirst().plain());
+ * assertEquals("Ivan", joined.arguments().getFirst().plain());
  * }</pre>
  */
 @Value
@@ -77,7 +77,7 @@ public class Text {
 	 * @return the plain text
 	 */
 	public @NotNull String plain() {
-		return spans().stream().map(TextSpan::getText).collect(Collectors.joining());
+		return spans().stream().map(TextSpan::text).collect(Collectors.joining());
 	}
 
 	/**
@@ -103,7 +103,7 @@ public class Text {
 	 * @return the first span containing it, or empty when no span does
 	 */
 	public @NotNull Optional<TextSpan> span(@NotNull String text) {
-		return spans().stream().filter(span -> span.getText().contains(text)).findFirst();
+		return spans().stream().filter(span -> span.text().contains(text)).findFirst();
 	}
 
 	/**
@@ -117,7 +117,7 @@ public class Text {
 	public <C extends TextContent> @NotNull Optional<C> find(@NotNull Class<C> type) {
 		if (type.isInstance(content)) return Optional.of(type.cast(content));
 		if (content instanceof TranslatedContent translated) {
-			for (Text argument : translated.getArguments()) {
+			for (Text argument : translated.arguments()) {
 				Optional<C> found = argument.find(type);
 				if (found.isPresent()) return found;
 			}
@@ -133,16 +133,16 @@ public class Text {
 	private static void append(Text text, SpanStyle inherited, List<TextSpan> spans) {
 		SpanStyle style = inherited.inherit(text.style);
 		switch (text.content) {
-			case LiteralContent literal -> add(literal.getText(), style, spans);
+			case LiteralContent literal -> add(literal.text(), style, spans);
 			case TranslatedContent translated -> {
-				add(translated.getKey(), style, spans);
-				for (Text argument : translated.getArguments()) {
+				add(translated.key(), style, spans);
+				for (Text argument : translated.arguments()) {
 					add(" ", style, spans);
 					append(argument, style, spans);
 				}
 			}
-			case KeybindContent keybind -> add(keybind.getKeybind(), style, spans);
-			case SelectorContent selector -> add(selector.getPattern(), style, spans);
+			case KeybindContent keybind -> add(keybind.keybind(), style, spans);
+			case SelectorContent selector -> add(selector.pattern(), style, spans);
 			case ScoreContent ignored -> {
 			}
 			case NbtContent ignored -> {
@@ -162,8 +162,8 @@ public class Text {
 		if (text.isEmpty()) return;
 
 		TextSpan last = spans.isEmpty() ? null : spans.getLast();
-		if (last != null && last.getStyle().equals(style)) {
-			spans.set(spans.size() - 1, new TextSpan(last.getText() + text, style));
+		if (last != null && last.style().equals(style)) {
+			spans.set(spans.size() - 1, new TextSpan(last.text() + text, style));
 			return;
 		}
 		spans.add(new TextSpan(text, style));

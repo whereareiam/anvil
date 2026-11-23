@@ -131,7 +131,7 @@ public abstract class ManagedProcess implements RunningProcess {
 	public synchronized void stop(@NotNull Duration timeout) {
 		thawForEnding();
 		ProcessExecution current = process;
-		if (current == null || !current.isAlive()) {
+		if (current == null || !current.alive()) {
 			ProcessState previous = state.getAndSet(ProcessState.STOPPED);
 			if (current != null && previous != ProcessState.STOPPING && previous != ProcessState.STOPPED) failed = true;
 			console.closeInput();
@@ -180,7 +180,7 @@ public abstract class ManagedProcess implements RunningProcess {
 	public synchronized void kill(@NotNull Duration timeout) {
 		thawForEnding();
 		ProcessExecution current = process;
-		if (current == null || !current.isAlive()) {
+		if (current == null || !current.alive()) {
 			stop(timeout);
 			return;
 		}
@@ -212,7 +212,7 @@ public abstract class ManagedProcess implements RunningProcess {
 			throw new ProcessException(name, "Process '" + name + "' did not become ready within " + timeout
 					+ console.diagnosticTail());
 		}
-		if (launched.isAlive() && state.get() == ProcessState.READY) return;
+		if (launched.alive() && state.get() == ProcessState.READY) return;
 		if (cancelled) throw cancellation();
 
 		markFailed();
@@ -315,7 +315,7 @@ public abstract class ManagedProcess implements RunningProcess {
 	 */
 	public synchronized void freeze() {
 		ProcessExecution current = process;
-		if (current == null || !current.isAlive() || state.get() != ProcessState.READY)
+		if (current == null || !current.alive() || state.get() != ProcessState.READY)
 			throw new IllegalStateException("Process '" + name + "' is not running, so it cannot be frozen");
 		if (frozen) return;
 

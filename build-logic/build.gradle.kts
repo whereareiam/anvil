@@ -49,6 +49,8 @@ val linkageToolSources = fileTree(linkageToolRoot) {
 	include("java/me/whereareiam/anvil/player/library/mcprotocol/segment/linkage/**")
 	include("resources/META-INF/services/java.util.spi.ToolProvider")
 }
+// The tool's sources read Lombok's accessors in the repository's one style, which its root lombok.config sets.
+val linkageToolLombokConfig = layout.settingsDirectory.file("../lombok.config")
 
 testing {
 	suites {
@@ -67,7 +69,7 @@ testing {
 			targets.configureEach {
 				testTask.configure {
 					jvmArgumentProviders.add(VersionCatalogArgument(layout.settingsDirectory.file("../gradle/libs.versions.toml")))
-					jvmArgumentProviders.add(LinkageToolSources(linkageToolRoot, linkageToolSources))
+					jvmArgumentProviders.add(LinkageToolSources(linkageToolRoot, linkageToolSources, linkageToolLombokConfig))
 				}
 			}
 		}
@@ -103,8 +105,9 @@ class VersionCatalogArgument(
 
 /**
  * Passes the sources of the segment linkage tool to the functional tests, which copy them into their consumer's
- * library common project: the root they are relative to and the files. The files' content is the input and their
- * location is not, so the build cache stays relocatable.
+ * library common project: the root they are relative to, the files and the Lombok configuration they are written
+ * for, which the consumer's root holds as the repository's does. The files' content is the input and their location
+ * is not, so the build cache stays relocatable.
  */
 class LinkageToolSources(
 	@get:Internal
@@ -112,9 +115,13 @@ class LinkageToolSources(
 	@get:InputFiles
 	@get:PathSensitive(PathSensitivity.RELATIVE)
 	val sources: FileTree,
+	@get:InputFile
+	@get:PathSensitive(PathSensitivity.NONE)
+	val lombokConfig: RegularFile,
 ) : CommandLineArgumentProvider {
 	override fun asArguments(): Iterable<String> = listOf(
 		"-Danvil.buildlogic.linkageTool.root=${root.asFile.absolutePath}",
 		"-Danvil.buildlogic.linkageTool.files=" + sources.files.joinToString(File.pathSeparator) { it.absolutePath },
+		"-Danvil.buildlogic.linkageTool.lombokConfig=${lombokConfig.asFile.absolutePath}",
 	)
 }

@@ -21,11 +21,11 @@ class EngineDefaultsTest {
 				.build();
 		EngineOptions effective = EngineDefaults.resolve(requested);
 
-		assertNull(requested.getCacheDirectory());
-		assertNull(requested.getProcessTimeouts().getStartup());
-		assertEquals(Duration.ofMinutes(2), effective.getProcessTimeouts().getStartup());
-		assertEquals(EngineDefaults.cacheDirectory(), effective.getCacheDirectory());
-		assertEquals(Duration.ofSeconds(7), effective.getProcessTimeouts().getShutdown());
+		assertNull(requested.cacheDirectory());
+		assertNull(requested.processTimeouts().startup());
+		assertEquals(Duration.ofMinutes(2), effective.processTimeouts().startup());
+		assertEquals(EngineDefaults.cacheDirectory(), effective.cacheDirectory());
+		assertEquals(Duration.ofSeconds(7), effective.processTimeouts().shutdown());
 
 		EngineOptions explicit = requested.toBuilder()
 				.cacheDirectory(Path.of("custom-cache"))
@@ -33,13 +33,13 @@ class EngineDefaultsTest {
 				.build();
 
 		EngineOptions resolved = EngineDefaults.resolve(explicit);
-		assertEquals(explicit.getCacheDirectory(), resolved.getCacheDirectory());
-		assertEquals(2, resolved.getProcessScheduling().getParallelism());
-		assertNull(explicit.getProcessScheduling().getStartupMemoryMegabytes());
-		assertNotNull(resolved.getProcessScheduling().getStartupMemoryMegabytes());
-		assertNotNull(resolved.getDownloadParallelism());
-		assertEquals(4, resolved.getProcessScheduling().getProcessors(), "An explicit limit survives resolution");
-		assertNull(effective.getProcessScheduling().getProcessors(), "Processes assume every processor unless limited");
-		assertEquals(ProcessPriority.NORMAL, effective.getProcessScheduling().getPriority());
+		assertEquals(explicit.cacheDirectory(), resolved.cacheDirectory());
+		assertEquals(2, resolved.processScheduling().parallelism());
+		assertNull(explicit.processScheduling().startupMemoryMegabytes());
+		assertNotNull(resolved.processScheduling().startupMemoryMegabytes());
+		assertNotNull(resolved.downloadParallelism());
+		assertEquals(4, resolved.processScheduling().processors(), "An explicit limit survives resolution");
+		assertNull(effective.processScheduling().processors(), "Processes assume every processor unless limited");
+		assertEquals(ProcessPriority.NORMAL, effective.processScheduling().priority());
 	}
 }

@@ -98,7 +98,7 @@ class McProtocolWorkerContractTest {
 			TestReporter reporter
 	) {
 		ProtocolRelease release = release(version);
-		assertEquals(protocol, release.getProtocolNumber());
+		assertEquals(protocol, release.protocolNumber());
 
 		try (ProtocolWorkerProcess worker =
 				new ProtocolWorkerProcess(release, GradleReleaseClosures.of(release), new LocalWorkerLauncher())) {
@@ -124,7 +124,7 @@ class McProtocolWorkerContractTest {
 				assertNull(channel.request(EventWorkerExtension.EMIT, new MessageText("no response")));
 				IllegalArgumentException rejected = assertThrows(IllegalArgumentException.class,
 						() -> channel.request(EventWorkerExtension.ECHO, null));
-				assertEquals("Operation '" + EventWorkerExtension.ECHO.getId() + "' requires a " + MessageText.class.getName()
+				assertEquals("Operation '" + EventWorkerExtension.ECHO.id() + "' requires a " + MessageText.class.getName()
 						+ " request", rejected.getMessage());
 			} finally {
 				player.destroy();

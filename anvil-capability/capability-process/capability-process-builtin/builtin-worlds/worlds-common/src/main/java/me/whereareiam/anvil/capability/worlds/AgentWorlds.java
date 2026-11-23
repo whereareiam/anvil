@@ -99,7 +99,7 @@ final class AgentWorlds implements Worlds {
 
 	@Override
 	public @NotNull List<ServerWorld> worlds() {
-		return Objects.requireNonNull(channel.request(WORLDS, null)).getWorlds().stream()
+		return Objects.requireNonNull(channel.request(WORLDS, null)).worlds().stream()
 				.map(AgentWorlds::world)
 				.toList();
 	}
@@ -108,59 +108,59 @@ final class AgentWorlds implements Worlds {
 	public @NotNull Optional<ServerWorld> world(@NotNull String key) {
 		String world = key(key);
 
-		return worlds().stream().filter(loaded -> loaded.getKey().equals(world)).findFirst();
+		return worlds().stream().filter(loaded -> loaded.key().equals(world)).findFirst();
 	}
 
 	@Override
 	public @NotNull Optional<WorldLocation> location(@NotNull SimulatedPlayer player) {
-		return placement(player).map(placement -> location(placement.getLocation()));
+		return placement(player).map(placement -> location(placement.location()));
 	}
 
 	@Override
 	public void send(@NotNull SimulatedPlayer player, @NotNull String world) {
-		send(player, loaded(key(world)).getSpawn());
+		send(player, loaded(key(world)).spawn());
 	}
 
 	@Override
 	public void send(@NotNull SimulatedPlayer player, @NotNull WorldLocation location) {
-		WorldLocation target = location.toBuilder().world(key(location.getWorld())).build();
-		loaded(target.getWorld());
+		WorldLocation target = location.toBuilder().world(key(location.world())).build();
+		loaded(target.world());
 		AgentPlacement placement = placement(player)
 				.orElseThrow(() -> new IllegalStateException("Player '" + player.name() + "' is not on '" + process + "'"));
 
 		AgentTransfer transfer = AgentTransfer.builder()
-				.uniqueId(placement.getUniqueId())
+				.uniqueId(placement.uniqueId())
 				.location(AgentLocation.builder()
-						.world(target.getWorld())
-						.x(target.getX())
-						.y(target.getY())
-						.z(target.getZ())
-						.yaw(target.getYaw())
-						.pitch(target.getPitch())
+						.world(target.world())
+						.x(target.x())
+						.y(target.y())
+						.z(target.z())
+						.yaw(target.yaw())
+						.pitch(target.pitch())
 						.build())
 				.build();
 		if (!Boolean.TRUE.equals(channel.request(SEND, transfer)))
 			throw new IllegalStateException("'" + process + "' refused to move player '" + player.name() + "' to '"
-					+ target.getWorld() + "'");
+					+ target.world() + "'");
 	}
 
 	@Override
 	public @NotNull ServerWorld create(@NotNull WorldCreation creation) {
-		String key = key(creation.getKey());
-		absent(key, creation.getKind());
+		String key = key(creation.key());
+		absent(key, creation.kind());
 
 		AgentWorldOutcome outcome = Objects.requireNonNull(channel.request(CREATE, AgentWorldCreation.builder()
 				.key(key)
-				.kind(creation.getKind().name())
-				.seed(creation.getSeed())
-				.generator(creation.getGenerator().name())
+				.kind(creation.kind().name())
+				.seed(creation.seed())
+				.generator(creation.generator().name())
 				.build()));
 		done(outcome, "create the world '" + key + "'");
 		synchronized (created) {
 			created.add(key);
 		}
 
-		return world(Objects.requireNonNull(outcome.getWorld()));
+		return world(Objects.requireNonNull(outcome.world()));
 	}
 
 	@Override
@@ -174,7 +174,7 @@ final class AgentWorlds implements Worlds {
 				.build()));
 		done(outcome, "load the world '" + key + "'");
 
-		return world(Objects.requireNonNull(outcome.getWorld()));
+		return world(Objects.requireNonNull(outcome.world()));
 	}
 
 	@Override
@@ -211,7 +211,7 @@ final class AgentWorlds implements Worlds {
 		if (!passed || keys.isEmpty()) return;
 
 		try {
-			Set<String> loaded = worlds().stream().map(ServerWorld::getKey).collect(Collectors.toSet());
+			Set<String> loaded = worlds().stream().map(ServerWorld::key).collect(Collectors.toSet());
 			RuntimeException failure = null;
 			for (String key : keys) {
 				if (!loaded.contains(key)) continue;
@@ -239,7 +239,7 @@ final class AgentWorlds implements Worlds {
 		long deadline = System.nanoTime() + cleanupTimeout.toNanos();
 		while (true) {
 			AgentWorldOutcome outcome = Objects.requireNonNull(channel.request(DELETE, key));
-			if (outcome.getRefusal() == null || System.nanoTime() >= deadline) {
+			if (outcome.refusal() == null || System.nanoTime() >= deadline) {
 				done(outcome, "delete the world '" + key + "' its scenario created");
 				return;
 			}
@@ -273,12 +273,12 @@ final class AgentWorlds implements Worlds {
 				.log(log)
 				.after(read)
 				.build()));
-		if (!unread.getLog().equals(log)) read = 0;
-		log = unread.getLog();
-		for (AgentWorldChange change : unread.getChanges()) {
-			changes.add(new WorldChange(new PlayerProfile(change.getUsername(), change.getUniqueId()), change.getFrom(),
-					change.getTo(), Instant.ofEpochMilli(change.getAt())));
-			read = change.getPosition();
+		if (!unread.log().equals(log)) read = 0;
+		log = unread.log();
+		for (AgentWorldChange change : unread.changes()) {
+			changes.add(new WorldChange(new PlayerProfile(change.username(), change.uniqueId()), change.from(),
+					change.to(), Instant.ofEpochMilli(change.at())));
+			read = change.position();
 		}
 
 		return List.copyOf(changes);
@@ -293,12 +293,12 @@ final class AgentWorlds implements Worlds {
 				.log(eventLog)
 				.after(eventsRead)
 				.build()));
-		if (!unread.getLog().equals(eventLog)) eventsRead = 0;
-		eventLog = unread.getLog();
-		for (AgentWorldEvent event : unread.getEvents()) {
-			events.add(new WorldEvent(event.getWorld(), WorldEventType.valueOf(event.getType()),
-					Instant.ofEpochMilli(event.getAt())));
-			eventsRead = event.getPosition();
+		if (!unread.log().equals(eventLog)) eventsRead = 0;
+		eventLog = unread.log();
+		for (AgentWorldEvent event : unread.events()) {
+			events.add(new WorldEvent(event.world(), WorldEventType.valueOf(event.type()),
+					Instant.ofEpochMilli(event.at())));
+			eventsRead = event.position();
 		}
 
 		return List.copyOf(events);
@@ -318,29 +318,29 @@ final class AgentWorlds implements Worlds {
 	 * platform cannot do, or one the server refused.
 	 */
 	private void done(@NotNull AgentWorldOutcome outcome, @NotNull String request) {
-		if (outcome.getMissing() != null)
-			throw new IllegalArgumentException("'" + process + "' cannot " + request + ": " + outcome.getMissing());
-		if (outcome.getUnsupported() != null)
-			throw new UnsupportedOperationException("'" + process + "' cannot " + request + ": " + outcome.getUnsupported());
-		if (outcome.getRefusal() != null)
-			throw new IllegalStateException("'" + process + "' refused to " + request + ": " + outcome.getRefusal());
+		if (outcome.missing() != null)
+			throw new IllegalArgumentException("'" + process + "' cannot " + request + ": " + outcome.missing());
+		if (outcome.unsupported() != null)
+			throw new UnsupportedOperationException("'" + process + "' cannot " + request + ": " + outcome.unsupported());
+		if (outcome.refusal() != null)
+			throw new IllegalStateException("'" + process + "' refused to " + request + ": " + outcome.refusal());
 	}
 
 	private @NotNull ServerWorld loaded(@NotNull String key) {
 		List<ServerWorld> worlds = worlds();
 
 		return worlds.stream()
-				.filter(world -> world.getKey().equals(key))
+				.filter(world -> world.key().equals(key))
 				.findFirst()
 				.orElseThrow(() -> new IllegalArgumentException("'" + process + "' has not loaded the world '" + key
-						+ "'; it has " + worlds.stream().map(ServerWorld::getKey).toList()));
+						+ "'; it has " + worlds.stream().map(ServerWorld::key).toList()));
 	}
 
 	private @NotNull Optional<AgentPlacement> placement(@NotNull SimulatedPlayer player) {
 		Set<UUID> uniqueIds = uniqueIds(player);
 
-		return Objects.requireNonNull(channel.request(PLACEMENTS, null)).getPlacements().stream()
-				.filter(placement -> uniqueIds.contains(placement.getUniqueId()))
+		return Objects.requireNonNull(channel.request(PLACEMENTS, null)).placements().stream()
+				.filter(placement -> uniqueIds.contains(placement.uniqueId()))
 				.findFirst();
 	}
 
@@ -353,31 +353,31 @@ final class AgentWorlds implements Worlds {
 
 	private static @NotNull ServerWorld world(@NotNull AgentWorld world) {
 		return ServerWorld.builder()
-				.key(world.getKey())
-				.kind(WorldKind.valueOf(world.getKind()))
-				.spawn(location(world.getSpawn()))
+				.key(world.key())
+				.kind(WorldKind.valueOf(world.kind()))
+				.spawn(location(world.spawn()))
 				.build();
 	}
 
 	private static @NotNull WorldLocation location(@NotNull AgentLocation location) {
 		return WorldLocation.builder()
-				.world(location.getWorld())
-				.x(location.getX())
-				.y(location.getY())
-				.z(location.getZ())
-				.yaw(location.getYaw())
-				.pitch(location.getPitch())
+				.world(location.world())
+				.x(location.x())
+				.y(location.y())
+				.z(location.z())
+				.yaw(location.yaw())
+				.pitch(location.pitch())
 				.build();
 	}
 
 	private static @NotNull Set<UUID> uniqueIds(@NotNull SimulatedPlayer player) {
 		return player.grantedProfiles().stream()
-				.map(PlayerProfile::getUniqueId)
+				.map(PlayerProfile::uniqueId)
 				.collect(Collectors.toSet());
 	}
 
 	private static <Q, R> @NotNull ChannelOperation<Q, R> channel(@NotNull AgentOperation<Q, R> operation) {
-		return new ChannelOperation<>(operation.getName(), operation.getRequestType(), operation.getResponseType());
+		return new ChannelOperation<>(operation.name(), operation.requestType(), operation.responseType());
 	}
 
 	/**
@@ -419,7 +419,7 @@ final class AgentWorlds implements Worlds {
 		@Override
 		public @NotNull WorldChange changed(@NotNull SimulatedPlayer player, @NotNull String world, @NotNull Duration timeout) {
 			String key = key(world);
-			return next(of(player).and(change -> change.getTo().equals(key)), timeout,
+			return next(of(player).and(change -> change.to().equals(key)), timeout,
 					"'" + process + "' did not move player '" + player.name() + "' to '" + key + "'");
 		}
 
@@ -439,13 +439,13 @@ final class AgentWorlds implements Worlds {
 
 			WorldChange change = Objects.requireNonNull(cursor.find(matcher));
 			throw new IllegalStateException("'" + process + "' moved player '" + player.name() + "' from '"
-					+ change.getFrom() + "' to '" + change.getTo() + "', which it must not do");
+					+ change.from() + "' to '" + change.to() + "', which it must not do");
 		}
 
 		@Override
 		public @NotNull Expectation expectChanged(@NotNull SimulatedPlayer player, @NotNull String world) {
 			String key = key(world);
-			Predicate<WorldChange> matcher = of(player).and(change -> change.getTo().equals(key));
+			Predicate<WorldChange> matcher = of(player).and(change -> change.to().equals(key));
 
 			return Expectation.of("be moved to '" + key + "' by '" + process + "'", () -> cursor.find(matcher) != null);
 		}
@@ -462,7 +462,7 @@ final class AgentWorlds implements Worlds {
 		}
 
 		private @NotNull Predicate<WorldChange> of(@NotNull SimulatedPlayer player) {
-			return change -> uniqueIds(player).contains(change.getProfile().getUniqueId());
+			return change -> uniqueIds(player).contains(change.profile().uniqueId());
 		}
 	}
 
@@ -521,7 +521,7 @@ final class AgentWorlds implements Worlds {
 		}
 
 		private @NotNull Predicate<WorldEvent> of(@NotNull String key, @NotNull WorldEventType type) {
-			return event -> event.getType() == type && event.getWorld().equals(key);
+			return event -> event.type() == type && event.world().equals(key);
 		}
 	}
 }

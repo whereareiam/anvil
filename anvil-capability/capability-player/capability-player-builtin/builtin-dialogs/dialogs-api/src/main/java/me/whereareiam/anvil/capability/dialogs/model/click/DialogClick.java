@@ -9,7 +9,7 @@ import java.util.List;
 
 /**
  * What the client sends when a dialog button is pressed: a command, or the custom click of a custom action. A custom
- * click names the pressed action by the handle {@link DialogAction#getHandle()} returns; the player's worker sends
+ * click names the pressed action by the handle {@link DialogAction#handle()} returns; the player's worker sends
  * the ID and payload the action declared, with the values put in.
  */
 @Value

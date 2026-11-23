@@ -100,7 +100,7 @@ public final class PaperPlatformProvider implements PlatformProvider {
 	private MinecraftVersion version(MinecraftProcess process) {
 		MinecraftVersion version = platformVersion(process);
 		if (version == null)
-			throw new PlatformException("Paper server '" + process.getName() + "' declares no Minecraft version");
+			throw new PlatformException("Paper server '" + process.name() + "' declares no Minecraft version");
 
 		return version;
 	}

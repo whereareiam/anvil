@@ -34,14 +34,14 @@ final class ArgumentReader {
 	}
 
 	private void readArgument(CommandTreeNode node) {
-		switch (node.getParser()) {
+		switch (node.parser()) {
 			case "brigadier:bool" -> {
 				String value = readString();
 				if (!value.equals("true") && !value.equals("false")) throw new IllegalArgumentException("Not a boolean");
 			}
 			case "brigadier:integer", "brigadier:long" -> range(node, readNumber(true));
 			case "brigadier:float", "brigadier:double" -> range(node, readNumber(false));
-			case "brigadier:string" -> readStringArgument(node.getStringMode());
+			case "brigadier:string" -> readStringArgument(node.stringMode());
 			case "minecraft:message" -> cursor = input.length();
 			case "minecraft:block_pos", "minecraft:vec3" -> readWords(3);
 			case "minecraft:column_pos", "minecraft:vec2", "minecraft:rotation" -> readWords(2);
@@ -107,8 +107,8 @@ final class ArgumentReader {
 	}
 
 	private static void range(CommandTreeNode node, double value) {
-		if (node.getMin() != null && value < node.getMin()) throw new IllegalArgumentException("Too low");
-		if (node.getMax() != null && value > node.getMax()) throw new IllegalArgumentException("Too high");
+		if (node.min() != null && value < node.min()) throw new IllegalArgumentException("Too low");
+		if (node.max() != null && value > node.max()) throw new IllegalArgumentException("Too high");
 	}
 
 	private void readWords(int count) {

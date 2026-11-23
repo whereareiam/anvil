@@ -36,7 +36,7 @@ class ChannelEntitiesTest {
 		know(zombie);
 
 		assertEquals(List.of(zombie), entities.all());
-		assertEquals(List.of(EntitiesChannel.KNOWN.getId()), channel.requests());
+		assertEquals(List.of(EntitiesChannel.KNOWN.id()), channel.requests());
 	}
 
 	@Test
@@ -51,7 +51,7 @@ class ChannelEntitiesTest {
 		know(near);
 		assertEquals(near, entities.present(EntityQuery.nearPlayer(3), TIMEOUT));
 		assertEquals("Player did not know a matching entity", assertThrows(IllegalStateException.class,
-				() -> entities.present(entity -> entity.getId() == 9, TIMEOUT)).getMessage());
+				() -> entities.present(entity -> entity.id() == 9, TIMEOUT)).getMessage());
 	}
 
 	@Test
@@ -80,7 +80,7 @@ class ChannelEntitiesTest {
 		appear(entity(1, 8, "Bob: hello"));
 
 		assertEquals(named, watch.appeared(EntityQuery.labelled("hello"), TIMEOUT));
-		assertEquals(8, watch.appeared(EntityQuery.labelled("hello"), TIMEOUT).getId());
+		assertEquals(8, watch.appeared(EntityQuery.labelled("hello"), TIMEOUT).id());
 		assertEquals("Player did not see an entity appear labelled 'hello'", assertThrows(IllegalStateException.class,
 				() -> watch.appeared(EntityQuery.labelled("hello"), TIMEOUT)).getMessage());
 	}
@@ -114,7 +114,7 @@ class ChannelEntitiesTest {
 		channel.publish(EntitiesChannel.CHANGED, new EntityChange(EntityChangeKind.DISAPPEARED, first, null));
 		assertTrue(gone.met());
 		watch.disappeared(bubble, TIMEOUT);
-		assertEquals(8, watch.appeared(EntityQuery.labelled("hello"), TIMEOUT).getId());
+		assertEquals(8, watch.appeared(EntityQuery.labelled("hello"), TIMEOUT).id());
 	}
 
 	@Test
@@ -135,11 +135,11 @@ class ChannelEntitiesTest {
 		Expectation hello = watch.expectAppeared(EntityQuery.labelled("hello"));
 
 		assertFalse(hello.met());
-		assertEquals("see an entity appear labelled 'hello'", hello.getDescription());
+		assertEquals("see an entity appear labelled 'hello'", hello.description());
 
 		appear(entity(1, 8, "hello"));
 		assertTrue(hello.met());
-		assertEquals(8, watch.appeared(EntityQuery.labelled("hello"), TIMEOUT).getId());
+		assertEquals(8, watch.appeared(EntityQuery.labelled("hello"), TIMEOUT).id());
 		assertFalse(hello.met());
 	}
 

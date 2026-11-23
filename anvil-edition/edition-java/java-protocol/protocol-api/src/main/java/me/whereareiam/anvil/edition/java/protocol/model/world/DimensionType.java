@@ -72,7 +72,7 @@ public class DimensionType {
 	 */
 	int minY;
 	/**
-	 * The number of block heights a level of the type spans from {@link #getMinY()} up, a multiple of 16: {@code 384}
+	 * The number of block heights a level of the type spans from {@link #minY()} up, a multiple of 16: {@code 384}
 	 * for the overworld from Minecraft 1.18 on, and {@code 256} for every type before Minecraft 1.17, whose levels had
 	 * no other height.
 	 */

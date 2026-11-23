@@ -38,16 +38,16 @@ public final class FileCache implements Cache {
 
 	@Override
 	public @NotNull Path path(@NotNull CacheKey key) {
-		Path namespace = Path.of(key.getNamespace());
+		Path namespace = Path.of(key.namespace());
 		if (namespace.isAbsolute() || namespace.normalize().toString().isEmpty())
 			throw new IllegalArgumentException("Cache namespace must be a relative directory: " + namespace);
 		for (Path part : namespace)
 			if (part.toString().equals(".."))
 				throw new IllegalArgumentException("Cache namespace must not traverse its root: " + namespace);
-		if (key.getSuffix().contains("/") || key.getSuffix().contains("\\"))
-			throw new IllegalArgumentException("Cache suffix must not contain path separators: " + key.getSuffix());
+		if (key.suffix().contains("/") || key.suffix().contains("\\"))
+			throw new IllegalArgumentException("Cache suffix must not contain path separators: " + key.suffix());
 
-		return root.resolve(namespace).resolve(hash(key.getValue()) + key.getSuffix());
+		return root.resolve(namespace).resolve(hash(key.value()) + key.suffix());
 	}
 
 	@Override

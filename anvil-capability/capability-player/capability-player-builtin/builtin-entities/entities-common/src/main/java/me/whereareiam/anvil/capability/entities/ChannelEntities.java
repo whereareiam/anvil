@@ -40,7 +40,7 @@ final class ChannelEntities implements Entities {
 
 	@Override
 	public @NotNull List<SeenEntity> all() {
-		return Objects.requireNonNull(channel.request(EntitiesChannel.KNOWN, null)).getEntities();
+		return Objects.requireNonNull(channel.request(EntitiesChannel.KNOWN, null)).entities();
 	}
 
 	@Override
@@ -59,7 +59,7 @@ final class ChannelEntities implements Entities {
 	}
 
 	private synchronized void record(EntityChange change) {
-		int changed = change.getEntity().getConnection();
+		int changed = change.entity().connection();
 		if (changed < connection) return;
 		if (changed > connection) {
 			for (SeenEntity entity : entities.values())
@@ -69,13 +69,13 @@ final class ChannelEntities implements Entities {
 		}
 
 		history.add(change);
-		SeenEntity entity = change.getEntity();
-		if (change.getKind() == EntityChangeKind.DISAPPEARED) entities.remove(entity.getId());
-		else entities.put(entity.getId(), entity);
+		SeenEntity entity = change.entity();
+		if (change.kind() == EntityChangeKind.DISAPPEARED) entities.remove(entity.id());
+		else entities.put(entity.id(), entity);
 	}
 
 	private synchronized boolean known(SeenEntity entity) {
-		SeenEntity current = entities.get(entity.getId());
+		SeenEntity current = entities.get(entity.id());
 		return current != null && current.sameEntity(entity);
 	}
 
@@ -100,15 +100,15 @@ final class ChannelEntities implements Entities {
 	}
 
 	private static boolean appears(EntityChange change, Predicate<SeenEntity> matcher) {
-		if (change.getKind() == EntityChangeKind.DISAPPEARED || !matcher.test(change.getEntity())) return false;
+		if (change.kind() == EntityChangeKind.DISAPPEARED || !matcher.test(change.entity())) return false;
 
-		SeenEntity previous = change.getPrevious();
+		SeenEntity previous = change.previous();
 		return previous == null || !matcher.test(previous);
 	}
 
 	private static String name(SeenEntity entity) {
 		String label = entity.label();
-		return entity.getType() + " " + entity.getId() + (label == null ? "" : " labelled '" + label + "'");
+		return entity.type() + " " + entity.id() + (label == null ? "" : " labelled '" + label + "'");
 	}
 
 	private static String describe(Predicate<SeenEntity> matcher) {
@@ -147,7 +147,7 @@ final class ChannelEntities implements Entities {
 			}
 
 			throw new IllegalStateException("Player saw an entity appear that must not appear: "
-					+ name(at(find(matcher, position())).getEntity()));
+					+ name(at(find(matcher, position())).entity()));
 		}
 
 		@Override
@@ -177,7 +177,7 @@ final class ChannelEntities implements Entities {
 			if (index < 0) throw new IllegalStateException("Player did not " + describe(matcher));
 
 			position = index + 1;
-			return at(index).getEntity();
+			return at(index).entity();
 		}
 	}
 }

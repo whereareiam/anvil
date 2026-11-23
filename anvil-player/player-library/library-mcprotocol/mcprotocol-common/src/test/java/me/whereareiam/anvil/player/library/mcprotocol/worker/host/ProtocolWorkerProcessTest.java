@@ -32,8 +32,8 @@ class ProtocolWorkerProcessTest {
 				}));
 
 		assertTrue(failure.getMessage().startsWith("Could not start protocol worker for MCProtocolLib future-1"), failure.getMessage());
-		assertEquals(29, requested.get().getJavaVersion());
-		assertEquals(McProtocolWorkerMain.class.getName(), requested.get().getMainClass());
-		assertEquals(List.of("1.21.11", "774"), requested.get().getArguments());
+		assertEquals(29, requested.get().javaVersion());
+		assertEquals(McProtocolWorkerMain.class.getName(), requested.get().mainClass());
+		assertEquals(List.of("1.21.11", "774"), requested.get().arguments());
 	}
 }

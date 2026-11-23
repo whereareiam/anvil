@@ -26,19 +26,19 @@ public enum RunnerCommandType {
 	STOP("stop", "stop"),
 	UNKNOWN("", "");
 
-	private static final Map<String, RunnerCommandType> BY_NAME = byName();
+	private static final Map<String, RunnerCommandType> BY_TOKEN = byToken();
 
-	private final String name;
+	private final String token;
 	private final String usage;
 
 	/**
 	 * Resolves a command token, returning {@link #UNKNOWN} for unsupported input.
 	 *
-	 * @param name command token
+	 * @param token command token
 	 * @return matching command or {@link #UNKNOWN}
 	 */
-	public static @NotNull RunnerCommandType fromName(@NotNull String name) {
-		return BY_NAME.getOrDefault(name, UNKNOWN);
+	public static @NotNull RunnerCommandType fromToken(@NotNull String token) {
+		return BY_TOKEN.getOrDefault(token, UNKNOWN);
 	}
 
 	/**
@@ -61,9 +61,9 @@ public enum RunnerCommandType {
 		);
 	}
 
-	private static @NotNull Map<String, RunnerCommandType> byName() {
+	private static @NotNull Map<String, RunnerCommandType> byToken() {
 		Map<String, RunnerCommandType> result = new LinkedHashMap<>();
-		for (RunnerCommandType command : values()) result.put(command.name, command);
+		for (RunnerCommandType command : values()) result.put(command.token, command);
 
 		return Map.copyOf(result);
 	}

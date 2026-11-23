@@ -106,7 +106,7 @@ public final class Pairings {
 	public synchronized void save(@NotNull Pairing pairing) throws IOException {
 		Stored stored = read();
 		Map<String, Pairing> workbenches = new TreeMap<>(stored.workbenches());
-		workbenches.put(pairing.getName(), pairing);
+		workbenches.put(pairing.name(), pairing);
 		write(new Stored(stored.defaultName(), workbenches));
 	}
 

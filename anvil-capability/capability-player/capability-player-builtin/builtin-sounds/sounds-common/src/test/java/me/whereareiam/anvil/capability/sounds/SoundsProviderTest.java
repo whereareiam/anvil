@@ -18,8 +18,8 @@ class SoundsProviderTest {
 		SoundsProvider provider = new SoundsProvider();
 
 		assertEquals("me.whereareiam.anvil.sounds", SoundsChannel.ID);
-		assertEquals(SoundsChannel.ID, provider.descriptor().getId());
-		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
+		assertEquals(SoundsChannel.ID, provider.descriptor().id());
+		assertTrue(provider.descriptor().requiredCapabilities().isEmpty());
 		assertEquals(Set.of(JavaProtocol.class), provider.requiredProtocols());
 		assertEquals(Sounds.class, provider.capability());
 	}
@@ -29,7 +29,7 @@ class SoundsProviderTest {
 		TestProtocolChannel channel = new TestProtocolChannel(Set.of(SoundsChannel.ID));
 		Sounds sounds = new SoundsProvider().create(new TestProtocolPlayerCapabilityContext(channel));
 
-		assertEquals(List.of(SoundsChannel.HEARD.getId()), channel.subscriptions());
+		assertEquals(List.of(SoundsChannel.HEARD.id()), channel.subscriptions());
 		assertTrue(channel.requests().isEmpty());
 		assertTrue(sounds.history().isEmpty());
 	}

@@ -60,7 +60,7 @@ final class ClientPacketListener extends SessionAdapter {
 	public void packetReceived(PacketReceivedEvent event) {
 		Session session = event.getSession();
 		Packet packet = event.getPacket();
-		if (packet instanceof EncryptionRequestPacket && login.getCredentials() == null) authenticationRequired = true;
+		if (packet instanceof EncryptionRequestPacket && login.credentials() == null) authenticationRequired = true;
 		if (packet instanceof LoginSuccessPacket success) {
 			granted = ClientProfile.builder()
 					.name(success.getProfile().getName())
@@ -70,7 +70,7 @@ final class ClientPacketListener extends SessionAdapter {
 		}
 		if (packet instanceof ServerJoinGamePacket join) {
 			entityId = join.getEntityId();
-			session.send(answers.clientInformation(login.getSettings()));
+			session.send(answers.clientInformation(login.settings()));
 			session.send(new ClientPluginMessagePacket(ClientBrand.CHANNEL, ClientBrand.payload()));
 			listener.loggedIn(session,
 					Objects.requireNonNull(granted, "The server started the game before it granted a profile"));
@@ -106,7 +106,7 @@ final class ClientPacketListener extends SessionAdapter {
 	@Override
 	public void packetSending(PacketSendingEvent event) {
 		Packet packet = event.getPacket();
-		String virtualHost = login.getConnection().getVirtualHost();
+		String virtualHost = login.connection().virtualHost();
 		if (virtualHost != null && packet instanceof HandshakePacket handshake)
 			event.setPacket(handshake.withHostname(virtualHost));
 	}

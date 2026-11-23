@@ -31,7 +31,7 @@ class ProcessTreeRenderer : ColoredTreeCellRenderer() {
 	}
 
 	private fun renderProcess(item: OverviewController.ProcessItem) {
-		val reported = item.live()?.state
+		val reported = item.live()?.state()
 		val label = StatusPresentation.processLabel(reported, item.session())
 		append(item.displayName())
 		icon = StatusIcon.overlay(StatusPresentation.processTone(reported, item.session()), label,

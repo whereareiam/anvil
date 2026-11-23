@@ -27,7 +27,7 @@ final class ChannelInteraction implements Interaction {
 
 	@Override
 	public void block(@NotNull BlockPosition position, @NotNull BlockFace face, @NotNull Hand hand) {
-		channel.request(InteractionChannel.BLOCK, new BlockUse(position.getX(), position.getY(), position.getZ(), face, hand));
+		channel.request(InteractionChannel.BLOCK, new BlockUse(position.x(), position.y(), position.z(), face, hand));
 	}
 
 	@Override

@@ -37,14 +37,14 @@ public final class ScenarioArtifactResolver {
 	public @NotNull AnvilScenario resolve(@NotNull AnvilScenario scenario) {
 		return scenario.toBuilder()
 				.clearServers()
-				.servers(scenario.getServers().stream().map(server -> server.toBuilder()
-						.distribution(resolve(server.getDistribution()))
-						.workspace(resolve(server.getWorkspace()))
+				.servers(scenario.servers().stream().map(server -> server.toBuilder()
+						.distribution(resolve(server.distribution()))
+						.workspace(resolve(server.workspace()))
 						.build()).toList())
 				.clearProxies()
-				.proxies(scenario.getProxies().stream().map(proxy -> proxy.toBuilder()
-						.distribution(resolve(proxy.getDistribution()))
-						.workspace(resolve(proxy.getWorkspace()))
+				.proxies(scenario.proxies().stream().map(proxy -> proxy.toBuilder()
+						.distribution(resolve(proxy.distribution()))
+						.workspace(resolve(proxy.workspace()))
 						.build()).toList())
 				.build();
 	}
@@ -65,7 +65,7 @@ public final class ScenarioArtifactResolver {
 				.asset(WorkspaceAsset.builder()
 						.group("anvil-platform-agent")
 						.source(AssetSource.path(agents.locate(agent)))
-						.target(agent.getTarget())
+						.target(agent.target())
 						.mode(AssetInstallMode.ALWAYS)
 						.build());
 		for (Path extension : agents.extensions(platformId))
@@ -81,24 +81,24 @@ public final class ScenarioArtifactResolver {
 
 	private WorkspacePlan resolve(WorkspacePlan workspace) {
 		return workspace.toBuilder().clearAssets()
-				.assets(workspace.getAssets().stream().map(this::resolve).toList()).build();
+				.assets(workspace.assets().stream().map(this::resolve).toList()).build();
 	}
 
 	private WorkspaceAsset resolve(WorkspaceAsset asset) {
-		AssetSource source = asset.getSource();
+		AssetSource source = asset.source();
 		if (source.declaredSources() != 1)
 			throw new ScenarioValidationException("Workspace asset must declare exactly one source: " + asset);
 		if (source.isText())
 			return asset;
 
-		Path path = source.isArtifact() ? requireArtifact(source.getArtifactReference()) : source.getPath();
+		Path path = source.isArtifact() ? requireArtifact(source.artifactReference()) : source.path();
 		return asset.toBuilder().source(AssetSource.path(path.toAbsolutePath().normalize())).build();
 	}
 
 	private Distribution resolve(Distribution distribution) {
 		if (!distribution.isArtifact())
 			return distribution;
-		return distribution.toBuilder().localJar(requireArtifact(distribution.getArtifactReference()))
+		return distribution.toBuilder().localJar(requireArtifact(distribution.artifactReference()))
 				.artifactReference(null).build();
 	}
 

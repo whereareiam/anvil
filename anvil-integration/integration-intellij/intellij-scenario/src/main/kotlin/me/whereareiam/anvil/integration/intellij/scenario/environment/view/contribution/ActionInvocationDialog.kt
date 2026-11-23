@@ -23,12 +23,12 @@ class ActionInvocationDialog(
 	init {
 		val history = session.ideProject.getService(CommandHistory::class.java)
 		val histories = LinkedHashMap<String, List<String>>()
-		for (input in action.definition.inputs) {
-			if (!input.isSensitive) histories[input.name] = history.history(key(input))
+		for (input in action.definition().inputs()) {
+			if (!input.sensitive()) histories[input.name()] = history.history(key(input))
 		}
 		form = ActionInvocationForm(
 			action,
-			"${ContributionsPanel.kind(action.target)}: ${action.target.name}",
+			"${ContributionsPanel.kind(action.target())}: ${action.target().name()}",
 			session.actionDraft(action),
 			histories,
 			history.limit()
@@ -41,7 +41,7 @@ class ActionInvocationDialog(
 			{ message -> setErrorText(message) },
 			{ isDisposed }
 		)
-		title = ContributionsPanel.label(action.definition)
+		title = ContributionsPanel.label(action.definition())
 		setOKButtonText("Run")
 		setCancelButtonText("Close")
 		init()
@@ -57,8 +57,8 @@ class ActionInvocationDialog(
 
 	private fun key(input: ActionInput) = CommandHistory.Scope.builder()
 		.source(session.source.id)
-		.definition(session.scenario.definition)
-		.target("${action.target.type}:${action.target.name}")
-		.operation("${action.definition.id}:${input.name}")
+		.definition(session.scenario.definition())
+		.target("${action.target().type()}:${action.target().name()}")
+		.operation("${action.definition().id()}:${input.name()}")
 		.build()
 }

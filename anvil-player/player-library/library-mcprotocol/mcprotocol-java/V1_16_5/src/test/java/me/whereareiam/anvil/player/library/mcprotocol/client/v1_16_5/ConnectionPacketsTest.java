@@ -66,7 +66,7 @@ class ConnectionPacketsTest {
 		assertEquals(DimensionType.withEffects("example:plain", "minecraft:overworld", 0, 256),
 				((ClientboundLogin) packets.decode(new ServerJoinGamePacket(42, false, GameMode.SURVIVAL, GameMode.SURVIVAL,
 						1, new String[]{"example:plain"}, codec, plain, "example:plain", 0, 20, 10, false, true, false,
-						false))).getDimensionType());
+						false))).dimensionType());
 	}
 
 	@Test
@@ -79,7 +79,7 @@ class ConnectionPacketsTest {
 				new String[]{"example:tall"}, codec, tall, "example:tall", 0, 20, 10, false, true, false, false);
 
 		assertEquals(DimensionType.withEffects("example:tall", "minecraft:overworld", -32, 320),
-				((ClientboundLogin) packets.decode(login)).getDimensionType());
+				((ClientboundLogin) packets.decode(login)).dimensionType());
 	}
 
 	@Test
@@ -87,8 +87,8 @@ class ConnectionPacketsTest {
 		packets.decode(login(overworld()));
 
 		assertTrue(((ClientboundRespawn) packets.decode(new ServerRespawnPacket(nether(), "minecraft:the_nether", 0,
-				GameMode.SURVIVAL, GameMode.SURVIVAL, false, false, false))).getDimensionType().isFastLava());
-		assertFalse(((ClientboundLogin) packets.decode(login(overworld()))).getDimensionType().isFastLava());
+				GameMode.SURVIVAL, GameMode.SURVIVAL, false, false, false))).dimensionType().fastLava());
+		assertFalse(((ClientboundLogin) packets.decode(login(overworld()))).dimensionType().fastLava());
 	}
 
 	@Test
@@ -134,18 +134,18 @@ class ConnectionPacketsTest {
 
 	@Test
 	void carriesWhetherTheClientShowsTheDeathScreen() {
-		assertTrue(((ClientboundLogin) packets.decode(login(overworld()))).isShowDeathScreen());
-		assertFalse(((ClientboundLogin) packets.decode(login(overworld()).withEnableRespawnScreen(false))).isShowDeathScreen());
+		assertTrue(((ClientboundLogin) packets.decode(login(overworld()))).showDeathScreen());
+		assertFalse(((ClientboundLogin) packets.decode(login(overworld()).withEnableRespawnScreen(false))).showDeathScreen());
 	}
 
 	private me.whereareiam.anvil.edition.java.protocol.type.player.GameMode loginMode(GameMode mode) {
-		return ((ClientboundLogin) packets.decode(login(overworld()).withGameMode(mode))).getGameMode();
+		return ((ClientboundLogin) packets.decode(login(overworld()).withGameMode(mode))).gameMode();
 	}
 
 	private me.whereareiam.anvil.edition.java.protocol.type.player.GameMode respawnMode(GameMode mode) {
 		packets.decode(login(overworld()));
 		return ((ClientboundRespawn) packets.decode(new ServerRespawnPacket(overworld(), "minecraft:overworld", 0, mode,
-				GameMode.UNKNOWN, false, false, false))).getGameMode();
+				GameMode.UNKNOWN, false, false, false))).gameMode();
 	}
 
 	private static ServerJoinGamePacket login(CompoundTag dimension) {

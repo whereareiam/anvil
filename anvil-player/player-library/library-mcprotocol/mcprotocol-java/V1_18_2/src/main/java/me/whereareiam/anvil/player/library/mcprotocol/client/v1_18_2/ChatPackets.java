@@ -58,9 +58,9 @@ final class ChatPackets implements PacketTranslation<Packet> {
 
 	@Override
 	public @Nullable Packet encode(@NotNull ServerboundPacket packet) {
-		if (packet instanceof ServerboundChat chat) return new ServerboundChatPacket(chat.getText());
+		if (packet instanceof ServerboundChat chat) return new ServerboundChatPacket(chat.text());
 		if (packet instanceof ServerboundChatCommand command)
-			return new ServerboundChatPacket(COMMAND_PREFIX + command.getCommand());
+			return new ServerboundChatPacket(COMMAND_PREFIX + command.command());
 
 		return null;
 	}

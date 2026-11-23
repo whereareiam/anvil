@@ -23,12 +23,12 @@ public class WorldBorder {
 	 */
 	double size;
 	/**
-	 * The side length in blocks the border started moving from, or {@link #getSize()} when the server set the size at
+	 * The side length in blocks the border started moving from, or {@link #size()} when the server set the size at
 	 * once.
 	 */
 	double lerpFrom;
 	/**
-	 * How long the border takes to move from {@link #getLerpFrom()} to {@link #getSize()}, in ticks, counted from when
+	 * How long the border takes to move from {@link #lerpFrom()} to {@link #size()}, in ticks, counted from when
 	 * the client was told; {@code 0} when the server set the size at once. Releases before Minecraft 1.21.9 send
 	 * milliseconds, which the client reports as ticks of 50 milliseconds.
 	 */

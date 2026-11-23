@@ -136,10 +136,10 @@ final class ExecutionFixture {
 			return new ExecutionSession() {
 				@Override
 				public @NotNull ProcessTarget prepare(@NotNull ProcessRequest request) {
-					calls.add("target:" + request.getName());
-					if (request.getName().equals(failingTarget)) throw failure;
-					Target target = new Target(request.getName(), targets.size());
-					targets.put(request.getName(), target);
+					calls.add("target:" + request.name());
+					if (request.name().equals(failingTarget)) throw failure;
+					Target target = new Target(request.name(), targets.size());
+					targets.put(request.name(), target);
 					return target;
 				}
 
@@ -162,17 +162,17 @@ final class ExecutionFixture {
 		@Override
 		public @NotNull PreparedProcess prepare(@NotNull ProcessSpec process, @NotNull ProcessTarget target,
 				@NotNull Map<String, InetSocketAddress> peers, @NotNull ProcessAddresses addresses) {
-			String name = process.getRequest().getName();
+			String name = process.request().name();
 			calls.add("prepare:" + name);
 			observedPeers.put(name, peers);
 			observedAddresses.put(name, addresses);
 			if (name.equals(failingPreparation)) throw failure;
 			try {
-				Files.createDirectories(process.getRequest().getWorkspace());
+				Files.createDirectories(process.request().workspace());
 			} catch (IOException failure) {
 				throw new UncheckedIOException(failure);
 			}
-			ProcessFiles files = new WorkspaceProcessFiles(process.getRequest().getWorkspace(), new WorkspaceFiles());
+			ProcessFiles files = new WorkspaceProcessFiles(process.request().workspace(), new WorkspaceFiles());
 			return new PreparedProcess() {
 				private int generation;
 
@@ -189,7 +189,7 @@ final class ExecutionFixture {
 					return new PreparedLaunch() {
 						@Override
 						public @NotNull ProcessLaunch command() {
-							if (process.isContainer())
+							if (process.container())
 								return ImageLaunch.builder().environmentVariable("GENERATION", Integer.toString(current)).build();
 
 							return JavaCommand.builder().jar(directory.resolve("input.jar")).memoryMegabytes(256)
@@ -304,7 +304,7 @@ final class ExecutionFixture {
 		@Override
 		public @NotNull OutputStream input() { return input; }
 		@Override
-		public boolean isAlive() { return alive.get(); }
+		public boolean alive() { return alive.get(); }
 		@Override
 		public @NotNull CompletableFuture<Void> onExit() { return exited; }
 		@Override

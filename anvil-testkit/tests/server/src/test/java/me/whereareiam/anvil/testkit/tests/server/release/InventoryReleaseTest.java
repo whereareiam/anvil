@@ -36,7 +36,7 @@ class InventoryReleaseTest {
 		Messages messages = player.capability(Messages.class);
 
 		messages.command("anvil-fixture gui");
-		inventory.matching(snapshot -> snapshot.getContainerId() != 0, TIMEOUT);
+		inventory.matching(snapshot -> snapshot.containerId() != 0, TIMEOUT);
 		inventory.click(4, InventoryClick.LEFT, 0);
 
 		messages.received("anvil:click:4", TIMEOUT);
@@ -55,14 +55,14 @@ class InventoryReleaseTest {
 		InventoryItem item = buy.item(TIMEOUT);
 
 		assertEquals("minecraft:generic_9x3", shop.menuType());
-		assertEquals(TextColor.GREEN, item.getDisplay().getName().span("Buy").orElseThrow().getStyle().getColor());
-		assertEquals(ItemNameSource.CUSTOM, item.getDisplay().getNameSource());
-		assertEquals(List.of("Costs 64 coins", "Click to buy"), item.getDisplay().getLore().stream().map(Text::plain).toList());
-		assertEquals(11, item.getSlot());
+		assertEquals(TextColor.GREEN, item.display().name().span("Buy").orElseThrow().style().color());
+		assertEquals(ItemNameSource.CUSTOM, item.display().nameSource());
+		assertEquals(List.of("Costs 64 coins", "Click to buy"), item.display().lore().stream().map(Text::plain).toList());
+		assertEquals(11, item.slot());
 		assertItemType("minecraft:emerald", item);
 		assertEquals(25, shop.items()
-				.matching("in the shop's own slots", own -> own.getSlot() < 27)
-				.matching("without a name", unnamed -> unnamed.getDisplay().getName() == null)
+				.matching("in the shop's own slots", own -> own.slot() < 27)
+				.matching("without a name", unnamed -> unnamed.display().name() == null)
 				.count());
 
 		buy.click(InventoryClick.LEFT);
@@ -81,10 +81,10 @@ class InventoryReleaseTest {
 	 */
 	private static void assertItemType(String identifier, InventoryItem item) {
 		if (TestedRelease.isAtLeast("26.2")) {
-			assertNull(item.getType().getIdentifier());
+			assertNull(item.type().identifier());
 			return;
 		}
 
-		assertEquals(identifier, item.getType().getIdentifier());
+		assertEquals(identifier, item.type().identifier());
 	}
 }

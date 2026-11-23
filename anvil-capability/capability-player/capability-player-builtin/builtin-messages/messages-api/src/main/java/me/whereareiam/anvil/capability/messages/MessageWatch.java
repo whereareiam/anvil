@@ -23,7 +23,7 @@ import java.util.function.Predicate;
  * MessageWatch chat = messages.watch();
  * messages.command("login secret");
  * Text welcome = chat.received("Welcome back");
- * assertEquals(TextColor.GREEN, welcome.span("Welcome back").orElseThrow().getStyle().getColor());
+ * assertEquals(TextColor.GREEN, welcome.span("Welcome back").orElseThrow().style().color());
  * chat.neverReceived("Invalid password", Duration.ofSeconds(3));
  * }</pre>
  */

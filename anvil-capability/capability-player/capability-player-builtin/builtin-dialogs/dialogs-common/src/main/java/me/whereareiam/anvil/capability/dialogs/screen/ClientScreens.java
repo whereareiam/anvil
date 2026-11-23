@@ -102,7 +102,7 @@ public final class ClientScreens {
 			case NONE -> open;
 			case CLOSE -> open.previous();
 			case WAIT_FOR_RESPONSE -> new WaitingScreen(open.previous(), clock.instant());
-			case OTHER -> throw new IllegalArgumentException("The dialog '" + open.dialog().getTitle()
+			case OTHER -> throw new IllegalArgumentException("The dialog '" + open.dialog().title()
 					+ "' has an after-action Anvil does not know");
 		};
 	}

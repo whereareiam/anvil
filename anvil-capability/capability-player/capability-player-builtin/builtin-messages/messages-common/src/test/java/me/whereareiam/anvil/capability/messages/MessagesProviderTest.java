@@ -19,8 +19,8 @@ class MessagesProviderTest {
 		MessagesProvider provider = new MessagesProvider();
 
 		assertEquals("me.whereareiam.anvil.messages", MessagesChannel.ID);
-		assertEquals(MessagesChannel.ID, provider.descriptor().getId());
-		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
+		assertEquals(MessagesChannel.ID, provider.descriptor().id());
+		assertTrue(provider.descriptor().requiredCapabilities().isEmpty());
 		assertEquals(Set.of(JavaProtocol.class), provider.requiredProtocols());
 		assertEquals(Messages.class, provider.capability());
 	}
@@ -31,14 +31,14 @@ class MessagesProviderTest {
 		channel.answer(MessagesChannel.CHAT, text -> null);
 		channel.answer(MessagesChannel.COMMAND, text -> null);
 		Messages messages = new MessagesProvider().create(new TestProtocolPlayerCapabilityContext(channel));
-		assertEquals(List.of(MessagesChannel.CHAT_ADDED.getId(), MessagesChannel.CHAT_DROPPED.getId(),
-				MessagesChannel.CHAT_DELETED.getId(), MessagesChannel.CHAT_CLEARED.getId()), channel.subscriptions());
+		assertEquals(List.of(MessagesChannel.CHAT_ADDED.id(), MessagesChannel.CHAT_DROPPED.id(),
+				MessagesChannel.CHAT_DELETED.id(), MessagesChannel.CHAT_CLEARED.id()), channel.subscriptions());
 		assertTrue(channel.requests().isEmpty());
 
 		messages.chat("hello");
 		messages.command("/list");
 
-		assertEquals(List.of(MessagesChannel.CHAT.getId(), MessagesChannel.COMMAND.getId()), channel.requests());
+		assertEquals(List.of(MessagesChannel.CHAT.id(), MessagesChannel.COMMAND.id()), channel.requests());
 		assertEquals(List.of(new MessageText("hello"), new MessageText("list")), channel.payloads());
 	}
 }

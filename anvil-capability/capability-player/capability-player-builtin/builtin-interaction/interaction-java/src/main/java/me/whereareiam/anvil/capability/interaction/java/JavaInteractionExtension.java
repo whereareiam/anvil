@@ -105,23 +105,23 @@ public final class JavaInteractionExtension implements WorkerExtension<Object> {
 		private int sequence;
 
 		private void useItem(ItemUse use) {
-			InteractionHand hand = hand(use.getHand());
+			InteractionHand hand = hand(use.hand());
 			ViewRotation view = player.viewRotation();
 			swing(hand);
 			sendNumbered(next -> ServerboundUseItem.builder()
 					.hand(hand)
 					.sequence(next)
-					.yaw(view.getYaw())
-					.pitch(view.getPitch())
+					.yaw(view.yaw())
+					.pitch(view.pitch())
 					.build());
 		}
 
 		private void useBlock(BlockUse use) {
-			InteractionHand hand = hand(use.getHand());
+			InteractionHand hand = hand(use.hand());
 			sendNumbered(next -> ServerboundUseItemOn.builder()
 					.hand(hand)
-					.position(BlockPosition.builder().x(use.getX()).y(use.getY()).z(use.getZ()).build())
-					.face(direction(use.getFace()))
+					.position(BlockPosition.builder().x(use.x()).y(use.y()).z(use.z()).build())
+					.face(direction(use.face()))
 					.cursorX(FACE_CENTER)
 					.cursorY(FACE_CENTER)
 					.cursorZ(FACE_CENTER)
@@ -131,9 +131,9 @@ public final class JavaInteractionExtension implements WorkerExtension<Object> {
 		}
 
 		private void useEntity(EntityUse use) {
-			InteractionHand hand = hand(use.getHand());
+			InteractionHand hand = hand(use.hand());
 			protocol.send(entity(use, hand));
-			if (use.getInteraction() == EntityInteraction.ATTACK && protocol.supports(ServerboundPunch.class))
+			if (use.interaction() == EntityInteraction.ATTACK && protocol.supports(ServerboundPunch.class))
 				protocol.send(new ServerboundPunch());
 			swing(hand);
 		}
@@ -143,10 +143,10 @@ public final class JavaInteractionExtension implements WorkerExtension<Object> {
 		}
 
 		private ServerboundPacket entity(EntityUse use, InteractionHand hand) {
-			return switch (use.getInteraction()) {
-				case ATTACK -> new ServerboundAttack(new EntityId(use.getEntityId()));
+			return switch (use.interaction()) {
+				case ATTACK -> new ServerboundAttack(new EntityId(use.entityId()));
 				case INTERACT -> ServerboundInteract.builder()
-						.entityId(new EntityId(use.getEntityId()))
+						.entityId(new EntityId(use.entityId()))
 						.action(InteractAction.INTERACT)
 						.hand(hand)
 						.build();

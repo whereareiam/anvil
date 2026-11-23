@@ -20,12 +20,12 @@ public final class WorkbenchWorkerLauncher implements ProtocolWorkerLauncher {
 	@Override
 	public @NotNull Process launch(@NotNull WorkerLaunch launch) throws IOException {
 		var java = JavaMainLaunch.builder()
-				.classpath(launch.getClosure())
-				.mainClass(launch.getMainClass())
-				.jvmArguments(launch.getJvmArguments())
-				.arguments(launch.getArguments())
-				.javaVersion(launch.getJavaVersion());
-		launch.getEngineEntries().forEach(entry -> java.classpathEntry(workbench.store(entry)));
+				.classpath(launch.closure())
+				.mainClass(launch.mainClass())
+				.jvmArguments(launch.jvmArguments())
+				.arguments(launch.arguments())
+				.javaVersion(launch.javaVersion());
+		launch.engineEntries().forEach(entry -> java.classpathEntry(workbench.store(entry)));
 
 		return workbench.launch(java.build());
 	}

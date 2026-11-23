@@ -81,7 +81,7 @@ public final class ProcessScheduler {
 	public void start(@NotNull Collection<ProcessSpec> inputs, @NotNull Consumer<ProcessSpec> action) {
 		Semaphore memory = new Semaphore(memoryBudget, true);
 		run(inputs, process -> {
-			int permits = Math.min(memoryBudget, process.getMemoryMegabytes());
+			int permits = Math.min(memoryBudget, process.memoryMegabytes());
 			try {
 				memory.acquire(permits);
 				try {

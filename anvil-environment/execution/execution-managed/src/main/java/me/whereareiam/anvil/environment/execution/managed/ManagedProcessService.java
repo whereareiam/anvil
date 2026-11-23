@@ -61,10 +61,10 @@ public final class ManagedProcessService {
 			@Nullable ScenarioObserver observer
 	) {
 		Map<String, BoundExecutionProvider> used = new LinkedHashMap<>();
-		used.put(plan.getExecutionProviderId(), provider(plan.getExecutionProviderId()));
-		for (ProcessSpec process : plan.getProcesses())
-			if (process.getExecutionProviderId() != null)
-				used.put(process.getExecutionProviderId(), provider(process.getExecutionProviderId()));
+		used.put(plan.executionProviderId(), provider(plan.executionProviderId()));
+		for (ProcessSpec process : plan.processes())
+			if (process.executionProviderId() != null)
+				used.put(process.executionProviderId(), provider(process.executionProviderId()));
 		List<List<ProcessSpec>> order = startupOrder(plan);
 		ManagedProcessGroup group = new ManagedProcessGroup(plan, used, preparation, order, observer);
 		try {
@@ -111,40 +111,40 @@ public final class ManagedProcessService {
 	}
 
 	private List<List<ProcessSpec>> startupOrder(ExecutionPlan plan) {
-		var scheduling = plan.getProcessScheduling();
-		if (scheduling.getParallelism() == null || scheduling.getStartupMemoryMegabytes() == null
-				|| scheduling.getParallelism() < 1 || scheduling.getStartupMemoryMegabytes() < 1)
+		var scheduling = plan.processScheduling();
+		if (scheduling.parallelism() == null || scheduling.startupMemoryMegabytes() == null
+				|| scheduling.parallelism() < 1 || scheduling.startupMemoryMegabytes() < 1)
 			throw new IllegalArgumentException("Process scheduling limits must be resolved and positive");
-		var timeouts = plan.getProcessTimeouts();
-		if (timeouts.getStartup() == null || timeouts.getShutdown() == null
-				|| timeouts.getStartup().isNegative() || timeouts.getStartup().isZero()
-				|| timeouts.getShutdown().isNegative() || timeouts.getShutdown().isZero())
+		var timeouts = plan.processTimeouts();
+		if (timeouts.startup() == null || timeouts.shutdown() == null
+				|| timeouts.startup().isNegative() || timeouts.startup().isZero()
+				|| timeouts.shutdown().isNegative() || timeouts.shutdown().isZero())
 			throw new IllegalArgumentException("Process timeouts must be resolved and positive");
 
 		Map<String, ProcessSpec> remaining = new LinkedHashMap<>();
-		for (ProcessSpec process : plan.getProcesses()) {
-			String name = process.getRequest().getName();
+		for (ProcessSpec process : plan.processes()) {
+			String name = process.request().name();
 			if (remaining.putIfAbsent(name, process) != null)
 				throw new IllegalArgumentException("Duplicate process: " + name);
-			if (process.getMemoryMegabytes() < 1)
+			if (process.memoryMegabytes() < 1)
 				throw new IllegalArgumentException("Process memory must be positive: " + name);
 		}
-		for (String peer : plan.getPeers().keySet())
+		for (String peer : plan.peers().keySet())
 			if (remaining.containsKey(peer))
 				throw new IllegalArgumentException("Process '" + peer + "' is both planned and supplied as a running peer");
 		for (ProcessSpec process : remaining.values())
-			if (!remaining.keySet().containsAll(process.getDependencies()))
-				throw new IllegalArgumentException("Unknown startup dependency for process '" + process.getRequest().getName() + "'");
+			if (!remaining.keySet().containsAll(process.dependencies()))
+				throw new IllegalArgumentException("Unknown startup dependency for process '" + process.request().name() + "'");
 
 		Set<String> started = new HashSet<>();
 		List<List<ProcessSpec>> order = new ArrayList<>();
 		while (!remaining.isEmpty()) {
 			List<ProcessSpec> ready = remaining.values().stream()
-					.filter(process -> started.containsAll(process.getDependencies())).toList();
+					.filter(process -> started.containsAll(process.dependencies())).toList();
 			if (ready.isEmpty()) throw new IllegalArgumentException("Cyclic process startup dependencies: " + remaining.keySet());
 			order.add(ready);
 			for (ProcessSpec process : ready) {
-				String name = process.getRequest().getName();
+				String name = process.request().name();
 				remaining.remove(name);
 				started.add(name);
 			}

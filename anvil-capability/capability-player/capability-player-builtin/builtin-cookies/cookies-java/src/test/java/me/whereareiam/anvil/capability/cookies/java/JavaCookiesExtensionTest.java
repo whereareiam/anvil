@@ -60,14 +60,14 @@ class JavaCookiesExtensionTest {
 		List<ServerboundCookieResponse> sent = player.sent(ServerboundCookieResponse.class);
 		assertEquals(List.of("cookies.store", "cookies.remove"), operations.registered());
 		assertEquals(List.of("example:ticket", "example:other"),
-				sent.stream().map(ServerboundCookieResponse::getKey).toList());
-		assertArrayEquals(TICKET, sent.get(0).getPayload());
-		assertNull(sent.get(1).getPayload());
+				sent.stream().map(ServerboundCookieResponse::key).toList());
+		assertArrayEquals(TICKET, sent.get(0).payload());
+		assertNull(sent.get(1).payload());
 
 		List<CookieRequest> requests = player.emitted(CookiesChannel.REQUESTED);
-		assertEquals("example:ticket", requests.get(0).getKey());
-		assertArrayEquals(TICKET, requests.get(0).getAnswer());
-		assertNull(requests.get(1).getAnswer());
+		assertEquals("example:ticket", requests.get(0).key());
+		assertArrayEquals(TICKET, requests.get(0).answer());
+		assertNull(requests.get(1).answer());
 	}
 
 	@Test
@@ -76,14 +76,14 @@ class JavaCookiesExtensionTest {
 		player.connect();
 		player.deliver(new ClientboundStoreCookie("example:ticket", TICKET));
 		player.disconnect();
-		Map<String, byte[]> afterEnd = lastHeld().getCookies();
+		Map<String, byte[]> afterEnd = lastHeld().cookies();
 
 		player.connect();
 		player.deliver(new ClientboundCookieRequest("example:ticket"));
 
 		assertEquals(Map.of(), afterEnd);
-		assertNull(lastSent().getPayload());
-		assertEquals(Map.of(), lastHeld().getCookies());
+		assertNull(lastSent().payload());
+		assertEquals(Map.of(), lastHeld().cookies());
 	}
 
 	@Test
@@ -94,9 +94,9 @@ class JavaCookiesExtensionTest {
 		player.connect();
 		player.deliver(new ClientboundCookieRequest("example:ticket"));
 
-		assertArrayEquals(TICKET, before.getCookies().get("example:ticket"));
-		assertArrayEquals(TICKET, lastSent().getPayload());
-		assertArrayEquals(TICKET, lastHeld().getCookies().get("example:ticket"));
+		assertArrayEquals(TICKET, before.cookies().get("example:ticket"));
+		assertArrayEquals(TICKET, lastSent().payload());
+		assertArrayEquals(TICKET, lastHeld().cookies().get("example:ticket"));
 	}
 
 	@Test
@@ -112,9 +112,9 @@ class JavaCookiesExtensionTest {
 		player.deliver(new ClientboundCookieRequest("example:arrival"));
 
 		List<ServerboundCookieResponse> sent = player.sent(ServerboundCookieResponse.class);
-		assertEquals(List.of("example:arrival"), List.copyOf(given.getCookies().keySet()));
-		assertNull(sent.get(0).getPayload());
-		assertArrayEquals(TICKET, sent.get(1).getPayload());
+		assertEquals(List.of("example:arrival"), List.copyOf(given.cookies().keySet()));
+		assertNull(sent.get(0).payload());
+		assertArrayEquals(TICKET, sent.get(1).payload());
 	}
 
 	@Test
@@ -128,9 +128,9 @@ class JavaCookiesExtensionTest {
 		player.deliver(new ClientboundCookieRequest("example:ticket"));
 
 		List<ServerboundCookieResponse> sent = player.sent(ServerboundCookieResponse.class);
-		assertArrayEquals(TICKET, sent.get(0).getPayload());
-		assertNull(sent.get(1).getPayload());
-		assertEquals(Map.of(), removed.getCookies());
+		assertArrayEquals(TICKET, sent.get(0).payload());
+		assertNull(sent.get(1).payload());
+		assertEquals(Map.of(), removed.cookies());
 	}
 
 	@Test
@@ -143,7 +143,7 @@ class JavaCookiesExtensionTest {
 		player.rejoin();
 
 		// The replaced connection ends before the next one starts: both are changes of the held cookies.
-		List<Long> versions = player.emitted(CookiesChannel.HELD).stream().map(HeldCookies::getVersion).toList();
+		List<Long> versions = player.emitted(CookiesChannel.HELD).stream().map(HeldCookies::version).toList();
 		assertEquals(List.of(1L, 2L, 3L, 4L, 5L), versions);
 	}
 
@@ -157,7 +157,7 @@ class JavaCookiesExtensionTest {
 		payload[0] = 'X';
 		player.deliver(new ClientboundCookieRequest("example:ticket"));
 
-		assertArrayEquals(TICKET, lastSent().getPayload());
+		assertArrayEquals(TICKET, lastSent().payload());
 	}
 
 	@Test

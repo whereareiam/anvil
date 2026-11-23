@@ -22,16 +22,16 @@ public final class ProcessTopology {
 
 	private ProcessTopology(@NotNull AnvilScenario scenario) {
 		Map<String, MinecraftProcess> processes = new LinkedHashMap<>();
-		scenario.getServers().forEach(server -> processes.put(server.getName(), server));
-		scenario.getProxies().forEach(proxy -> processes.put(proxy.getName(), proxy));
+		scenario.servers().forEach(server -> processes.put(server.name(), server));
+		scenario.proxies().forEach(proxy -> processes.put(proxy.name(), proxy));
 		this.processes = Collections.unmodifiableMap(processes);
 
 		Map<String, Set<String>> neighbors = new LinkedHashMap<>();
 		processes.keySet().forEach(name -> neighbors.put(name, new LinkedHashSet<>()));
-		for (MinecraftProxy proxy : scenario.getProxies()) {
-			for (String server : proxy.getServers()) {
-				neighbors.get(proxy.getName()).add(server);
-				neighbors.get(server).add(proxy.getName());
+		for (MinecraftProxy proxy : scenario.proxies()) {
+			for (String server : proxy.servers()) {
+				neighbors.get(proxy.name()).add(server);
+				neighbors.get(server).add(proxy.name());
 			}
 		}
 
@@ -53,9 +53,9 @@ public final class ProcessTopology {
 		Set<String> assigned = new LinkedHashSet<>();
 		for (MinecraftProxy proxy : processes.values().stream()
 				.filter(MinecraftProxy.class::isInstance).map(MinecraftProxy.class::cast).toList()) {
-			if (assigned.contains(proxy.getName())) continue;
+			if (assigned.contains(proxy.name())) continue;
 
-			Set<String> connected = connected(proxy.getName());
+			Set<String> connected = connected(proxy.name());
 			result.add(new Component(ordered(connected), proxy));
 			assigned.addAll(connected);
 		}

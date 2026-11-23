@@ -79,7 +79,7 @@ class PacketTableTest {
 
 		@Override
 		public @Nullable String encode(@NotNull ServerboundPacket packet) {
-			return packet instanceof ServerboundChat chat ? PREFIX + chat.getText() : null;
+			return packet instanceof ServerboundChat chat ? PREFIX + chat.text() : null;
 		}
 	}
 

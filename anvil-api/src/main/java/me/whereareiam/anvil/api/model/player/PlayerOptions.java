@@ -30,7 +30,7 @@ public class PlayerOptions {
 
 	/**
 	 * Name that identifies the player within its scenario, unique among its players. It is also the Minecraft
-	 * username unless the {@link #getLogin() login} supplies another one.
+	 * username unless the {@link #login() login} supplies another one.
 	 */
 	@NotNull String name;
 

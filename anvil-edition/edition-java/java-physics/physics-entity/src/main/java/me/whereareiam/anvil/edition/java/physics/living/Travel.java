@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
  * How a living entity travels with its input, as {@code LivingEntity.travel} moves it: through the air with the
  * friction of the block below, gravity, levitation and slow falling ({@code travelInAir}), through water with its water
  * movement efficiency and dolphin's grace ({@code travelInWater}), through lava ({@code travelInLava}) and climbing
- * ({@code handleOnClimbable}). Fluids slow only an entity they affect ({@link LivingBody#isAffectedByFluids}).
+ * ({@code handleOnClimbable}). Fluids slow only an entity they affect ({@link LivingBody#affectedByFluids}).
  */
 public final class Travel {
 	private static final float DEGREES_TO_RADIANS = (float) (Math.PI / 180.0);
@@ -43,7 +43,7 @@ public final class Travel {
 		this.fluids = fluids;
 		this.effects = effects;
 		this.climbing = new Climbing(body);
-		this.collisions = new Collisions(body.getLevel());
+		this.collisions = new Collisions(body.level());
 	}
 
 	/**
@@ -52,8 +52,8 @@ public final class Travel {
 	 * @param input the strafing, vertical and forward input
 	 */
 	public void travel(@NotNull Vector input) {
-		boolean affected = body.isAffectedByFluids();
-		if (affected && fluids.isTouchingWater()) {
+		boolean affected = body.affectedByFluids();
+		if (affected && fluids.touchingWater()) {
 			travelInWater(input);
 			return;
 		}
@@ -67,27 +67,27 @@ public final class Travel {
 
 	private void travelInAir(@NotNull Vector input) {
 		double earlyGravity = effectiveGravity();
-		float friction = body.isOnGround() ? effects.friction() : 1.0F;
+		float friction = body.onGround() ? effects.friction() : 1.0F;
 		float drag = friction * 0.91F;
 		moveRelative(frictionInfluencedSpeed(friction), input);
-		body.setDeltaMovement(climbing.handleOnClimbable(body.getDeltaMovement()));
-		move.move(body.getDeltaMovement());
-		Vector movement = body.getDeltaMovement();
-		if ((body.isHorizontalCollision() || body.isJumping()) && body.onClimbable())
+		body.deltaMovement(climbing.handleOnClimbable(body.deltaMovement()));
+		move.move(body.deltaMovement());
+		Vector movement = body.deltaMovement();
+		if ((body.horizontalCollision() || body.jumping()) && body.onClimbable())
 			movement = new Vector(movement.x, 0.2, movement.z);
 
 		double gravity = body.has(EntityBehaviour.GRAVITY_AFTER_MOVE) ? effectiveGravity() : earlyGravity;
 		double vertical = vertical(movement.y, gravity);
-		body.setDeltaMovement(new Vector(movement.x * drag, vertical * 0.98F, movement.z * drag));
+		body.deltaMovement(new Vector(movement.x * drag, vertical * 0.98F, movement.z * drag));
 	}
 
 	private double vertical(double vertical, double gravity) {
-		Effects active = body.getEffects();
+		Effects active = body.effects();
 		if (active.has(MobEffect.LEVITATION))
 			return vertical + (0.05 * (active.amplifier(MobEffect.LEVITATION).orElseThrow() + 1) - vertical) * 0.2;
 		if (effects.hasChunkBelow()) return vertical - gravity;
 
-		return body.getPosition().y > body.getLevel().minY() ? -0.1 : 0.0;
+		return body.position().y > body.level().minY() ? -0.1 : 0.0;
 	}
 
 	/**
@@ -95,42 +95,42 @@ public final class Travel {
 	 * of its control there ({@link LivingBody#flyingSpeed}).
 	 */
 	private float frictionInfluencedSpeed(float friction) {
-		if (body.isOnGround()) return body.getSpeed() * (0.21600002F / (friction * friction * friction));
+		if (body.onGround()) return body.speed() * (0.21600002F / (friction * friction * friction));
 
 		return body.flyingSpeed();
 	}
 
 	private void travelInWater(@NotNull Vector input) {
 		double gravity = effectiveGravity();
-		boolean falling = body.getDeltaMovement().y <= 0.0;
-		double startY = body.getPosition().y;
-		float slowDown = body.isSprinting() ? 0.9F : 0.8F;
+		boolean falling = body.deltaMovement().y <= 0.0;
+		double startY = body.position().y;
+		float slowDown = body.sprinting() ? 0.9F : 0.8F;
 		float speed = 0.02F;
-		float efficiency = (float) body.getAttributes().value(LivingAttributes.WATER_MOVEMENT_EFFICIENCY);
-		if (!body.isOnGround()) efficiency *= 0.5F;
+		float efficiency = (float) body.attributes().value(LivingAttributes.WATER_MOVEMENT_EFFICIENCY);
+		if (!body.onGround()) efficiency *= 0.5F;
 		if (efficiency > 0.0F) {
 			slowDown += (0.54600006F - slowDown) * efficiency;
-			speed += (body.getSpeed() - speed) * efficiency;
+			speed += (body.speed() - speed) * efficiency;
 		}
-		if (body.getEffects().has(MobEffect.DOLPHINS_GRACE)) slowDown = 0.96F;
+		if (body.effects().has(MobEffect.DOLPHINS_GRACE)) slowDown = 0.96F;
 
 		moveRelative(speed, input);
-		move.move(body.getDeltaMovement());
-		Vector movement = body.getDeltaMovement();
-		if (body.isHorizontalCollision() && body.onClimbable()) movement = new Vector(movement.x, 0.2, movement.z);
+		move.move(body.deltaMovement());
+		Vector movement = body.deltaMovement();
+		if (body.horizontalCollision() && body.onClimbable()) movement = new Vector(movement.x, 0.2, movement.z);
 		movement = movement.multiply(slowDown, 0.8F, slowDown);
-		body.setDeltaMovement(fluidFallingAdjusted(gravity, falling, movement));
+		body.deltaMovement(fluidFallingAdjusted(gravity, falling, movement));
 		jumpOutOfFluid(startY);
 	}
 
 	private void travelInLava(@NotNull Vector input) {
 		double gravity = effectiveGravity();
-		boolean falling = body.getDeltaMovement().y <= 0.0;
-		double startY = body.getPosition().y;
+		boolean falling = body.deltaMovement().y <= 0.0;
+		double startY = body.position().y;
 		moveRelative(0.02F, input);
-		move.move(body.getDeltaMovement());
-		Vector delta = body.getDeltaMovement();
-		body.setDeltaMovement(fluids.getLavaHeight() <= fluids.fluidJumpThreshold()
+		move.move(body.deltaMovement());
+		Vector delta = body.deltaMovement();
+		body.deltaMovement(fluids.lavaHeight() <= fluids.fluidJumpThreshold()
 				? fluidFallingAdjusted(gravity, falling, delta.multiply(0.5, 0.8F, 0.5))
 				: delta.scale(0.5));
 		if (gravity != 0.0) body.addDeltaMovement(0.0, -gravity / 4.0, 0.0);
@@ -138,19 +138,19 @@ public final class Travel {
 	}
 
 	private @NotNull Vector fluidFallingAdjusted(double gravity, boolean falling, @NotNull Vector movement) {
-		if (gravity == 0.0 || body.isSprinting()) return movement;
+		if (gravity == 0.0 || body.sprinting()) return movement;
 
 		boolean settled = falling && Math.abs(movement.y - 0.005) >= 0.003 && Math.abs(movement.y - gravity / 16.0) < 0.003;
 		return new Vector(movement.x, settled ? -0.003 : movement.y - gravity / 16.0, movement.z);
 	}
 
 	private void jumpOutOfFluid(double startY) {
-		Vector delta = body.getDeltaMovement();
-		if (!body.isHorizontalCollision()) return;
+		Vector delta = body.deltaMovement();
+		if (!body.horizontalCollision()) return;
 
-		Box moved = body.getBox().move(delta.x, delta.y + 0.6F - body.getPosition().y + startY, delta.z);
-		if (collisions.noCollision(moved, body.context()) && !new Fluids(body.getLevel()).containsAny(moved))
-			body.setDeltaMovement(new Vector(delta.x, 0.3F, delta.z));
+		Box moved = body.box().move(delta.x, delta.y + 0.6F - body.position().y + startY, delta.z);
+		if (collisions.noCollision(moved, body.context()) && !new Fluids(body.level()).containsAny(moved))
+			body.deltaMovement(new Vector(delta.x, 0.3F, delta.z));
 	}
 
 	/**
@@ -161,9 +161,9 @@ public final class Travel {
 		if (lengthSqr < 1.0E-7) return;
 
 		Vector scaled = (lengthSqr > 1.0 ? input.normalize() : input).scale(amount);
-		Trigonometry trigonometry = body.getRules().trigonometry();
-		float sin = trigonometry.sin(body.getYaw() * DEGREES_TO_RADIANS);
-		float cos = trigonometry.cos(body.getYaw() * DEGREES_TO_RADIANS);
+		Trigonometry trigonometry = body.rules().trigonometry();
+		float sin = trigonometry.sin(body.yaw() * DEGREES_TO_RADIANS);
+		float cos = trigonometry.cos(body.yaw() * DEGREES_TO_RADIANS);
 		body.addDeltaMovement(scaled.x * cos - scaled.z * sin, scaled.y, scaled.z * cos + scaled.x * sin);
 	}
 
@@ -172,8 +172,8 @@ public final class Travel {
 	 * slow falling.
 	 */
 	private double effectiveGravity() {
-		double gravity = body.getAttributes().value(LivingAttributes.GRAVITY);
-		boolean slow = body.getDeltaMovement().y <= 0.0 && body.getEffects().has(MobEffect.SLOW_FALLING);
+		double gravity = body.attributes().value(LivingAttributes.GRAVITY);
+		boolean slow = body.deltaMovement().y <= 0.0 && body.effects().has(MobEffect.SLOW_FALLING);
 		return slow ? Math.min(gravity, 0.01) : gravity;
 	}
 }

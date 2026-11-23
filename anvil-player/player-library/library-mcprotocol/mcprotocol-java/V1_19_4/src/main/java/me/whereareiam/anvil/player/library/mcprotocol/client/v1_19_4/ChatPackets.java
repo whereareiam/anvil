@@ -121,10 +121,10 @@ public final class ChatPackets implements PacketTranslation<Packet> {
 	@Override
 	public @Nullable Packet encode(@NotNull ServerboundPacket packet) {
 		if (packet instanceof ServerboundChat chat)
-			return new ServerboundChatPacket(chat.getText(), Instant.now().toEpochMilli(), UNSIGNED_SALT, NO_SIGNATURE,
+			return new ServerboundChatPacket(chat.text(), Instant.now().toEpochMilli(), UNSIGNED_SALT, NO_SIGNATURE,
 					NO_ACKNOWLEDGED_OFFSET, new BitSet(ACKNOWLEDGED_MESSAGES));
 		if (packet instanceof ServerboundChatCommand command)
-			return new ServerboundChatCommandPacket(command.getCommand(), Instant.now().toEpochMilli(), UNSIGNED_SALT,
+			return new ServerboundChatCommandPacket(command.command(), Instant.now().toEpochMilli(), UNSIGNED_SALT,
 					List.of(), NO_ACKNOWLEDGED_OFFSET, new BitSet(ACKNOWLEDGED_MESSAGES));
 
 		return null;

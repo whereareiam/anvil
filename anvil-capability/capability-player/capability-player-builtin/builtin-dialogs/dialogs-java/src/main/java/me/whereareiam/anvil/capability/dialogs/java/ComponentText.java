@@ -49,21 +49,21 @@ final class ComponentText {
 
 	private static void append(NbtTag component, StringBuilder text) {
 		switch (component) {
-			case NbtString value -> text.append(value.getValue());
+			case NbtString value -> text.append(value.value());
 			case NbtNumber value -> text.append(value.number());
-			case NbtList list -> list.getElements().forEach(element -> append(element, text));
+			case NbtList list -> list.elements().forEach(element -> append(element, text));
 			case NbtCompound compound -> {
 				appendContent(compound, text);
-				compound.list(EXTRA).ifPresent(extra -> extra.getElements().forEach(child -> append(child, text)));
+				compound.list(EXTRA).ifPresent(extra -> extra.elements().forEach(child -> append(child, text)));
 			}
 			case NbtByteArray array -> {
-				for (byte value : array.getValues()) text.append(value);
+				for (byte value : array.values()) text.append(value);
 			}
 			case NbtIntArray array -> {
-				for (int value : array.getValues()) text.append(value);
+				for (int value : array.values()) text.append(value);
 			}
 			case NbtLongArray array -> {
-				for (long value : array.getValues()) text.append(value);
+				for (long value : array.values()) text.append(value);
 			}
 		}
 	}
@@ -94,7 +94,7 @@ final class ComponentText {
 
 	private static void appendTranslation(NbtTag key, NbtCompound component, StringBuilder text) {
 		append(key, text);
-		component.list(WITH).ifPresent(arguments -> arguments.getElements().forEach(argument -> {
+		component.list(WITH).ifPresent(arguments -> arguments.elements().forEach(argument -> {
 			text.append(' ');
 			append(argument, text);
 		}));

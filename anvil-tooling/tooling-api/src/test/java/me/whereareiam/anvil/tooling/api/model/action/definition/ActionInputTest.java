@@ -34,8 +34,8 @@ class ActionInputTest {
 		List<String> choices = new ArrayList<>(List.of("first"));
 		var input = ActionInput.builder().name("value").type(ActionInputType.CHOICE).choices(choices).build();
 		choices.add("second");
-		assertEquals(List.of("first"), input.getChoices());
-		assertThrows(UnsupportedOperationException.class, () -> input.getChoices().add("other"));
+		assertEquals(List.of("first"), input.choices());
+		assertThrows(UnsupportedOperationException.class, () -> input.choices().add("other"));
 		assertThrows(IllegalArgumentException.class, () -> input.validate(null));
 		assertDoesNotThrow(() -> input.toBuilder().required(false).build().validate(null));
 	}

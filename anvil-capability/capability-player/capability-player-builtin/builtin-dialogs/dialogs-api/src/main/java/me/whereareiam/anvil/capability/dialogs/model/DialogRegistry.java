@@ -22,13 +22,13 @@ public class DialogRegistry {
 	 * @return the registry's dialog, or the reference with its registry name when the registry has no data for it
 	 */
 	public @NotNull Dialog resolve(@NotNull Dialog dialog) {
-		Integer id = dialog.getRegistryId();
+		Integer id = dialog.registryId();
 		if (id == null || id < 0 || id >= dialogs.size()) return dialog;
 
 		RegistryDialog entry = dialogs.get(id);
-		Dialog known = entry.getDialog();
-		if (known == null) return dialog.toBuilder().registryName(entry.getName()).build();
-		return known.toBuilder().registryId(id).registryName(entry.getName()).build();
+		Dialog known = entry.dialog();
+		if (known == null) return dialog.toBuilder().registryName(entry.name()).build();
+		return known.toBuilder().registryId(id).registryName(entry.name()).build();
 	}
 
 	/**
@@ -40,8 +40,8 @@ public class DialogRegistry {
 	public @Nullable Dialog find(@NotNull String name) {
 		for (int id = 0; id < dialogs.size(); id++) {
 			RegistryDialog entry = dialogs.get(id);
-			if (entry.getName().equals(name) && entry.getDialog() != null)
-				return entry.getDialog().toBuilder().registryId(id).registryName(name).build();
+			if (entry.name().equals(name) && entry.dialog() != null)
+				return entry.dialog().toBuilder().registryId(id).registryName(name).build();
 		}
 		return null;
 	}

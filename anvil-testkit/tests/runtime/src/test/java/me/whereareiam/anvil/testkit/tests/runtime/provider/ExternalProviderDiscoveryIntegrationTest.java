@@ -73,7 +73,7 @@ class ExternalProviderDiscoveryIntegrationTest {
 			try (var players = new DefaultPlayerService(
 					ProtocolLibraryRegistry.discover(),
 					options(),
-					options().getCacheDirectory(),
+					options().cacheDirectory(),
 					artifacts(),
 					launch -> { throw new AssertionError("No worker starts before a player connects"); }
 			)) {
@@ -96,7 +96,7 @@ class ExternalProviderDiscoveryIntegrationTest {
 			}
 
 			try (var players = new DefaultPlayerService(ProtocolLibraryRegistry.discover(),
-					options().toBuilder().protocolLibrary("fixture").build(), options().getCacheDirectory(), artifacts(),
+					options().toBuilder().protocolLibrary("fixture").build(), options().cacheDirectory(), artifacts(),
 					launch -> { throw new AssertionError("The fixture library starts no worker"); })) {
 				players.open(scenario(), new Processes(), composer(composed), true).create("EngineChoice");
 			}

@@ -106,9 +106,9 @@ class ClientPacketListenerTest {
 	@Test
 	void announcesTheVirtualHostInPlaceOfTheConnectedHost() {
 		ClientLogin virtual = ClientLogin.builder()
-				.profile(LOGIN.getProfile())
+				.profile(LOGIN.profile())
 				.minecraftVersion("1.20.6")
-				.settings(LOGIN.getSettings())
+				.settings(LOGIN.settings())
 				.connection(ClientConnection.builder().host("127.0.0.1").port(25577).virtualHost("lobby.example.test").build())
 				.build();
 		PacketSendingEvent handshake = new PacketSendingEvent(session,

@@ -146,8 +146,8 @@ public abstract class ChunkTranslation implements PacketTranslation<Packet> {
 	}
 
 	private static @Nullable ClientboundPacket unreadable(ChunkPosition position, String reason) {
-		System.err.println("[Anvil] Warning: the player's world leaves out the chunk column at " + position.getX() + " "
-				+ position.getZ() + ", which it cannot read: " + reason);
+		System.err.println("[Anvil] Warning: the player's world leaves out the chunk column at " + position.x() + " "
+				+ position.z() + ", which it cannot read: " + reason);
 		return null;
 	}
 }

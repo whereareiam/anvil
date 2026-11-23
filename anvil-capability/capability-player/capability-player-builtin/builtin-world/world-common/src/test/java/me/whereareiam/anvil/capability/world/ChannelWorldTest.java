@@ -98,7 +98,7 @@ class ChannelWorldTest {
 		channel.publish(WorldChannel.DIMENSION, change(NETHER, OVERWORLD));
 		channel.publish(WorldChannel.DIMENSION, change(OVERWORLD, NETHER));
 		assertEquals(change(OVERWORLD, NETHER),
-				dimensions.changed(change -> NETHER.equals(change.getTo()), TIMEOUT));
+				dimensions.changed(change -> NETHER.equals(change.to()), TIMEOUT));
 		assertThrows(IllegalStateException.class, () -> dimensions.changed(change -> true, TIMEOUT));
 	}
 
@@ -140,10 +140,10 @@ class ChannelWorldTest {
 				.build();
 		channel.publish(WorldChannel.STATE, state);
 
-		assertEquals(Optional.of(state.getTime()), world.time());
+		assertEquals(Optional.of(state.time()), world.time());
 		assertEquals(Optional.of(Weather.CLEAR), world.weather());
-		assertEquals(Optional.of(state.getBorder()), world.border());
-		assertEquals(Optional.of(state.getSpawn()), world.spawn());
+		assertEquals(Optional.of(state.border()), world.border());
+		assertEquals(Optional.of(state.spawn()), world.spawn());
 
 		channel.publish(WorldChannel.STATE, WorldState.EMPTY);
 		assertEquals(Optional.empty(), world.spawn());
@@ -153,7 +153,7 @@ class ChannelWorldTest {
 	void waitsForAStateThatHoldsNowOrOnlyBrieflyMeanwhile() {
 		WorldStateWatch states = world.states();
 		channel.publish(WorldChannel.STATE, raining(false));
-		assertEquals(raining(false), states.until(state -> state.getWeather() != null, TIMEOUT));
+		assertEquals(raining(false), states.until(state -> state.weather() != null, TIMEOUT));
 
 		channel.meanwhile(() -> {
 			channel.publish(WorldChannel.STATE, raining(true));

@@ -70,7 +70,7 @@ public class EnvironmentExecutionPlatformTest extends ScenarioPlatformTestCase {
 
 		environment.stop();
 		assertTrue(output.waitFor(5000));
-		assertEquals(SessionState.STOPPED, environment.getSnapshot().getState());
+		assertEquals(SessionState.STOPPED, environment.getSnapshot().state());
 		assertTrue(runner.requests.isEmpty());
 		assertFalse(Files.exists(directory.resolve("tooling.json")));
 	}
@@ -92,8 +92,8 @@ public class EnvironmentExecutionPlatformTest extends ScenarioPlatformTestCase {
 
 		environment.stop();
 		assertTrue(output.waitFor(5000));
-		assertEquals(SessionState.FAILED, environment.getSnapshot().getState());
-		assertEquals("cleanup failed", environment.getSnapshot().getFailure());
+		assertEquals(SessionState.FAILED, environment.getSnapshot().state());
+		assertEquals("cleanup failed", environment.getSnapshot().failure());
 	}
 
 	public void testCancellingPreparationDoesNotReportAnEnvironmentCleanupFailure() throws Exception {
@@ -107,7 +107,7 @@ public class EnvironmentExecutionPlatformTest extends ScenarioPlatformTestCase {
 		assertTrue(build.started.await(5, TimeUnit.SECONDS));
 		environment.stop();
 		assertTrue(output.waitFor(5000));
-		assertEquals(SessionState.STOPPED, environment.getSnapshot().getState());
+		assertEquals(SessionState.STOPPED, environment.getSnapshot().state());
 		assertEquals(Integer.valueOf(0), output.getExitCode());
 		assertEquals(1L, runtime.started.getCount());
 		assertFalse(Files.exists(directory.resolve("tooling.json")));
@@ -187,8 +187,8 @@ public class EnvironmentExecutionPlatformTest extends ScenarioPlatformTestCase {
 		EnvironmentSession run = start(session(build, runtime), directory, build, runtime);
 		runtime.emit(failure(lastStartRequest, "Scenario no longer exists"));
 		assertTrue(recorded(run.getLog()).waitFor(5000));
-		assertEquals(SessionState.FAILED, run.getSnapshot().getState());
-		assertEquals("Scenario no longer exists", run.getSnapshot().getFailure());
+		assertEquals(SessionState.FAILED, run.getSnapshot().state());
+		assertEquals("Scenario no longer exists", run.getSnapshot().failure());
 		assertFalse(run.isActive());
 	}
 
@@ -204,8 +204,8 @@ public class EnvironmentExecutionPlatformTest extends ScenarioPlatformTestCase {
 		assertTrue(runtime.started.await(5, TimeUnit.SECONDS));
 		runtime.emit("{\"type\":\"ready\",\"protocolVersion\":3}");
 		assertTrue(recorded(run.getLog()).waitFor(5000));
-		assertEquals(SessionState.FAILED, run.getSnapshot().getState());
-		assertTrue(run.getSnapshot().getFailure().contains("Unsupported Anvil tooling protocol"));
+		assertEquals(SessionState.FAILED, run.getSnapshot().state());
+		assertTrue(run.getSnapshot().failure().contains("Unsupported Anvil tooling protocol"));
 		assertTrue(runtime.requests.isEmpty());
 	}
 
@@ -228,12 +228,12 @@ public class EnvironmentExecutionPlatformTest extends ScenarioPlatformTestCase {
 		runtime.emit(
 				"{\"type\":\"snapshot\",\"snapshot\":{\"state\":\"RUNNING\",\"processes\":["
 						+ "{\"name\":\"lobby\",\"executionId\":\"00000000-0000-0000-0000-000000000001\",\"displayName\":\"Lobby\",\"state\":\"READY\",\"host\":\"127.0.0.1\",\"port\":25566,\"workDirectory\":\"/work/lobby\"}]}}");
-		await(() -> run.getSnapshot().getProcesses().size() == 1);
+		await(() -> run.getSnapshot().processes().size() == 1);
 		run.stop();
 		assertTrue(recorded(run.getLog()).waitFor(5000));
 		assertFalse(session.hasActiveSession());
 		assertFalse(runtime.isAlive());
-		assertEquals(SessionState.STOPPED, run.getSnapshot().getState());
+		assertEquals(SessionState.STOPPED, run.getSnapshot().state());
 		assertFalse(Files.exists(directory.resolve("tooling.json")));
 	}
 
@@ -253,7 +253,7 @@ public class EnvironmentExecutionPlatformTest extends ScenarioPlatformTestCase {
 		var environment = environments.run(selectedProject(directory), scenario(), null);
 		runner.emit(failure(runner.nextRequest(), "Environment startup failed"));
 		await(() -> !environment.isActive());
-		assertEquals(SessionState.FAILED, environment.getSnapshot().getState());
+		assertEquals(SessionState.FAILED, environment.getSnapshot().state());
 		assertEquals(ScenarioCatalog.State.READY, catalog().snapshot().getState());
 		assertNull(catalog().snapshot().getFailure());
 		assertEquals(1, catalog().snapshot().getScenarios().size());
@@ -281,7 +281,7 @@ public class EnvironmentExecutionPlatformTest extends ScenarioPlatformTestCase {
 
 		runner.complete(0);
 		await(() -> !environments.hasActiveSession());
-		assertEquals(SessionState.STOPPED, environment.getSnapshot().getState());
+		assertEquals(SessionState.STOPPED, environment.getSnapshot().state());
 	}
 
 	public void testMalformedHandshakeFailsDiscoveryAndEnvironmentAndCleansUp() throws Exception {
@@ -296,7 +296,7 @@ public class EnvironmentExecutionPlatformTest extends ScenarioPlatformTestCase {
 
 		runner.emit("{\"type\":\"ready\",\"protocolVersion\":\"7\"}");
 		await(() -> !environment.isActive());
-		assertEquals(SessionState.FAILED, environment.getSnapshot().getState());
+		assertEquals(SessionState.FAILED, environment.getSnapshot().state());
 		assertEquals(ScenarioCatalog.State.FAILED, catalog().snapshot().getState());
 		assertTrue(runner.requests.isEmpty());
 		assertFalse(Files.exists(directory.resolve("tooling.json")));

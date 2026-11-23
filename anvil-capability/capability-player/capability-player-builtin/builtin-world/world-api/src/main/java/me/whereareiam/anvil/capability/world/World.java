@@ -50,8 +50,8 @@ public interface World extends PlayerCapability {
 	 *
 	 * <pre>{@code
 	 * Level level = world.level().orElseThrow();
-	 * assertEquals(Environment.NETHER, level.getType().getEnvironment());
-	 * assertEquals(LevelGeneration.FLAT, level.getGeneration());
+	 * assertEquals(Environment.NETHER, level.type().environment());
+	 * assertEquals(LevelGeneration.FLAT, level.generation());
 	 * }</pre>
 	 *
 	 * @return the player's level, or empty while the player is not connected or has not joined a level yet
@@ -64,7 +64,7 @@ public interface World extends PlayerCapability {
 	 *
 	 * <pre>{@code
 	 * ServerLevels server = world.server().orElseThrow();
-	 * assertTrue(server.getLevels().contains("minecraft:arena"));
+	 * assertTrue(server.levels().contains("minecraft:arena"));
 	 * }</pre>
 	 *
 	 * @return the server's worlds, or empty while the player is not connected or has not joined a level yet
@@ -90,14 +90,14 @@ public interface World extends PlayerCapability {
 	 *
 	 * <pre>{@code
 	 * lobby.console().sendCommand("time set noon");
-	 * world.states().until(state -> state.getTime() != null
-	 *         && state.getTime().timeOfDay().orElse(-1) >= 6000);
+	 * world.states().until(state -> state.time() != null
+	 *         && state.time().timeOfDay().orElse(-1) >= 6000);
 	 * }</pre>
 	 *
 	 * @return the time, or empty while the player is not in a level or the server has not sent it yet
 	 */
 	default @NotNull Optional<WorldTime> time() {
-		return Optional.ofNullable(states().current().getTime());
+		return Optional.ofNullable(states().current().time());
 	}
 
 	/**
@@ -106,7 +106,7 @@ public interface World extends PlayerCapability {
 	 * @return the weather, clear until the server says otherwise, or empty while the player is not in a level
 	 */
 	default @NotNull Optional<Weather> weather() {
-		return Optional.ofNullable(states().current().getWeather());
+		return Optional.ofNullable(states().current().weather());
 	}
 
 	/**
@@ -115,7 +115,7 @@ public interface World extends PlayerCapability {
 	 * @return the border, or empty while the player is not in a level or the server has not sent it for the level yet
 	 */
 	default @NotNull Optional<WorldBorder> border() {
-		return Optional.ofNullable(states().current().getBorder());
+		return Optional.ofNullable(states().current().border());
 	}
 
 	/**
@@ -124,7 +124,7 @@ public interface World extends PlayerCapability {
 	 * @return the spawn point, or empty while the player is not connected or the server has not sent it yet
 	 */
 	default @NotNull Optional<SpawnPoint> spawn() {
-		return Optional.ofNullable(states().current().getSpawn());
+		return Optional.ofNullable(states().current().spawn());
 	}
 
 	/**

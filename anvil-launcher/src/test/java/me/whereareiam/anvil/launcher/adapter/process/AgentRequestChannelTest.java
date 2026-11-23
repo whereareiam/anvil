@@ -28,7 +28,7 @@ class AgentRequestChannelTest {
 		var operation = new ChannelOperation<>("external.fixture.count", String.class, Integer.class);
 
 		assertEquals(42, channel.request(operation, "hello"));
-		assertEquals(List.of(new Invocation(operation.getId(), "hello", Integer.class)), connection.invocations);
+		assertEquals(List.of(new Invocation(operation.id(), "hello", Integer.class)), connection.invocations);
 		assertEquals(0, connection.closed);
 	}
 
@@ -39,7 +39,7 @@ class AgentRequestChannelTest {
 		var operation = new ChannelOperation<>("external.fixture.state", Void.class, String.class);
 
 		assertEquals("ready", channel.request(operation, null));
-		assertEquals(List.of(new Invocation(operation.getId(), null, String.class)), connection.invocations);
+		assertEquals(List.of(new Invocation(operation.id(), null, String.class)), connection.invocations);
 	}
 
 	@Test
@@ -49,7 +49,7 @@ class AgentRequestChannelTest {
 		var operation = new ChannelOperation<>("external.fixture.set", String.class, Void.class);
 
 		assertNull(channel.request(operation, "value"));
-		assertEquals(List.of(new Invocation(operation.getId(), "value", Void.class)), connection.invocations);
+		assertEquals(List.of(new Invocation(operation.id(), "value", Void.class)), connection.invocations);
 	}
 
 	@Test
@@ -59,7 +59,7 @@ class AgentRequestChannelTest {
 		var operation = new ChannelOperation<>("external.fixture.identity", String.class, String.class);
 
 		assertNull(channel.request(operation, "unknown"));
-		assertEquals(List.of(new Invocation(operation.getId(), "unknown", String.class)), connection.invocations);
+		assertEquals(List.of(new Invocation(operation.id(), "unknown", String.class)), connection.invocations);
 	}
 
 	@Test
@@ -69,7 +69,7 @@ class AgentRequestChannelTest {
 		var operation = new ChannelOperation<>("external.fixture.echo", String.class, String.class);
 
 		var failure = assertThrows(IllegalArgumentException.class, () -> channel.request(operation, null));
-		assertTrue(failure.getMessage().contains(operation.getId()));
+		assertTrue(failure.getMessage().contains(operation.id()));
 		assertTrue(connection.invocations.isEmpty());
 	}
 
@@ -106,7 +106,7 @@ class AgentRequestChannelTest {
 
 		var unavailable = assertThrows(ChannelUnavailableException.class, () -> channel.request(operation, "hello"));
 		assertSame(failure, unavailable.getCause());
-		assertTrue(unavailable.getMessage().contains(operation.getId()));
+		assertTrue(unavailable.getMessage().contains(operation.id()));
 	}
 
 	@RequiredArgsConstructor

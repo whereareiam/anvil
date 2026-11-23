@@ -29,16 +29,16 @@ class PlayerStateTest {
 	@Test
 	void followsTheAbilitiesOfTheGameModeTheServerSets() {
 		login(GameMode.CREATIVE);
-		assertTrue(state.isMayFly());
-		assertFalse(state.isFlying());
+		assertTrue(state.mayFly());
+		assertFalse(state.flying());
 
 		state.gameEvent(new ClientboundGameEvent(GameEventType.CHANGE_GAME_MODE, 3.0F));
 		assertTrue(state.isSpectator());
-		assertTrue(state.isFlying());
+		assertTrue(state.flying());
 
 		state.gameEvent(new ClientboundGameEvent(GameEventType.CHANGE_GAME_MODE, 0.0F));
-		assertFalse(state.isMayFly());
-		assertFalse(state.isFlying());
+		assertFalse(state.mayFly());
+		assertFalse(state.flying());
 	}
 
 	@Test
@@ -48,25 +48,25 @@ class PlayerStateTest {
 		state.abilities(ClientboundPlayerAbilities.builder().flying(true).mayFly(true).flyingSpeed(0.1F)
 				.walkingSpeed(0.2F).build());
 
-		assertTrue(state.isFlying());
-		assertEquals(0.1F, state.getFlyingSpeed());
-		assertEquals(0.2F, state.getWalkingSpeed());
+		assertTrue(state.flying());
+		assertEquals(0.1F, state.flyingSpeed());
+		assertEquals(0.2F, state.walkingSpeed());
 	}
 
 	@Test
 	void diesAtNoHealthOrItsOwnCombatKillAndLivesAgainAfterARespawn() {
 		login(GameMode.SURVIVAL);
 		state.combatKill(new ClientboundPlayerCombatKill(new EntityId(8), "Bob died"));
-		assertFalse(state.isDead());
+		assertFalse(state.dead());
 
 		state.health(new ClientboundSetHealth(0.0F, 20, 5.0F));
-		assertTrue(state.isDead());
+		assertTrue(state.dead());
 		state.respawn(ClientboundRespawn.builder().dimension(OVERWORLD).dimensionType(DimensionType.known(OVERWORLD))
 				.build());
-		assertFalse(state.isDead());
+		assertFalse(state.dead());
 
 		state.combatKill(new ClientboundPlayerCombatKill(new EntityId(7), "Alice died"));
-		assertTrue(state.isDead());
+		assertTrue(state.dead());
 	}
 
 	@Test
@@ -74,12 +74,12 @@ class PlayerStateTest {
 		login(GameMode.SURVIVAL);
 		state.effect(ClientboundUpdateMobEffect.builder().entityId(new EntityId(7)).effect("minecraft:levitation").amplifier(0)
 				.duration(100).build());
-		assertTrue(state.getEffects().has(MobEffect.LEVITATION));
+		assertTrue(state.effects().has(MobEffect.LEVITATION));
 
 		state.respawn(ClientboundRespawn.builder().dimension(OVERWORLD).dimensionType(DimensionType.known(OVERWORLD))
 				.build());
 
-		assertFalse(state.getEffects().has(MobEffect.LEVITATION));
+		assertFalse(state.effects().has(MobEffect.LEVITATION));
 	}
 
 	@Test
@@ -98,7 +98,7 @@ class PlayerStateTest {
 
 		state.disconnected();
 
-		assertNull(state.getEntityId());
+		assertNull(state.entityId());
 		assertFalse(state.own(new EntityId(7)));
 	}
 

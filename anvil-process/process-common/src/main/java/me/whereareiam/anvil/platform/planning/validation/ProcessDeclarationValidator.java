@@ -20,8 +20,8 @@ public final class ProcessDeclarationValidator {
 			@NotNull Map<String, PlatformProvider> providers
 	) {
 		Map<String, MinecraftProcess> processes = new LinkedHashMap<>();
-		scenario.getServers().forEach(server -> register(server, processes, providers, scenario.isManual()));
-		scenario.getProxies().forEach(proxy -> register(proxy, processes, providers, scenario.isManual()));
+		scenario.servers().forEach(server -> register(server, processes, providers, scenario.manual()));
+		scenario.proxies().forEach(proxy -> register(proxy, processes, providers, scenario.manual()));
 
 		return processes;
 	}
@@ -32,41 +32,41 @@ public final class ProcessDeclarationValidator {
 			@NotNull Map<String, PlatformProvider> providers,
 			boolean manual
 	) {
-		PlatformProvider provider = providers.get(process.getPlatform());
+		PlatformProvider provider = providers.get(process.platform());
 		if (provider == null)
-			throw new ScenarioValidationException("No PlatformProvider for '" + process.getPlatform()
+			throw new ScenarioValidationException("No PlatformProvider for '" + process.platform()
 					+ "'. Available: " + providers.keySet());
 		if (!provider.configurationType().isInstance(process))
-			throw new ScenarioValidationException("Platform '" + process.getPlatform() + "' requires "
-					+ provider.configurationType().getSimpleName() + " but '" + process.getName()
+			throw new ScenarioValidationException("Platform '" + process.platform() + "' requires "
+					+ provider.configurationType().getSimpleName() + " but '" + process.name()
 					+ "' is " + process.getClass().getSimpleName());
-		if (!process.getDistribution().isLocal() && !process.getDistribution().isArtifact()
-				&& blank(process.getDistribution().getVersion()))
-			throw new ScenarioValidationException("Remote distribution for process '" + process.getName()
+		if (!process.distribution().isLocal() && !process.distribution().isArtifact()
+				&& blank(process.distribution().version()))
+			throw new ScenarioValidationException("Remote distribution for process '" + process.name()
 					+ "' requires a version");
 
 		try {
 			provider.validateDistribution(process);
 		} catch (PlatformException failure) {
-			throw new ScenarioValidationException("Invalid distribution for process '" + process.getName() + "': "
+			throw new ScenarioValidationException("Invalid distribution for process '" + process.name() + "': "
 					+ failure.getMessage(), failure);
 		}
 
 		if (process instanceof MinecraftServer server
-				&& (process.getDistribution().isLocal() || process.getDistribution().isArtifact())
-				&& blank(server.getMinecraftVersion()))
-			throw new ScenarioValidationException("Local or artifact server distribution for '" + process.getName()
+				&& (process.distribution().isLocal() || process.distribution().isArtifact())
+				&& blank(server.minecraftVersion()))
+			throw new ScenarioValidationException("Local or artifact server distribution for '" + process.name()
 					+ "' requires minecraftVersion");
-		if (!manual && process.getDistribution().isLatest())
-			throw new ScenarioValidationException("Automated scenario process '" + process.getName()
+		if (!manual && process.distribution().isLatest())
+			throw new ScenarioValidationException("Automated scenario process '" + process.name()
 					+ "' must pin an immutable build instead of 'latest'");
-		if (manual && process.getDistribution().isLatest())
-			System.err.println("[Anvil] Warning: manual process '" + process.getName()
+		if (manual && process.distribution().isLatest())
+			System.err.println("[Anvil] Warning: manual process '" + process.name()
 					+ "' selects latest; this run is not reproducible.");
-		if (process.getMemoryMegabytes() < 256)
-			throw new ScenarioValidationException("Process '" + process.getName() + "' must allocate at least 256 MiB");
+		if (process.memoryMegabytes() < 256)
+			throw new ScenarioValidationException("Process '" + process.name() + "' must allocate at least 256 MiB");
 
-		processes.put(process.getName(), process);
+		processes.put(process.name(), process);
 	}
 
 	private boolean blank(String value) {

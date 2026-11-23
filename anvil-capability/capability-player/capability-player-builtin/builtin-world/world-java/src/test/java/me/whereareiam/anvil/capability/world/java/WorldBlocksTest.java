@@ -39,8 +39,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class WorldBlocksTest {
 	private static final String OVERWORLD = "minecraft:overworld";
 	private static final BlockRegistry BLOCKS = JavaBlockData.shipped().require(TestJavaPlayer.PROTOCOL);
-	private static final int STONE = BLOCKS.block("minecraft:stone").orElseThrow().getDefaultStateId();
-	private static final int GLASS = BLOCKS.block("minecraft:glass").orElseThrow().getDefaultStateId();
+	private static final int STONE = BLOCKS.block("minecraft:stone").orElseThrow().defaultStateId();
+	private static final int GLASS = BLOCKS.block("minecraft:glass").orElseThrow().defaultStateId();
 	private static final BlockPosition IN_CHUNK = new BlockPosition(3, -64, 7);
 
 	private final TestJavaPlayer player = new TestJavaPlayer("Alice");
@@ -83,10 +83,10 @@ class WorldBlocksTest {
 	void namesEachStateByTheBlockDataOfThePlayersProtocol() {
 		player.deliver(stoneFloor(0, 0));
 
-		BlockReading stone = operations.call(WorldChannel.BLOCK, IN_CHUNK).getReading();
+		BlockReading stone = operations.call(WorldChannel.BLOCK, IN_CHUNK).reading();
 
-		assertEquals(new BlockIdentity("minecraft:stone", Map.of(), false), stone.getIdentity());
-		assertEquals(TestJavaPlayer.PROTOCOL, stone.getProtocol());
+		assertEquals(new BlockIdentity("minecraft:stone", Map.of(), false), stone.identity());
+		assertEquals(TestJavaPlayer.PROTOCOL, stone.protocol());
 	}
 
 	@Test
@@ -95,7 +95,7 @@ class WorldBlocksTest {
 		player.deliver(stoneFloor(0, 0));
 		player.deliver(new ClientboundBlockUpdate(change(IN_CHUNK, BLOCKS.stateCount())));
 
-		assertNull(operations.call(WorldChannel.BLOCK, IN_CHUNK).getReading().getIdentity());
+		assertNull(operations.call(WorldChannel.BLOCK, IN_CHUNK).reading().identity());
 	}
 
 	@Test
@@ -150,15 +150,15 @@ class WorldBlocksTest {
 
 	private static BlockChange change(BlockPosition position, int state) {
 		return new BlockChange(me.whereareiam.anvil.edition.java.protocol.model.world.BlockPosition.builder()
-				.x(position.getX())
-				.y(position.getY())
-				.z(position.getZ())
+				.x(position.x())
+				.y(position.y())
+				.z(position.z())
 				.build(), state);
 	}
 
 	private static BlockReading reading(BlockPosition position, int state) {
 		BlockState named = BLOCKS.state(state);
-		return new BlockReading(position, state, new BlockIdentity(named.getBlock().getName(), named.getProperties(),
+		return new BlockReading(position, state, new BlockIdentity(named.block().name(), named.properties(),
 				named.isAir()), TestJavaPlayer.PROTOCOL);
 	}
 }

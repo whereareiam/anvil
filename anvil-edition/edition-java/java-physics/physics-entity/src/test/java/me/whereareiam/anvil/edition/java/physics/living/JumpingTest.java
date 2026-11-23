@@ -33,12 +33,12 @@ class JumpingTest {
 		jump(entity);
 
 		float power = 0.42F * 1.0F * 1.0F + 0.1F * (1 + 1.0F);
-		assertEquals(65.0 + power, entity.body().getPosition().y);
-		for (int tick = 0; tick < 40 && !entity.body().isOnGround(); tick++) entity.tick();
+		assertEquals(65.0 + power, entity.body().position().y);
+		for (int tick = 0; tick < 40 && !entity.body().onGround(); tick++) entity.tick();
 		effects.remove("minecraft:jump_boost");
 		for (int tick = 0; tick < 10; tick++) entity.tick();
 		jump(entity);
-		assertEquals(65.0 + 0.42F, entity.body().getPosition().y);
+		assertEquals(65.0 + 0.42F, entity.body().position().y);
 	}
 
 	@Test
@@ -51,7 +51,7 @@ class JumpingTest {
 
 		jump(entity);
 
-		assertEquals(66.0, entity.body().getPosition().y);
+		assertEquals(66.0, entity.body().position().y);
 	}
 
 	@ParameterizedTest
@@ -59,25 +59,25 @@ class JumpingTest {
 	void waitsTenTicksBeforeJumpingAgainWhileItKeepsJumping(@NotNull String version) {
 		LivingSimulation entity = TestEntity.living(floored(version), 8.5, 65.0, 8.5);
 		TestEntity.settle(entity);
-		entity.body().setJumping(true);
+		entity.body().jumping(true);
 
 		entity.tick();
-		assertEquals((0.42F - 0.08) * (double) 0.98F, entity.body().getDeltaMovement().y);
+		assertEquals((0.42F - 0.08) * (double) 0.98F, entity.body().deltaMovement().y);
 		int landed = 0;
 		for (int tick = 0; tick < 40 && landed == 0; tick++) {
 			entity.tick();
-			if (entity.body().isOnGround()) landed = tick + 1;
+			if (entity.body().onGround()) landed = tick + 1;
 		}
 
 		assertTrue(landed > 0, "the entity landed");
 		entity.tick();
-		assertTrue(entity.body().getDeltaMovement().y > 0.0, "it jumped again as the delay had passed in the air");
+		assertTrue(entity.body().deltaMovement().y > 0.0, "it jumped again as the delay had passed in the air");
 	}
 
 	private static void jump(@NotNull LivingSimulation entity) {
-		entity.body().setJumping(true);
+		entity.body().jumping(true);
 		entity.tick();
-		entity.body().setJumping(false);
+		entity.body().jumping(false);
 	}
 
 	private static @NotNull TestWorld floored(@NotNull String version) {

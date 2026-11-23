@@ -41,9 +41,9 @@ class PlayerBodyTest {
 
 		for (int tick = 0; tick < 60; tick++) player.tick(FORWARD);
 
-		assertTrue(player.body().getPosition().z > 11.0, "the spectator passed the wall at " + player.body().getPosition());
-		assertFalse(player.body().isOnGround());
-		assertFalse(player.body().isHorizontalCollision());
+		assertTrue(player.body().position().z > 11.0, "the spectator passed the wall at " + player.body().position());
+		assertFalse(player.body().onGround());
+		assertFalse(player.body().horizontalCollision());
 	}
 
 	@Test
@@ -55,20 +55,20 @@ class PlayerBodyTest {
 
 		player.tick(FORWARD);
 
-		assertEquals(2.5 + 0.98F * 0.05F, player.body().getPosition().z, 1.0E-9);
+		assertEquals(2.5 + 0.98F * 0.05F, player.body().position().z, 1.0E-9);
 	}
 
 	@Test
 	void ignoresTheEffectsOfOtherEntities() {
 		TestClient client = new TestClient("1.21.11").join().load(0, 0).send();
 		PlayerState state = client.state(GameMode.SURVIVAL);
-		state.effect(ClientboundUpdateMobEffect.builder().entityId(new EntityId(TestClient.ENTITY_ID.getValue() + 1))
+		state.effect(ClientboundUpdateMobEffect.builder().entityId(new EntityId(TestClient.ENTITY_ID.value() + 1))
 				.effect("minecraft:slow_falling").amplifier(0).duration(200).build());
 		PlayerSimulation player = client.simulation(state, 8.5, 100.0, 8.5);
 
 		player.tick(MovementInput.NONE);
 
-		assertEquals((0.0 - 0.08) * 0.98F, player.body().getDeltaMovement().y);
+		assertEquals((0.0 - 0.08) * 0.98F, player.body().deltaMovement().y);
 	}
 
 	@ParameterizedTest
@@ -90,6 +90,6 @@ class PlayerBodyTest {
 		PlayerSimulationTest.settle(player);
 
 		player.tick(FORWARD);
-		return player.body().getPosition().z - 2.5;
+		return player.body().position().z - 2.5;
 	}
 }

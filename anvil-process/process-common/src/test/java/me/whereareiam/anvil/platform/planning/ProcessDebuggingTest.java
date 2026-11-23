@@ -33,20 +33,20 @@ class ProcessDebuggingTest {
 	void givesANamedProcessADebugListenerAndAgent() {
 		AnvilScenario debugged = ProcessDebugging.apply(scenario, EngineOptions.builder().debugProcess("proxy").build());
 
-		MinecraftProxy proxy = debugged.getProxies().getFirst();
-		assertEquals(List.of("debug"), proxy.getListeners());
+		MinecraftProxy proxy = debugged.proxies().getFirst();
+		assertEquals(List.of("debug"), proxy.listeners());
 		assertEquals(List.of("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:${anvil.process.proxy.listener.debug}"),
-				proxy.getJvmArguments());
-		assertEquals(scenario.getServers(), debugged.getServers());
-		assertEquals(scenario.getProcessTimeouts(), debugged.getProcessTimeouts());
+				proxy.jvmArguments());
+		assertEquals(scenario.servers(), debugged.servers());
+		assertEquals(scenario.processTimeouts(), debugged.processTimeouts());
 	}
 
 	@Test
 	void waitsLongEnoughForADebuggerToAttachWhenEveryProcessSuspends() {
 		AnvilScenario debugged = ProcessDebugging.apply(scenario, EngineOptions.builder().debugProcess("*").debugSuspend(true).build());
 
-		assertTrue(debugged.getServers().getFirst().getJvmArguments().getFirst().contains("suspend=y"));
-		assertTrue(debugged.getProxies().getFirst().getJvmArguments().getFirst().contains("suspend=y"));
-		assertEquals(Duration.ofMinutes(30), debugged.getProcessTimeouts().getStartup());
+		assertTrue(debugged.servers().getFirst().jvmArguments().getFirst().contains("suspend=y"));
+		assertTrue(debugged.proxies().getFirst().jvmArguments().getFirst().contains("suspend=y"));
+		assertEquals(Duration.ofMinutes(30), debugged.processTimeouts().startup());
 	}
 }

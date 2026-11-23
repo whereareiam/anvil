@@ -226,8 +226,8 @@ final class CatalogController implements Disposable {
 			return;
 		}
 
-		var current = scenario.getProcesses().stream()
-				.filter(candidate -> candidate.getName().equals(process.getName()))
+		var current = scenario.processes().stream()
+				.filter(candidate -> candidate.name().equals(process.name()))
 				.findFirst()
 				.orElse(null);
 		if (current == null) {
@@ -235,7 +235,7 @@ final class CatalogController implements Disposable {
 			return;
 		}
 
-		view.details.showProcess(scenario, current, execution.process(current.getName()), snapshot.getState());
+		view.details.showProcess(scenario, current, execution.process(current.name()), snapshot.state());
 	}
 
 	private void showDeclaration(@NotNull ScenarioDescriptor scenario, @Nullable ProcessDefinition process) {

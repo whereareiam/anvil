@@ -13,7 +13,7 @@ import java.util.Map;
 
 /**
  * The style one {@link Text} component sets, as the server sent it. What it leaves unset, a {@code null} member or a
- * decoration missing from {@link #getDecorations()}, the component inherits from its parent; {@link SpanStyle} is the
+ * decoration missing from {@link #decorations()}, the component inherits from its parent; {@link SpanStyle} is the
  * style with everything inherited resolved.
  *
  * <pre>{@code

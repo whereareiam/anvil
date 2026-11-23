@@ -27,27 +27,27 @@ final class BungeeCordConfiguration {
 			.disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER).build();
 
 	void write(MinecraftProxy proxy, PlatformContext context) throws IOException {
-		if (context.getForwarding().getMode() != ForwardingMode.LEGACY)
+		if (context.forwarding().mode() != ForwardingMode.LEGACY)
 			throw new PlatformException("BungeeCord requires legacy forwarding");
 
-		for (String key : proxy.getSettings().keySet())
+		for (String key : proxy.settings().keySet())
 			if (OWNED.contains(key))
 				throw new PlatformException("BungeeCord setting '" + key + "' is owned by Anvil runtime configuration");
 
-		ProcessFiles files = context.getFiles();
+		ProcessFiles files = context.files();
 		ObjectNode config = read(files);
-		for (var setting : proxy.getSettings().entrySet())
+		for (var setting : proxy.settings().entrySet())
 			config.set(setting.getKey(), yaml.readTree(setting.getValue()));
 
-		config.put("online_mode", proxy.isOnlineMode());
+		config.put("online_mode", proxy.onlineMode());
 		config.put("ip_forward", true);
 		config.put("log_commands", true);
 		config.put("network_compression_threshold", 256);
 		config.putArray("listeners").add(listener(proxy, context));
 		ObjectNode servers = config.putObject("servers");
-		for (String server : proxy.getServers())
-			servers.putObject(server).put("address", context.getProcessAddresses().get(server).getHostString() + ":"
-					+ context.getProcessAddresses().get(server).getPort())
+		for (String server : proxy.servers())
+			servers.putObject(server).put("address", context.processAddresses().get(server).getHostString() + ":"
+					+ context.processAddresses().get(server).getPort())
 					.put("motd", "Anvil server " + server).put("restricted", false);
 
 		files.write(CONFIGURATION, yaml.writeValueAsString(config));
@@ -55,10 +55,10 @@ final class BungeeCordConfiguration {
 
 	private ObjectNode listener(MinecraftProxy proxy, PlatformContext context) {
 		ObjectNode listener = yaml.createObjectNode();
-		listener.put("host", context.getBindAddress() + ":" + context.getPort());
-		listener.put("motd", "Anvil: " + proxy.getName());
+		listener.put("host", context.bindAddress() + ":" + context.port());
+		listener.put("motd", "Anvil: " + proxy.name());
 		listener.put("max_players", 20);
-		listener.putArray("priorities").add(proxy.getDefaultServer());
+		listener.putArray("priorities").add(proxy.defaultServer());
 		listener.put("force_default_server", true);
 		listener.put("ping_passthrough", false);
 		listener.put("query_enabled", false);

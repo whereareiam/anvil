@@ -40,7 +40,7 @@ public final class ManagedContainer extends ManagedProcess implements RunningCon
 	@Override
 	public @NotNull CommandResult execute(@NotNull Duration timeout, @NotNull String... command) {
 		ProcessExecution execution = currentExecution();
-		if (execution == null || !execution.isAlive())
+		if (execution == null || !execution.alive())
 			throw new IllegalStateException("Container '" + name() + "' is not running");
 
 		return execution.execute(timeout, command);

@@ -24,7 +24,7 @@ import java.util.function.Consumer;
  *
  * <pre>{@code
  * JavaProtocol protocol = player.protocol(JavaProtocol.class);
- * Subscription chat = protocol.listen(ClientboundSystemChat.class, packet -> received(packet.getText()));
+ * Subscription chat = protocol.listen(ClientboundSystemChat.class, packet -> received(packet.text()));
  * protocol.send(new ServerboundChatCommand("spawn"));
  * }</pre>
  */
@@ -96,7 +96,7 @@ public interface JavaProtocol {
 	 * of a teleport, are not reported. Listeners run on the sender's thread.
 	 *
 	 * <pre>{@code
-	 * Subscription moves = protocol.listenSent(ServerboundMovePlayerPosRot.class, move -> position = move.getPosition());
+	 * Subscription moves = protocol.listenSent(ServerboundMovePlayerPosRot.class, move -> position = move.position());
 	 * }</pre>
 	 *
 	 * @param type packet class

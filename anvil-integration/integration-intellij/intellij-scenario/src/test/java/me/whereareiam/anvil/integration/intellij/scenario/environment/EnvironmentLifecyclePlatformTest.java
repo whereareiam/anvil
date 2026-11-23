@@ -96,10 +96,10 @@ public class EnvironmentLifecyclePlatformTest extends ScenarioPlatformTestCase {
 						+ " run log\"}");
 		firstRuntime.emit(
 				"{\"type\":\"snapshot\",\"snapshot\":{\"state\":\"RUNNING\",\"displayName\":\"Registration\"}}");
-		await(() -> first.getSnapshot().getState() == SessionState.RUNNING);
+		await(() -> first.getSnapshot().state() == SessionState.RUNNING);
 		first.stop();
 		await(() -> !session.hasActiveSession());
-		assertEquals(SessionState.STOPPED, first.getSnapshot().getState());
+		assertEquals(SessionState.STOPPED, first.getSnapshot().state());
 		assertTrue(recorded(first.getLog()).waitFor(5000));
 		assertFalse(first.isActive());
 		String retainedOutput = outputText(first);
@@ -111,7 +111,7 @@ public class EnvironmentLifecyclePlatformTest extends ScenarioPlatformTestCase {
 				first.console("lobby", "must not reach the newer run").get(5, TimeUnit.SECONDS));
 		assertTrue(second.isActive());
 		assertTrue(secondRuntime.requests.isEmpty());
-		assertEquals(SessionState.STOPPED, first.getSnapshot().getState());
+		assertEquals(SessionState.STOPPED, first.getSnapshot().state());
 		assertEquals(retainedOutput, outputText(first));
 		assertFalse(outputText(second).contains("First run log"));
 		assertEquals(2, session.getSessions().size());

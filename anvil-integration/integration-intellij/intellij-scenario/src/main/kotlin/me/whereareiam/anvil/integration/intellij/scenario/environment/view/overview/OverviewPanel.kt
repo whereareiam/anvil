@@ -61,7 +61,7 @@ class OverviewPanel(project: Project, private val session: EnvironmentSession) :
 		sink[ScenarioDataKeys.SCENARIO] = session.scenario
 		sink[ScenarioDataKeys.PROCESS] = controller.selectedProcessName()
 		sink[ScenarioDataKeys.SESSION] = session
-		val definition = session.scenario.definition
+		val definition = session.scenario.definition()
 		sink[CommonDataKeys.NAVIGATABLE] = object : Navigatable {
 			override fun navigate(requestFocus: Boolean) = controller.openDefinition(definition)
 			override fun canNavigate() = true

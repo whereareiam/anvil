@@ -15,7 +15,7 @@ import java.util.function.Consumer;
 public interface ProtocolAuthentication {
 	/**
 	 * Lists locally stored accounts owned by this library. Each account's
-	 * {@link AuthenticationAccount#getLibraryId() library identifier} is this library's identifier.
+	 * {@link AuthenticationAccount#libraryId() library identifier} is this library's identifier.
 	 *
 	 * @return account metadata without credential material
 	 */

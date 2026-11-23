@@ -94,7 +94,7 @@ public final class RunnerSession implements ToolingSession {
 		this.engineFactory = engineFactory;
 		this.scenarios = scenarios;
 		this.extensions = extensions;
-		this.consoleOutput = new SessionConsole(() -> latest.getSessionId());
+		this.consoleOutput = new SessionConsole(() -> latest.sessionId());
 	}
 
 	@Override
@@ -114,16 +114,16 @@ public final class RunnerSession implements ToolingSession {
 			stop();
 
 			Map<String, PresentationMetadata> labels = new LinkedHashMap<>();
-			Stream.concat(scenario.getServers().stream(), scenario.getProxies().stream())
-					.filter(component -> component.getMetadata() != null)
-					.forEach(component -> labels.put(component.getName(), component.getMetadata()));
+			Stream.concat(scenario.servers().stream(), scenario.proxies().stream())
+					.filter(component -> component.metadata() != null)
+					.forEach(component -> labels.put(component.name(), component.metadata()));
 			consoleOutput.beginRun(labels);
 			latest = SessionSnapshot.builder()
 					.sessionId(UUID.randomUUID().toString())
 					.definition(selected.definition())
-					.scenario(scenario.getName())
-					.entrypoint(scenario.getEntrypoint())
-					.displayName(DisplayNameResolver.resolve(scenario.getName(), scenario.getMetadata()))
+					.scenario(scenario.name())
+					.entrypoint(scenario.entrypoint())
+					.displayName(DisplayNameResolver.resolve(scenario.name(), scenario.metadata()))
 					.state(SessionState.STARTING)
 					.build();
 			try {
@@ -185,8 +185,8 @@ public final class RunnerSession implements ToolingSession {
 	}
 
 	private static void requireDeclaredProcess(AnvilScenario definition, String process) {
-		if (Stream.concat(definition.getServers().stream(), definition.getProxies().stream())
-				.noneMatch(candidate -> candidate.getName().equals(process)))
+		if (Stream.concat(definition.servers().stream(), definition.proxies().stream())
+				.noneMatch(candidate -> candidate.name().equals(process)))
 			throw new NoSuchElementException("Unknown process: " + process);
 	}
 
@@ -220,7 +220,7 @@ public final class RunnerSession implements ToolingSession {
 		lifecycle.lock();
 		try {
 			ScenarioContext current = requireRunning();
-			if (!request.getSessionId().equals(latest.getSessionId()))
+			if (!request.sessionId().equals(latest.sessionId()))
 				throw new IllegalStateException("Action belongs to a different environment");
 			ActionResult result = extensions.invoke(current, request);
 			refresh();
@@ -273,9 +273,9 @@ public final class RunnerSession implements ToolingSession {
 			ScenarioContext current = context;
 			latest = latest.toBuilder().state(SessionState.STOPPING).build();
 			try {
-				current.finish(latest.getFailure() == null);
-				latest = latest.toBuilder().state(latest.getFailure() == null ? SessionState.STOPPED : SessionState.FAILED)
-						.processes(latest.getProcesses().stream()
+				current.finish(latest.failure() == null);
+				latest = latest.toBuilder().state(latest.failure() == null ? SessionState.STOPPED : SessionState.FAILED)
+						.processes(latest.processes().stream()
 								.map(process -> process.toBuilder()
 										.state(me.whereareiam.anvil.tooling.api.type.ProcessState.STOPPED)
 										.build())
@@ -308,7 +308,7 @@ public final class RunnerSession implements ToolingSession {
 
 	private ScenarioContext requireRunning() {
 		ensureOpen();
-		if (context == null || latest.getState() != SessionState.RUNNING)
+		if (context == null || latest.state() != SessionState.RUNNING)
 			throw new IllegalStateException("No scenario is ready for commands");
 		return context;
 	}
@@ -326,8 +326,8 @@ public final class RunnerSession implements ToolingSession {
 				.build()).toList();
 		latest = latest.toBuilder().processes(processes).players(players)
 				.actions(extensions.actions(context)).observations(extensions.observations(context)).build();
-		if (latest.getState() == SessionState.RUNNING
-				&& processes.stream().anyMatch(process -> process.getState() == me.whereareiam.anvil.tooling.api.type.ProcessState.FAILED))
+		if (latest.state() == SessionState.RUNNING
+				&& processes.stream().anyMatch(process -> process.state() == me.whereareiam.anvil.tooling.api.type.ProcessState.FAILED))
 			latest = latest.toBuilder().state(SessionState.FAILED).failure("A scenario process failed; inspect retained logs.").build();
 	}
 

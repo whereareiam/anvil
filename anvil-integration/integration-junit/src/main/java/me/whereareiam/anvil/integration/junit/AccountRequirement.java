@@ -64,7 +64,7 @@ final class AccountRequirement {
 	private AccountPool anyStored(AccountManager accounts) {
 		Map<String, Integer> owners = new LinkedHashMap<>();
 		for (AuthenticationAccount account : accounts.list())
-			owners.merge(account.getAccountId(), 1, Integer::sum);
+			owners.merge(account.accountId(), 1, Integer::sum);
 
 		List<String> accountIds = new ArrayList<>();
 		owners.forEach((accountId, libraries) -> {

@@ -36,8 +36,8 @@ class ChannelPacketTapTest {
 		tap.receive(chat("first"));
 		tap.receive(chat("second"));
 
-		assertEquals("first", tap.received(ClientboundSystemChat.class, chat -> true).getText().plain());
-		assertEquals("second", tap.received(ClientboundSystemChat.class, chat -> true).getText().plain());
+		assertEquals("first", tap.received(ClientboundSystemChat.class, chat -> true).text().plain());
+		assertEquals("second", tap.received(ClientboundSystemChat.class, chat -> true).text().plain());
 		assertTrue(tap.unread().isEmpty());
 		assertEquals(2, tap.history().size());
 	}
@@ -46,8 +46,8 @@ class ChannelPacketTapTest {
 	void waitsForAPacketThatArrivesWhileItWaits() {
 		channel.meanwhile(() -> tap.receive(chat("late")));
 
-		assertEquals("late", tap.received(ClientboundSystemChat.class, chat -> chat.getText().plain().equals("late"))
-				.getText().plain());
+		assertEquals("late", tap.received(ClientboundSystemChat.class, chat -> chat.text().plain().equals("late"))
+				.text().plain());
 	}
 
 	@Test
@@ -56,7 +56,7 @@ class ChannelPacketTapTest {
 
 		TappedPacket light = tap.received("update_light");
 
-		assertEquals(0, light.getSequence());
+		assertEquals(0, light.sequence());
 		assertTrue(light.packet().isEmpty());
 	}
 
@@ -80,7 +80,7 @@ class ChannelPacketTapTest {
 		tap.receive(chat("a"));
 		tap.receive(new TappedFrame(List.of(1), ConnectionState.PLAY, 0x2a, "update_light", null, null));
 
-		assertEquals(List.of(0L, 1L), tap.history().stream().map(TappedPacket::getSequence).toList());
+		assertEquals(List.of(0L, 1L), tap.history().stream().map(TappedPacket::sequence).toList());
 	}
 
 	@Test
@@ -88,7 +88,7 @@ class ChannelPacketTapTest {
 		tap.receive(chat("other"));
 
 		assertThrows(IllegalStateException.class, () -> tap.received(ClientboundSystemChat.class,
-				chat -> chat.getText().plain().equals("wanted"), SHORT));
+				chat -> chat.text().plain().equals("wanted"), SHORT));
 	}
 
 	@Test

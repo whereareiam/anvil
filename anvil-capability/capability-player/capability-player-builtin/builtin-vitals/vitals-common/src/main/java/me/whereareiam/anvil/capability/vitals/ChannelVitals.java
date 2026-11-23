@@ -39,22 +39,22 @@ final class ChannelVitals implements Vitals {
 
 	@Override
 	public float health() {
-		return status.getHealth();
+		return status.health();
 	}
 
 	@Override
 	public int food() {
-		return status.getFood();
+		return status.food();
 	}
 
 	@Override
 	public float saturation() {
-		return status.getSaturation();
+		return status.saturation();
 	}
 
 	@Override
 	public boolean dead() {
-		return deathScreen || status.getHealth() <= 0F;
+		return deathScreen || status.health() <= 0F;
 	}
 
 	@Override
@@ -78,13 +78,13 @@ final class ChannelVitals implements Vitals {
 
 	private synchronized void report(VitalStatus reported) {
 		status = reported;
-		if (reported.getHealth() > 0F) deathScreen = false;
+		if (reported.health() > 0F) deathScreen = false;
 		reports++;
 	}
 
 	private synchronized void died(Death death) {
 		deaths.add(death);
-		if (!death.isRespawnedImmediately()) deathScreen = true;
+		if (!death.respawnedImmediately()) deathScreen = true;
 	}
 
 	/**
@@ -112,7 +112,7 @@ final class ChannelVitals implements Vitals {
 			}
 
 			Death death = Objects.requireNonNull(cursor.find(matcher));
-			throw new IllegalStateException("Player died when it must not: " + death.getMessage());
+			throw new IllegalStateException("Player died when it must not: " + death.message());
 		}
 
 		@Override

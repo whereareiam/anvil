@@ -110,11 +110,11 @@ public interface PlayerManager extends AutoCloseable {
 	default @NotNull SimulatedPlayer create(@NotNull PlayerOptions options, @NotNull AccountPool.AccountLease lease) {
 		PlayerLogin login = leasedLogin(options);
 		if (!lease.claim())
-			throw new IllegalStateException("Account lease for '" + lease.account().getAccountId() + "' is no longer available");
+			throw new IllegalStateException("Account lease for '" + lease.account().accountId() + "' is no longer available");
 
 		try {
-			return create(options.toBuilder().protocolLibrary(lease.account().getLibraryId())
-					.login(PlayerLogin.account(login.getAuthentication(), lease.account().getAccountId())).build());
+			return create(options.toBuilder().protocolLibrary(lease.account().libraryId())
+					.login(PlayerLogin.account(login.authentication(), lease.account().accountId())).build());
 		} catch (RuntimeException exception) {
 			lease.close();
 			throw exception;
@@ -122,9 +122,9 @@ public interface PlayerManager extends AutoCloseable {
 	}
 
 	private static @NotNull PlayerLogin leasedLogin(@NotNull PlayerOptions options) {
-		PlayerLogin login = options.getLogin();
+		PlayerLogin login = options.login();
 		if (!login.isLeased())
-			throw new IllegalArgumentException("Player '" + options.getName() + "' declares a " + login.getAuthentication()
+			throw new IllegalArgumentException("Player '" + options.name() + "' declares a " + login.authentication()
 					+ " login that takes no lease; declare PlayerLogin.leased(AuthenticationMode) to sign in with a leased account");
 		return login;
 	}

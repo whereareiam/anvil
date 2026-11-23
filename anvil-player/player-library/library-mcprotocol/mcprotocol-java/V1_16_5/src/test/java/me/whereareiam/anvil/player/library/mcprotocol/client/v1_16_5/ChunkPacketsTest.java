@@ -44,12 +44,12 @@ class ChunkPacketsTest {
 				new ServerChunkDataPacket(new Column(-2, 5, chunks, new CompoundTag[0], new CompoundTag(""),
 						new int[1024]))));
 
-		assertEquals(new ChunkPosition(-2, 5), chunk.getPosition());
-		assertEquals(16, chunk.getSections().size());
-		assertEquals(9, chunk.getSections().getFirst().blockState(1, 2, 3));
-		assertEquals(LevelChunkSection.AIR, chunk.getSections().getFirst().blockState(1, 2, 4));
-		assertEquals(LevelChunkSection.EMPTY, chunk.getSections().get(1));
-		assertEquals(300, chunk.getSections().get(2).blockState(300 % 16, 1, (300 / 16) % 16));
+		assertEquals(new ChunkPosition(-2, 5), chunk.position());
+		assertEquals(16, chunk.sections().size());
+		assertEquals(9, chunk.sections().getFirst().blockState(1, 2, 3));
+		assertEquals(LevelChunkSection.AIR, chunk.sections().getFirst().blockState(1, 2, 4));
+		assertEquals(LevelChunkSection.EMPTY, chunk.sections().get(1));
+		assertEquals(300, chunk.sections().get(2).blockState(300 % 16, 1, (300 / 16) % 16));
 	}
 
 	@Test
@@ -61,10 +61,10 @@ class ChunkPacketsTest {
 		ClientboundSectionBlocksUpdate update = assertInstanceOf(ClientboundSectionBlocksUpdate.class, packets.decode(
 				new ServerChunkDataPacket(new Column(1, -1, chunks, new CompoundTag[0], new CompoundTag("")))));
 
-		assertEquals(4096, update.getChanges().size());
-		assertEquals(change(16, 16, -16, LevelChunkSection.AIR), update.getChanges().getFirst());
-		assertEquals(List.of(change(20, 21, -10, 9)), update.getChanges().stream()
-				.filter(change -> change.getBlockState() != LevelChunkSection.AIR).toList());
+		assertEquals(4096, update.changes().size());
+		assertEquals(change(16, 16, -16, LevelChunkSection.AIR), update.changes().getFirst());
+		assertEquals(List.of(change(20, 21, -10, 9)), update.changes().stream()
+				.filter(change -> change.blockState() != LevelChunkSection.AIR).toList());
 	}
 
 	@Test

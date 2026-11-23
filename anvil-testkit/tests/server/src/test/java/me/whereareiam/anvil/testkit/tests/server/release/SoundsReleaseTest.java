@@ -29,7 +29,7 @@ class SoundsReleaseTest {
 				+ player.name());
 
 		HeardSound heard = sounds.heard("entity.experience_orb.pickup", Duration.ofSeconds(10));
-		assertEquals(SoundCategory.PLAYERS, heard.getCategory());
+		assertEquals(SoundCategory.PLAYERS, heard.category());
 	}
 
 	@Test
@@ -40,6 +40,6 @@ class SoundsReleaseTest {
 
 		server.console("execute at " + player.name() + " run playsound anvil:announcement master " + player.name());
 
-		assertEquals(SoundCategory.MASTER, sounds.heard("anvil:announcement", Duration.ofSeconds(10)).getCategory());
+		assertEquals(SoundCategory.MASTER, sounds.heard("anvil:announcement", Duration.ofSeconds(10)).category());
 	}
 }

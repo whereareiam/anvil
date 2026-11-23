@@ -80,7 +80,7 @@ public class RemoteEndpoint {
 	}
 
 	/**
-	 * Returns the host of the {@link #getAddress() address} as the vanilla client reads it: without the brackets
+	 * Returns the host of the {@link #address() address} as the vanilla client reads it: without the brackets
 	 * of an IPv6 literal and with internationalised labels converted to their ASCII form, letter case and a
 	 * trailing dot kept.
 	 *
@@ -98,7 +98,7 @@ public class RemoteEndpoint {
 	}
 
 	/**
-	 * Returns the port of the {@link #getAddress() address}, or 25565 when it names none.
+	 * Returns the port of the {@link #address() address}, or 25565 when it names none.
 	 *
 	 * @return the port the client connects to before it follows an SRV record
 	 * @throws IllegalArgumentException when the address cannot be parsed

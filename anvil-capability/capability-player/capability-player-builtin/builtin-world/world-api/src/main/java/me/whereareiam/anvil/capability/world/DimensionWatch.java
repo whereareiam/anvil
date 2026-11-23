@@ -104,6 +104,6 @@ public interface DimensionWatch {
 	 */
 	static @NotNull Predicate<DimensionChange> entering(@NotNull String dimension) {
 		String key = dimension.indexOf(':') < 0 ? "minecraft:" + dimension : dimension;
-		return change -> change.getTo().equals(key) && !key.equals(change.getFrom());
+		return change -> change.to().equals(key) && !key.equals(change.from());
 	}
 }

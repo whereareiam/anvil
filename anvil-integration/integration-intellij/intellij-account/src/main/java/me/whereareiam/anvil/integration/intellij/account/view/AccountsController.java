@@ -147,7 +147,7 @@ final class AccountsController {
 				null, "", (InputValidatorEx) input -> {
 					if (!library.isValidAccountId(input))
 						return "Use letters, numbers, dots, underscores, or hyphens.";
-					if (catalog.getAccounts().stream().anyMatch(entry -> entry.getAccount().getAccountId().equals(input)))
+					if (catalog.getAccounts().stream().anyMatch(entry -> entry.getAccount().accountId().equals(input)))
 						return "This account ID is already available to the project.";
 
 					return null;
@@ -167,10 +167,10 @@ final class AccountsController {
 
 		Path source = Path.of(selected[0].getPath());
 		runOperation(() -> library.inspect(source), metadata -> {
-			String id = metadata.getAccountId();
+			String id = metadata.accountId();
 			boolean global = catalog.getAccounts().stream().anyMatch(
 					entry -> entry.getSource() == AccountSource.GLOBAL
-							&& entry.getAccount().getAccountId().equals(id));
+							&& entry.getAccount().accountId().equals(id));
 
 			if (global) {
 				form.showFeedback(
@@ -201,7 +201,7 @@ final class AccountsController {
 
 		var descriptor = new FileSaverDescriptor("Export Account", "Choose where to save this account file.", "json");
 		var destination = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
-				.save(selected.getAccount().getAccountId() + ".json");
+				.save(selected.getAccount().accountId() + ".json");
 		if (destination == null) return;
 
 		runOperation(() -> {
@@ -214,7 +214,7 @@ final class AccountsController {
 		var selected = accounts.selected();
 		if (selected == null || selected.getSource() != AccountSource.PROJECT) return;
 
-		String id = selected.getAccount().getAccountId();
+		String id = selected.getAccount().accountId();
 		String used = String.join(
 				", ",
 				poolMembers.entrySet().stream()

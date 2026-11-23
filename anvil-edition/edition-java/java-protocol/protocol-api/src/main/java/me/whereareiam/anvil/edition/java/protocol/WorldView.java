@@ -51,6 +51,6 @@ public interface WorldView {
 	 * block's column or the height lies outside the level
 	 */
 	default @NotNull OptionalInt blockState(@NotNull BlockPosition position) {
-		return blockState(position.getX(), position.getY(), position.getZ());
+		return blockState(position.x(), position.y(), position.z());
 	}
 }

@@ -57,7 +57,7 @@ class ProcessDeclarationValidatorTest {
 		MinecraftServer server = server("server", "1").toBuilder().platform("proxy").build();
 		AnvilScenario scenario = AnvilScenario.builder()
 				.name("mismatch")
-				.entrypoint(server.getName())
+				.entrypoint(server.name())
 				.server(server)
 				.build();
 
@@ -72,7 +72,7 @@ class ProcessDeclarationValidatorTest {
 				.build();
 		AnvilScenario scenario = AnvilScenario.builder()
 				.name("local")
-				.entrypoint(local.getName())
+				.entrypoint(local.name())
 				.server(local)
 				.build();
 
@@ -105,7 +105,7 @@ class ProcessDeclarationValidatorTest {
 		MinecraftServer server = server("server", build);
 		return AnvilScenario.builder()
 				.name("direct")
-				.entrypoint(server.getName())
+				.entrypoint(server.name())
 				.server(server)
 				.build();
 	}

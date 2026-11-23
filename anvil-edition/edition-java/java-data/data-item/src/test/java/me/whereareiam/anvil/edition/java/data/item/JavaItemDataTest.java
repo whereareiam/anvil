@@ -62,7 +62,7 @@ class JavaItemDataTest {
 	void reportsWhyAMissingProtocolHasNoItemData() {
 		ItemDataUnavailableException failure = assertThrows(ItemDataUnavailableException.class, () -> DATA.require(777));
 
-		assertEquals(777, failure.getProtocol());
+		assertEquals(777, failure.protocol());
 		assertEquals("No item data for protocol 777: PrismarineJS/minecraft-data 3.117.0 has no item file for it",
 				failure.getMessage());
 	}

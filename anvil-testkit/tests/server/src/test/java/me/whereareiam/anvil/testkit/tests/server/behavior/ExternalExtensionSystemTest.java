@@ -76,7 +76,7 @@ class ExternalExtensionSystemTest {
 				var player = context.players().create("Observer");
 				assertEquals("Observer@1.21.11", probe(fixture, player, "label"));
 				assertFalse(player.hasCapability(Session.class));
-				assertEquals("Observer", player.requestedProfile().getUsername());
+				assertEquals("Observer", player.requestedProfile().username());
 			}
 		}
 		assertEquals(List.of("created", "closed"), Files.readAllLines(temporary.resolve("cache/fixture-observer.lifecycle")));
@@ -127,8 +127,8 @@ class ExternalExtensionSystemTest {
 
 	private AnvilScenario scenario(Path extension) {
 		AnvilScenario base = new Paper12111SystemScenario().define();
-		var server = base.getServers().getFirst();
-		var workspace = server.getWorkspace().toBuilder().asset(WorkspaceAsset.builder().group("external-agent")
+		var server = base.servers().getFirst();
+		var workspace = server.workspace().toBuilder().asset(WorkspaceAsset.builder().group("external-agent")
 				.source(AssetSource.path(extension))
 				.target(Path.of("plugins/anvil-agent-extensions/external.jar")).build()).build();
 		return base.toBuilder().name("external-extension").clearServers()

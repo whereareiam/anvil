@@ -59,8 +59,8 @@ final class ChannelOverlays implements Overlays {
 	public @NotNull List<BossBar> bossBars() {
 		Map<UUID, BossBar> shown = new LinkedHashMap<>();
 		for (BossBarEvent event : bossBarEvents) {
-			if (event.getChange() == BossBarChange.REMOVED) shown.remove(event.getBar().getId());
-			else shown.put(event.getBar().getId(), event.getBar());
+			if (event.change() == BossBarChange.REMOVED) shown.remove(event.bar().id());
+			else shown.put(event.bar().id(), event.bar());
 		}
 		return List.copyOf(shown.values());
 	}
@@ -128,7 +128,7 @@ final class ChannelOverlays implements Overlays {
 		@Override
 		public void neverShown(@NotNull Predicate<Title> matcher, @NotNull Duration duration) {
 			follower.never(matcher, duration, "Player saw a title it must not see: ",
-					title -> title.getSubtitle().isEmpty() ? title.getTitle() : title.getTitle() + " / " + title.getSubtitle());
+					title -> title.subtitle().isEmpty() ? title.title() : title.title() + " / " + title.subtitle());
 		}
 
 		@Override
@@ -173,17 +173,17 @@ final class ChannelOverlays implements Overlays {
 
 		@Override
 		public @NotNull BossBar shown(@NotNull Predicate<BossBar> matcher, @NotNull Duration timeout) {
-			return follower.next(shownMatching(matcher), timeout).getBar();
+			return follower.next(shownMatching(matcher), timeout).bar();
 		}
 
 		@Override
 		public @NotNull BossBar removed(@NotNull Predicate<BossBar> matcher, @NotNull Duration timeout) {
-			return follower.next(removedMatching(matcher), timeout).getBar();
+			return follower.next(removedMatching(matcher), timeout).bar();
 		}
 
 		@Override
 		public void neverShown(@NotNull Predicate<BossBar> matcher, @NotNull Duration duration) {
-			follower.never(shownMatching(matcher), duration, "Player saw a boss bar it must not see: ", event -> event.getBar().getText());
+			follower.never(shownMatching(matcher), duration, "Player saw a boss bar it must not see: ", event -> event.bar().text());
 		}
 
 		@Override
@@ -202,11 +202,11 @@ final class ChannelOverlays implements Overlays {
 		}
 
 		private static Predicate<BossBarEvent> shownMatching(Predicate<BossBar> matcher) {
-			return event -> event.getChange() != BossBarChange.REMOVED && matcher.test(event.getBar());
+			return event -> event.change() != BossBarChange.REMOVED && matcher.test(event.bar());
 		}
 
 		private static Predicate<BossBarEvent> removedMatching(Predicate<BossBar> matcher) {
-			return event -> event.getChange() == BossBarChange.REMOVED && matcher.test(event.getBar());
+			return event -> event.change() == BossBarChange.REMOVED && matcher.test(event.bar());
 		}
 	}
 }

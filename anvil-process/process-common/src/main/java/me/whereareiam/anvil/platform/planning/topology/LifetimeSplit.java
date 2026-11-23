@@ -42,18 +42,18 @@ public final class LifetimeSplit {
 	 * @return the division, or null when no process of the scenario outlives it
 	 */
 	public static @Nullable LifetimeSplit of(@NotNull PlatformPlan scenario) {
-		AnvilScenario declaration = scenario.getScenario();
-		List<MinecraftServer> servers = declaration.getServers().stream().filter(LifetimeSplit::retained).toList();
-		List<MinecraftProxy> proxies = declaration.getProxies().stream().filter(LifetimeSplit::retained).toList();
+		AnvilScenario declaration = scenario.scenario();
+		List<MinecraftServer> servers = declaration.servers().stream().filter(LifetimeSplit::retained).toList();
+		List<MinecraftProxy> proxies = declaration.proxies().stream().filter(LifetimeSplit::retained).toList();
 		List<String> names = new ArrayList<>();
-		servers.forEach(server -> names.add(server.getName()));
-		proxies.forEach(proxy -> names.add(proxy.getName()));
+		servers.forEach(server -> names.add(server.name()));
+		proxies.forEach(proxy -> names.add(proxy.name()));
 		if (names.isEmpty()) return null;
 
 		AnvilScenario own = declaration.toBuilder()
 				.name("engine-" + String.join("-", names))
 				.metadata(null)
-				.entrypoint(names.contains(declaration.getEntrypoint()) ? declaration.getEntrypoint() : names.getFirst())
+				.entrypoint(names.contains(declaration.entrypoint()) ? declaration.entrypoint() : names.getFirst())
 				.clearServers()
 				.servers(servers)
 				.clearProxies()
@@ -64,7 +64,7 @@ public final class LifetimeSplit {
 				.setupHook(null)
 				.build();
 		PlatformPlan.PlatformPlanBuilder retained = PlatformPlan.builder().scenario(own);
-		names.forEach(name -> retained.process(name, scenario.getProcesses().get(name)));
+		names.forEach(name -> retained.process(name, scenario.processes().get(name)));
 
 		return new LifetimeSplit(scenario, retained.build());
 	}
@@ -87,13 +87,13 @@ public final class LifetimeSplit {
 	 * @return value that is equal for declarations of the same running processes
 	 */
 	public @NotNull Object identity() {
-		AnvilScenario declaration = retained.getScenario();
-		List<Identity.Process> processes = retained.getProcesses().values().stream().map(Identity.Process::of).toList();
+		AnvilScenario declaration = retained.scenario();
+		List<Identity.Process> processes = retained.processes().values().stream().map(Identity.Process::of).toList();
 
 		return new Identity(
-				declaration.getExecutionProviderId(),
-				declaration.getNetworkPolicy(),
-				declaration.getProcessTimeouts(),
+				declaration.executionProviderId(),
+				declaration.networkPolicy(),
+				declaration.processTimeouts(),
 				processes
 		);
 	}
@@ -106,16 +106,16 @@ public final class LifetimeSplit {
 	 * @return the scenario's plan without the processes that outlive it
 	 */
 	public @NotNull PlatformPlan own(@NotNull PlatformPlan running) {
-		Set<String> lent = retained.getProcesses().keySet();
+		Set<String> lent = retained.processes().keySet();
 		Map<ForwardingConfiguration, ForwardingConfiguration> adopted = new HashMap<>();
-		running.getProcesses().forEach((name, process) ->
-				adopted.put(scenario.getProcesses().get(name).getForwarding(), process.getForwarding()));
+		running.processes().forEach((name, process) ->
+				adopted.put(scenario.processes().get(name).forwarding(), process.forwarding()));
 
-		PlatformPlan.PlatformPlanBuilder own = PlatformPlan.builder().scenario(scenario.getScenario());
-		scenario.getProcesses().forEach((name, process) -> {
+		PlatformPlan.PlatformPlanBuilder own = PlatformPlan.builder().scenario(scenario.scenario());
+		scenario.processes().forEach((name, process) -> {
 			if (lent.contains(name)) return;
 
-			ForwardingConfiguration planned = process.getForwarding();
+			ForwardingConfiguration planned = process.forwarding();
 			own.process(name, process.toBuilder().forwarding(adopted.getOrDefault(planned, planned)).build());
 		});
 
@@ -123,7 +123,7 @@ public final class LifetimeSplit {
 	}
 
 	private static boolean retained(MinecraftProcess process) {
-		return process.getLifetime() == ProcessLifetime.ENGINE;
+		return process.lifetime() == ProcessLifetime.ENGINE;
 	}
 
 	private record Identity(
@@ -142,9 +142,9 @@ public final class LifetimeSplit {
 				@NotNull List<String> programArguments
 		) {
 			static Process of(ProcessPlan process) {
-				return new Process(process.getDeclaration(), process.getWorkspace(), process.getJavaSelection(),
-						process.getForwarding().getMode(), process.getForwarding().isProxyOnlineMode(),
-						process.getJvmArguments(), process.getProgramArguments());
+				return new Process(process.declaration(), process.workspace(), process.javaSelection(),
+						process.forwarding().mode(), process.forwarding().proxyOnlineMode(),
+						process.jvmArguments(), process.programArguments());
 			}
 		}
 	}

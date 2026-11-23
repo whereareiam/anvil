@@ -59,8 +59,8 @@ final class EnvironmentExecution {
 		this.discovered = discovered;
 
 		snapshot = SessionSnapshot.builder().state(SessionState.STARTING)
-				.definition(selection.getDefinition()).scenario(selection.getName())
-				.displayName(selection.getDisplayName()).build();
+				.definition(selection.definition()).scenario(selection.name())
+				.displayName(selection.displayName()).build();
 	}
 
 	/**
@@ -88,7 +88,7 @@ final class EnvironmentExecution {
 
 		launch.outcome().thenAccept(this::complete);
 		launch.discover().thenAccept(definitions -> definitions.stream()
-				.filter(candidate -> candidate.getDefinition().equals(selection.getDefinition()))
+				.filter(candidate -> candidate.definition().equals(selection.definition()))
 				.findFirst().ifPresent(discovered));
 
 		launch.ready().whenComplete((connected, failure) -> {
@@ -101,8 +101,8 @@ final class EnvironmentExecution {
 			if (launch.isStopping()) return;
 
 			var request = ScenarioLaunchRequest.builder()
-					.definition(selection.getDefinition())
-					.scenario(selection.getName())
+					.definition(selection.definition())
+					.scenario(selection.name())
 					.target(process)
 					.build();
 			connected.request(ScenarioOperations.START, request).result().whenComplete((state, startFailure) -> {
@@ -120,11 +120,11 @@ final class EnvironmentExecution {
 	}
 
 	synchronized void update(@NotNull SessionSnapshot received) {
-		if (finished || received.getState() == SessionState.IDLE) return;
-		if (snapshot.getState() == SessionState.FAILED && received.getFailure() == null)
+		if (finished || received.state() == SessionState.IDLE) return;
+		if (snapshot.state() == SessionState.FAILED && received.failure() == null)
 			received = received.toBuilder()
 					.state(SessionState.FAILED)
-					.failure(snapshot.getFailure())
+					.failure(snapshot.failure())
 					.build();
 
 		if (snapshot.equals(received)) return;
@@ -132,8 +132,8 @@ final class EnvironmentExecution {
 		snapshot = received;
 		changed.run();
 
-		if (received.getFailure() != null) diagnostic(received.getFailure(), true);
-		if (received.getState() == SessionState.STOPPED || received.getState() == SessionState.FAILED) launch.stop();
+		if (received.failure() != null) diagnostic(received.failure(), true);
+		if (received.state() == SessionState.STOPPED || received.state() == SessionState.FAILED) launch.stop();
 	}
 
 	@NotNull CompletableFuture<Boolean> startAll() {
@@ -168,7 +168,7 @@ final class EnvironmentExecution {
 				return;
 			}
 
-			if (accepted.getAccepted()) diagnostic("Command accepted by Anvil.", false);
+			if (accepted.accepted()) diagnostic("Command accepted by Anvil.", false);
 		});
 
 		return exchange.submitted();
@@ -184,14 +184,14 @@ final class EnvironmentExecution {
 			);
 		}
 
-		String sessionId = snapshot.getSessionId();
+		String sessionId = snapshot.sessionId();
 		if (sessionId == null)
 			return CompletableFuture.failedFuture(new IllegalStateException("Environment is not ready"));
 
 		var request = ActionRequest.builder()
 				.sessionId(sessionId)
-				.actionId(action.getDefinition().getId())
-				.target(action.getTarget())
+				.actionId(action.definition().id())
+				.target(action.target())
 				.arguments(arguments)
 				.build();
 
@@ -215,7 +215,7 @@ final class EnvironmentExecution {
 	synchronized void stop() {
 		if (finished || launch.isStopping()) return;
 		userStopped = true;
-		if (snapshot.getState() != SessionState.FAILED) {
+		if (snapshot.state() != SessionState.FAILED) {
 			snapshot = snapshot.toBuilder().state(SessionState.STOPPING).build();
 			changed.run();
 		}
@@ -230,7 +230,7 @@ final class EnvironmentExecution {
 	}
 
 	private synchronized void fail(Throwable failure) {
-		if (finished || snapshot.getState() == SessionState.FAILED) return;
+		if (finished || snapshot.state() == SessionState.FAILED) return;
 		String message = failure.getMessage() == null ? failure.toString() : failure.getMessage();
 		snapshot = snapshot.toBuilder().state(SessionState.FAILED).failure(message).build();
 		diagnostic(message, true);
@@ -240,7 +240,7 @@ final class EnvironmentExecution {
 
 	private synchronized void complete(ToolingLaunch.Outcome outcome) {
 		if (outcome instanceof ToolingLaunch.Outcome.Failed failed) fail(failed.cause());
-		if (snapshot.getState() == SessionState.FAILED) {
+		if (snapshot.state() == SessionState.FAILED) {
 			finish(1);
 			return;
 		}
@@ -257,7 +257,7 @@ final class EnvironmentExecution {
 			return;
 		}
 
-		if (snapshot.getState() == SessionState.STOPPED) {
+		if (snapshot.state() == SessionState.STOPPED) {
 			finish(outcome.exitCode());
 			return;
 		}

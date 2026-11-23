@@ -49,7 +49,7 @@ final class ChannelPacketRecording implements PacketRecording {
 	void receive(@NotNull TappedFrame frame) {
 		if (stopped.get()) return;
 
-		byte[] payload = Objects.requireNonNull(frame.getPayload(), "The worker sent a recorded frame without its bytes");
-		frames.add(new ClientboundFrame(frame.getState(), frame.getId(), frame.getName(), payload, frame.getPacket()));
+		byte[] payload = Objects.requireNonNull(frame.payload(), "The worker sent a recorded frame without its bytes");
+		frames.add(new ClientboundFrame(frame.state(), frame.id(), frame.name(), payload, frame.packet()));
 	}
 }

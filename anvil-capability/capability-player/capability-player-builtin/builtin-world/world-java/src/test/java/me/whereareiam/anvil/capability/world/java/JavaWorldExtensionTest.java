@@ -111,7 +111,7 @@ class JavaWorldExtensionTest {
 		assertEquals(List.of(
 				new Level(ARENA, levelType("example:void", Environment.END, 0, 256), LevelGeneration.FLAT),
 				new Level(ARENA, levelType("example:modded", Environment.CUSTOM, -32, 128), LevelGeneration.DEBUG)
-		), player.emitted(WorldChannel.DIMENSION).stream().map(DimensionChange::getLevel).toList());
+		), player.emitted(WorldChannel.DIMENSION).stream().map(DimensionChange::level).toList());
 	}
 
 	@Test
@@ -122,7 +122,7 @@ class JavaWorldExtensionTest {
 		player.deliver(login(8, ARENA, vanilla(OVERWORLD)));
 
 		assertEquals(Arrays.asList(null, OVERWORLD), player.emitted(WorldChannel.DIMENSION).stream()
-				.map(DimensionChange::getFrom).toList());
+				.map(DimensionChange::from).toList());
 	}
 
 	@Test
@@ -192,8 +192,8 @@ class JavaWorldExtensionTest {
 
 		player.deliver(ClientboundSetTime.builder().gameTime(500).dayTime(30000L).tickDayTime(false).build());
 
-		assertEquals(WorldTime.builder().gameTime(500).dayTime(30000L).advancing(false).build(), lastState().getTime());
-		assertEquals(6000, lastState().getTime().timeOfDay().orElseThrow());
+		assertEquals(WorldTime.builder().gameTime(500).dayTime(30000L).advancing(false).build(), lastState().time());
+		assertEquals(6000, lastState().time().timeOfDay().orElseThrow());
 	}
 
 	@Test
@@ -206,31 +206,31 @@ class JavaWorldExtensionTest {
 				.clockUpdate(OVERWORLD, new ClockState(13000, 0, 1))
 				.clockUpdate(END, new ClockState(40, 0, 0))
 				.build());
-		WorldTime overworld = lastState().getTime();
+		WorldTime overworld = lastState().time();
 		player.deliver(respawn(NETHER, vanilla(NETHER)));
-		WorldTime nether = lastState().getTime();
+		WorldTime nether = lastState().time();
 		player.deliver(respawn(END, vanilla(END).toBuilder().defaultClock(END).build()));
-		WorldTime end = lastState().getTime();
+		WorldTime end = lastState().time();
 
-		assertEquals(13000L, overworld.getDayTime());
-		assertTrue(overworld.isAdvancing());
-		assertEquals(Map.of(OVERWORLD, new Clock(13000, 1), END, new Clock(40, 0)), overworld.getClocks());
-		assertNull(nether.getDayTime());
-		assertFalse(nether.isAdvancing());
-		assertEquals(40L, end.getDayTime());
-		assertFalse(end.isAdvancing());
+		assertEquals(13000L, overworld.dayTime());
+		assertTrue(overworld.advancing());
+		assertEquals(Map.of(OVERWORLD, new Clock(13000, 1), END, new Clock(40, 0)), overworld.clocks());
+		assertNull(nether.dayTime());
+		assertFalse(nether.advancing());
+		assertEquals(40L, end.dayTime());
+		assertFalse(end.advancing());
 	}
 
 	@Test
 	void keepsTheWeatherOfTheLevelAndClearsItInAnotherOne() {
 		connect();
 		player.deliver(login(7, OVERWORLD, vanilla(OVERWORLD)));
-		assertEquals(Weather.CLEAR, lastState().getWeather());
+		assertEquals(Weather.CLEAR, lastState().weather());
 
 		player.deliver(new ClientboundGameEvent(GameEventType.START_RAINING, 0));
 		player.deliver(new ClientboundGameEvent(GameEventType.RAIN_LEVEL_CHANGE, 1));
 		player.deliver(new ClientboundGameEvent(GameEventType.THUNDER_LEVEL_CHANGE, 1));
-		assertEquals(Weather.builder().rainLevel(1).thunderLevel(1).build(), lastState().getWeather());
+		assertEquals(Weather.builder().rainLevel(1).thunderLevel(1).build(), lastState().weather());
 		assertEquals(WeatherType.THUNDER, lastState().weatherType());
 
 		player.deliver(respawn(OVERWORLD, vanilla(OVERWORLD)));
@@ -238,19 +238,19 @@ class JavaWorldExtensionTest {
 
 		player.deliver(new ClientboundGameEvent(GameEventType.RAIN_LEVEL_CHANGE, 0.1F));
 		player.deliver(new ClientboundGameEvent(GameEventType.STOP_RAINING, 0));
-		assertEquals(Weather.builder().rainLevel(1).thunderLevel(1).build(), lastState().getWeather());
+		assertEquals(Weather.builder().rainLevel(1).thunderLevel(1).build(), lastState().weather());
 		player.deliver(new ClientboundGameEvent(GameEventType.START_RAINING, 0));
 		assertEquals(WeatherType.CLEAR, lastState().weatherType());
 
 		player.deliver(respawn(NETHER, vanilla(NETHER)));
-		assertEquals(Weather.CLEAR, lastState().getWeather());
+		assertEquals(Weather.CLEAR, lastState().weather());
 	}
 
 	@Test
 	void followsTheWorldBorderOfTheLevel() {
 		connect();
 		player.deliver(login(7, OVERWORLD, vanilla(OVERWORLD)));
-		assertNull(lastState().getBorder());
+		assertNull(lastState().border());
 
 		player.deliver(ClientboundInitializeBorder.builder()
 				.centerX(1)
@@ -262,7 +262,7 @@ class JavaWorldExtensionTest {
 				.warningTime(15)
 				.build());
 		player.deliver(new ClientboundSetBorderLerpSize(100, 50, 200));
-		WorldBorder moving = lastState().getBorder();
+		WorldBorder moving = lastState().border();
 		player.deliver(new ClientboundSetBorderCenter(10, 20));
 		player.deliver(new ClientboundSetBorderSize(64));
 		player.deliver(new ClientboundSetBorderWarningDelay(30));
@@ -271,10 +271,10 @@ class JavaWorldExtensionTest {
 		assertEquals(WorldBorder.builder().centerX(1).centerZ(2).size(50).lerpFrom(100).lerpTicks(200)
 				.absoluteMaxSize(1000).warningBlocks(5).warningTime(15).build(), moving);
 		assertEquals(WorldBorder.builder().centerX(10).centerZ(20).size(64).lerpFrom(64)
-				.absoluteMaxSize(1000).warningBlocks(8).warningTime(30).build(), lastState().getBorder());
+				.absoluteMaxSize(1000).warningBlocks(8).warningTime(30).build(), lastState().border());
 
 		player.deliver(respawn(NETHER, vanilla(NETHER)));
-		assertNull(lastState().getBorder());
+		assertNull(lastState().border());
 	}
 
 	@Test
@@ -286,7 +286,7 @@ class JavaWorldExtensionTest {
 				.position(BlockPosition.builder().x(1).y(64).z(-3).build())
 				.yaw(90)
 				.build());
-		SpawnPoint inferred = lastState().getSpawn();
+		SpawnPoint inferred = lastState().spawn();
 		player.deliver(ClientboundSetDefaultSpawnPosition.builder()
 				.dimension(OVERWORLD)
 				.position(BlockPosition.builder().x(0).y(70).z(0).build())
@@ -295,7 +295,7 @@ class JavaWorldExtensionTest {
 				.build());
 
 		assertEquals(SpawnPoint.builder().dimension(NETHER).x(1).y(64).z(-3).yaw(90).build(), inferred);
-		assertEquals(SpawnPoint.builder().dimension(OVERWORLD).y(70).yaw(180).pitch(15).build(), lastState().getSpawn());
+		assertEquals(SpawnPoint.builder().dimension(OVERWORLD).y(70).yaw(180).pitch(15).build(), lastState().spawn());
 	}
 
 	@Test
@@ -342,7 +342,7 @@ class JavaWorldExtensionTest {
 	 */
 	private static DimensionChange change(String from, String to, Environment environment) {
 		DimensionType type = vanilla(to);
-		Level level = new Level(to, levelType(to, environment, type.getMinY(), type.getHeight()),
+		Level level = new Level(to, levelType(to, environment, type.minY(), type.height()),
 				LevelGeneration.NORMAL);
 
 		return new DimensionChange(from, to, level);

@@ -41,8 +41,8 @@ final class ChannelMessages implements Messages {
 	ChannelMessages(@NotNull ProtocolChannel channel) {
 		this.channel = channel;
 		channel.subscribe(MessagesChannel.CHAT_ADDED, message -> {
-			chat.add(message.getId(), message.getText().plain());
-			history.add(message.getText());
+			chat.add(message.id(), message.text().plain());
+			history.add(message.text());
 		});
 		channel.subscribe(MessagesChannel.CHAT_DROPPED, dropped::add);
 		channel.subscribe(MessagesChannel.CHAT_DELETED, chat::delete);
@@ -103,7 +103,7 @@ final class ChannelMessages implements Messages {
 			channel.await(condition, description, timeout);
 		} catch (IllegalStateException failure) {
 			List<Text> showed = shown.get();
-			List<DroppedChat> matching = left.get().stream().filter(message -> matcher.test(message.getText())).toList();
+			List<DroppedChat> matching = left.get().stream().filter(message -> matcher.test(message.text())).toList();
 			if (showed.isEmpty() && matching.isEmpty()) throw failure;
 
 			StringBuilder message = new StringBuilder(failure.getMessage());
@@ -128,10 +128,10 @@ final class ChannelMessages implements Messages {
 	}
 
 	private static String describe(DroppedChat message) {
-		String reason = message.getReason() == ChatDropReason.NO_PLAYER
+		String reason = message.reason() == ChatDropReason.NO_PLAYER
 				? "the client had no player"
 				: "the server's filter hid it";
-		return "'" + message.getText() + "' (" + reason + ")";
+		return "'" + message.text() + "' (" + reason + ")";
 	}
 
 	/**

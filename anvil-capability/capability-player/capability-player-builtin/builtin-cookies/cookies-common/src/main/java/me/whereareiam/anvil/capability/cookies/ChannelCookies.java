@@ -42,7 +42,7 @@ final class ChannelCookies implements Cookies {
 		if (current == null) return Map.of();
 
 		Map<String, byte[]> copy = new HashMap<>();
-		current.getCookies().forEach((key, payload) -> copy.put(key, payload.clone()));
+		current.cookies().forEach((key, payload) -> copy.put(key, payload.clone()));
 		return Map.copyOf(copy);
 	}
 
@@ -83,12 +83,12 @@ final class ChannelCookies implements Cookies {
 	 */
 	private synchronized void hold(@NotNull HeldCookies change) {
 		HeldCookies current = held;
-		if (current == null || change.getVersion() > current.getVersion()) held = change;
+		if (current == null || change.version() > current.version()) held = change;
 	}
 
 	private byte @Nullable [] payload(String key) {
 		HeldCookies current = held;
-		return current == null ? null : current.getCookies().get(key);
+		return current == null ? null : current.cookies().get(key);
 	}
 
 	/**
@@ -131,7 +131,7 @@ final class ChannelCookies implements Cookies {
 
 		private static Predicate<CookieRequest> forKey(String key) {
 			String normalized = CookieKeys.normalize(key);
-			return request -> request.getKey().equals(normalized);
+			return request -> request.key().equals(normalized);
 		}
 
 		private static String describe(String key) {

@@ -64,11 +64,11 @@ public final class JavaMessagesExtension implements WorkerExtension<Object> {
 	public @NotNull WorkerBinding bind(@NotNull PlayerBindingContext<Object> player, @NotNull OperationRegistry operations) {
 		JavaProtocol protocol = player.protocol(JavaProtocol.class);
 		operations.register(MessagesChannel.CHAT, request -> {
-			protocol.send(new ServerboundChat(request.getText()));
+			protocol.send(new ServerboundChat(request.text()));
 			return null;
 		});
 		operations.register(MessagesChannel.COMMAND, request -> {
-			protocol.send(new ServerboundChatCommand(request.getText()));
+			protocol.send(new ServerboundChatCommand(request.text()));
 			return null;
 		});
 
@@ -87,27 +87,27 @@ public final class JavaMessagesExtension implements WorkerExtension<Object> {
 		if (protocol.supports(ClientboundStartConfiguration.class))
 			listening.add(protocol.listen(ClientboundStartConfiguration.class, ignored -> connection.get().configure()));
 		listening.add(protocol.listen(ClientboundSystemChat.class, chat -> {
-			if (chat.isOverlay()) return;
+			if (chat.overlay()) return;
 
-			show(player, connection.get(), ids, chat.getText());
+			show(player, connection.get(), ids, chat.text());
 		}));
 		listening.add(protocol.listen(ClientboundPlayerChat.class, chat -> {
 			ConnectionChat current = connection.get();
 			if (!current.accept(chat)) return;
-			if (chat.getFilterMask() == FilterMaskType.FULLY_FILTERED) {
-				dropped(player, chat.getText().plain(), ChatDropReason.FULLY_FILTERED);
+			if (chat.filterMask() == FilterMaskType.FULLY_FILTERED) {
+				dropped(player, chat.text().plain(), ChatDropReason.FULLY_FILTERED);
 				return;
 			}
 
-			Long id = show(player, current, ids, chat.getText());
-			if (id != null) current.remember(chat.getSignature(), id);
+			Long id = show(player, current, ids, chat.text());
+			if (id != null) current.remember(chat.signature(), id);
 		}));
 		if (protocol.supports(ClientboundDisguisedChat.class))
 			listening.add(protocol.listen(ClientboundDisguisedChat.class, chat ->
-					show(player, connection.get(), ids, chat.getText())));
+					show(player, connection.get(), ids, chat.text())));
 		if (protocol.supports(ClientboundDeleteChat.class))
 			listening.add(protocol.listen(ClientboundDeleteChat.class, delete -> {
-				Long id = connection.get().deleted(delete.getSignature());
+				Long id = connection.get().deleted(delete.signature());
 				if (id != null) player.emit(MessagesChannel.CHAT_DELETED, id);
 			}));
 		Subscription subscriptions = Subscription.all(listening);
@@ -182,13 +182,13 @@ public final class JavaMessagesExtension implements WorkerExtension<Object> {
 		 */
 		synchronized boolean accept(ClientboundPlayerChat chat) {
 			List<MessageSignature> lastSeen = new ArrayList<>();
-			for (PackedMessageSignature packed : chat.getLastSeen()) {
+			for (PackedMessageSignature packed : chat.lastSeen()) {
 				MessageSignature signature = cache.unpack(packed);
 				if (signature == null) return false;
 
 				lastSeen.add(signature);
 			}
-			cache.push(lastSeen, chat.getSignature());
+			cache.push(lastSeen, chat.signature());
 
 			return true;
 		}

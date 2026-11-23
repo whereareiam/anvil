@@ -89,25 +89,25 @@ public final class PlayerPackets implements PacketTranslation<Packet> {
 	public @Nullable Packet encode(@NotNull ServerboundPacket packet) {
 		return switch (packet) {
 			case ServerboundMovePlayerPosRot move -> {
-				Vec3d position = move.getPosition();
-				yield new ServerboundMovePlayerPosRotPacket(move.isOnGround(), move.isHorizontalCollision(),
-						position.getX(), position.getY(), position.getZ(), move.getYaw(), move.getPitch());
+				Vec3d position = move.position();
+				yield new ServerboundMovePlayerPosRotPacket(move.onGround(), move.horizontalCollision(),
+						position.x(), position.y(), position.z(), move.yaw(), move.pitch());
 			}
 			case ServerboundMovePlayerPos move -> {
-				Vec3d position = move.getPosition();
-				yield new ServerboundMovePlayerPosPacket(move.isOnGround(), move.isHorizontalCollision(),
-						position.getX(), position.getY(), position.getZ());
+				Vec3d position = move.position();
+				yield new ServerboundMovePlayerPosPacket(move.onGround(), move.horizontalCollision(),
+						position.x(), position.y(), position.z());
 			}
-			case ServerboundMovePlayerRot turn -> new ServerboundMovePlayerRotPacket(turn.isOnGround(),
-					turn.isHorizontalCollision(), turn.getYaw(), turn.getPitch());
+			case ServerboundMovePlayerRot turn -> new ServerboundMovePlayerRotPacket(turn.onGround(),
+					turn.horizontalCollision(), turn.yaw(), turn.pitch());
 			case ServerboundMovePlayerStatusOnly status ->
-					new ServerboundMovePlayerStatusOnlyPacket(status.isOnGround(), status.isHorizontalCollision());
-			case ServerboundPlayerInput input -> new ServerboundPlayerInputPacket(input.isForward(), input.isBackward(),
-					input.isLeft(), input.isRight(), input.isJump(), input.isShift(), input.isSprint());
+					new ServerboundMovePlayerStatusOnlyPacket(status.onGround(), status.horizontalCollision());
+			case ServerboundPlayerInput input -> new ServerboundPlayerInputPacket(input.forward(), input.backward(),
+					input.left(), input.right(), input.jump(), input.shift(), input.sprint());
 			case ServerboundClientTickEnd ignored -> ServerboundClientTickEndPacket.INSTANCE;
-			case ServerboundPlayerAbilities abilities -> new ServerboundPlayerAbilitiesPacket(abilities.isFlying());
+			case ServerboundPlayerAbilities abilities -> new ServerboundPlayerAbilitiesPacket(abilities.flying());
 			case ServerboundPlayerCommand command ->
-					new ServerboundPlayerCommandPacket(command.getEntityId().getValue(), state(command.getAction()));
+					new ServerboundPlayerCommandPacket(command.entityId().value(), state(command.action()));
 			default -> null;
 		};
 	}

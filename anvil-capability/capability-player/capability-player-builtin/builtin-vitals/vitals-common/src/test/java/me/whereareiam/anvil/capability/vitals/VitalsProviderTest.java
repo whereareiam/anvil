@@ -18,8 +18,8 @@ class VitalsProviderTest {
 		VitalsProvider provider = new VitalsProvider();
 
 		assertEquals("me.whereareiam.anvil.vitals", VitalsChannel.ID);
-		assertEquals(VitalsChannel.ID, provider.descriptor().getId());
-		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
+		assertEquals(VitalsChannel.ID, provider.descriptor().id());
+		assertTrue(provider.descriptor().requiredCapabilities().isEmpty());
 		assertEquals(Set.of(JavaProtocol.class), provider.requiredProtocols());
 		assertEquals(Vitals.class, provider.capability());
 	}
@@ -29,7 +29,7 @@ class VitalsProviderTest {
 		TestProtocolChannel channel = new TestProtocolChannel(Set.of(VitalsChannel.ID));
 		Vitals vitals = new VitalsProvider().create(new TestProtocolPlayerCapabilityContext(channel));
 
-		assertEquals(List.of(VitalsChannel.STATUS.getId(), VitalsChannel.DIED.getId()), channel.subscriptions());
+		assertEquals(List.of(VitalsChannel.STATUS.id(), VitalsChannel.DIED.id()), channel.subscriptions());
 		assertTrue(channel.requests().isEmpty());
 		assertTrue(vitals.deaths().isEmpty());
 	}

@@ -59,7 +59,7 @@ final class ChannelSounds implements Sounds {
 			}
 
 			throw new IllegalStateException("Player heard a sound it must not hear: "
-					+ Objects.requireNonNull(cursor.find(matcher)).getKey());
+					+ Objects.requireNonNull(cursor.find(matcher)).key());
 		}
 
 		@Override

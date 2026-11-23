@@ -52,7 +52,7 @@ public final class EntityQuery implements Predicate<SeenEntity> {
 	 */
 	public static @NotNull EntityQuery ofType(@NotNull String type) {
 		String namespaced = type.indexOf(':') < 0 ? "minecraft:" + type : type;
-		return matching("of type " + namespaced, entity -> entity.getType().equals(namespaced));
+		return matching("of type " + namespaced, entity -> entity.type().equals(namespaced));
 	}
 
 	/**
@@ -63,7 +63,7 @@ public final class EntityQuery implements Predicate<SeenEntity> {
 	 */
 	public static @NotNull EntityQuery nearPlayer(double distance) {
 		return matching("within " + distance + " blocks of the player", entity -> {
-			Double playerDistance = entity.getPlayerDistance();
+			Double playerDistance = entity.playerDistance();
 			return playerDistance != null && playerDistance <= distance;
 		});
 	}
@@ -74,7 +74,7 @@ public final class EntityQuery implements Predicate<SeenEntity> {
 	 * @return the query
 	 */
 	public static @NotNull EntityQuery ridingPlayer() {
-		return matching("riding the player", SeenEntity::isRidingPlayer);
+		return matching("riding the player", SeenEntity::ridingPlayer);
 	}
 
 	/**
@@ -86,8 +86,8 @@ public final class EntityQuery implements Predicate<SeenEntity> {
 	 */
 	public static @NotNull EntityQuery aroundPlayer(double distance) {
 		return matching("within " + distance + " blocks of or riding the player", entity -> {
-			Double playerDistance = entity.getPlayerDistance();
-			return entity.isRidingPlayer() || playerDistance != null && playerDistance <= distance;
+			Double playerDistance = entity.playerDistance();
+			return entity.ridingPlayer() || playerDistance != null && playerDistance <= distance;
 		});
 	}
 

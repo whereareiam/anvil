@@ -16,16 +16,16 @@ import java.util.Map;
 /**
  * One block of a protocol's registry, such as {@code minecraft:stone}, with what vanilla's movement code needs from it.
  *
- * <p>Its states have the consecutive global IDs {@link #getMinStateId()} to {@link #getMaxStateId()}. The name,
+ * <p>Its states have the consecutive global IDs {@link #minStateId()} to {@link #maxStateId()}. The name,
  * properties and states come from PrismarineJS minecraft-data; the kind, the collision kind and the movement are
  * vanilla's facts that Anvil maintains by hand, and keep vanilla's defaults for every block that does not change
  * them.</p>
  *
  * <pre>{@code
- * BlockType block = registry.state(stateId).getBlock();
- * float friction = block.getMovement().getFriction();
- * boolean climbable = block.getMovement().has(MovementBehaviour.CLIMBABLE);
- * boolean fence = block.getKind() == BlockKind.FENCE;
+ * BlockType block = registry.state(stateId).block();
+ * float friction = block.movement().friction();
+ * boolean climbable = block.movement().has(MovementBehaviour.CLIMBABLE);
+ * boolean fence = block.kind() == BlockKind.FENCE;
  * }</pre>
  */
 @Value
@@ -85,14 +85,14 @@ public class BlockType {
 		String[] values = new String[properties.size()];
 		int remainder = stateId - minStateId;
 		for (int index = properties.size() - 1; index >= 0; index--) {
-			List<String> choices = properties.get(index).getValues();
+			List<String> choices = properties.get(index).values();
 			values[index] = choices.get(remainder % choices.size());
 			remainder /= choices.size();
 		}
 
 		Map<String, String> named = new LinkedHashMap<>();
 		for (int index = 0; index < values.length; index++)
-			named.put(properties.get(index).getName(), values[index]);
+			named.put(properties.get(index).name(), values[index]);
 		return Collections.unmodifiableMap(named);
 	}
 

@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
  * Runs a command, or sends chat, as the player.
  *
  * <pre>{@code
- * assertEquals(new RunCommandClick("/arbor help"), span.getStyle().getClick());
+ * assertEquals(new RunCommandClick("/arbor help"), span.style().click());
  * }</pre>
  */
 @Value

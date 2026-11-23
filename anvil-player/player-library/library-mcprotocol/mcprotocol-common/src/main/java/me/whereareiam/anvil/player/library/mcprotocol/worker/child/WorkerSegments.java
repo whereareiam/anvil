@@ -69,9 +69,9 @@ final class WorkerSegments {
 		Map<String, MinecraftVersion> owners = new LinkedHashMap<>();
 		for (String root : roots(loader, SegmentDescriptor.PROPERTIES)) {
 			SegmentDescriptor descriptor = read(root + SegmentDescriptor.PROPERTIES, SegmentDescriptor::read);
-			if (!descriptor.getLibrary().equals(McProtocolClient.LIBRARY_ID)) continue;
-			if (owners.putIfAbsent(descriptor.getOwner(), descriptor.getSince()) != null)
-				throw new IllegalStateException("The worker class path holds more than one segment of " + descriptor.getOwner());
+			if (!descriptor.library().equals(McProtocolClient.LIBRARY_ID)) continue;
+			if (owners.putIfAbsent(descriptor.owner(), descriptor.since()) != null)
+				throw new IllegalStateException("The worker class path holds more than one segment of " + descriptor.owner());
 
 			Optional<String> failure = read(root + SegmentDescriptor.LINKAGE, SegmentLinkage::read).firstFailure(classPath);
 			Segment segment = new Segment(descriptor, failure.orElse(null));
@@ -120,7 +120,7 @@ final class WorkerSegments {
 	 */
 	@NotNull Map<String, String> selected() {
 		Map<String, String> versions = new LinkedHashMap<>();
-		segments.values().forEach(segment -> versions.put(segment.descriptor().getOwner(), segment.descriptor().getSince().toString()));
+		segments.values().forEach(segment -> versions.put(segment.descriptor().owner(), segment.descriptor().since().toString()));
 		return Map.copyOf(versions);
 	}
 
@@ -167,7 +167,7 @@ final class WorkerSegments {
 	}
 
 	private static String describe(Segment segment) {
-		return "segment " + segment.descriptor().getOwner() + " " + segment.descriptor().getSince();
+		return "segment " + segment.descriptor().owner() + " " + segment.descriptor().since();
 	}
 
 	private static List<String> roots(ClassLoader loader, String resource) {

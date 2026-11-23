@@ -1,4 +1,6 @@
 package me.whereareiam.anvil.runner;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import me.whereareiam.anvil.api.model.PresentationMetadata;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
@@ -34,7 +36,7 @@ class ScenarioDescriptorFactoryTest {
 				.toBuilder().minecraftVersion("26.1.2").onlineMode(true).memoryMegabytes(1536)
 				.metadata(PresentationMetadata.builder().displayName("Direct backend").description("Local server under test").build())
 				.build();
-		AnvilScenario local = AnvilScenario.builder().name("direct-environment").entrypoint(direct.getName()).server(direct).build();
+		AnvilScenario local = AnvilScenario.builder().name("direct-environment").entrypoint(direct.name()).server(direct).build();
 		MinecraftServer lobby = server("lobby", Distribution.artifact("lobby-runtime"));
 		MinecraftServer game = server("game", Distribution.pinned("1.21.11", "a".repeat(64)));
 		MinecraftProxy proxy = MinecraftProxy.builder().name("proxy").platform("velocity")
@@ -56,55 +58,59 @@ class ScenarioDescriptorFactoryTest {
 			throw new AssertionError("Scenario inspection must not construct or start an engine");
 		}, ScenarioRepository.fromScenarios(List.of(local, network)))) {
 			scenarios = session.scenarios();
-			assertEquals("IDLE", session.snapshot().getState().name());
-			assertTrue(session.snapshot().getProcesses().isEmpty());
+			assertEquals("IDLE", session.snapshot().state().name());
+			assertTrue(session.snapshot().processes().isEmpty());
 		}
 
-		assertEquals(List.of("direct-environment", "proxy-environment"), scenarios.stream().map(ScenarioDescriptor::getName).toList());
-		assertEquals(List.of("direct-server"), scenarios.getFirst().getProcesses().stream().map(ProcessDefinition::getName).toList());
-		assertNull(scenarios.getFirst().getExecutionProviderId());
-		assertEquals(0, scenarios.getFirst().getStartupTimeoutMillis());
-		assertEquals(0, scenarios.getFirst().getShutdownTimeoutMillis());
-		assertEquals("Project default", scenarios.getFirst().getJavaRequirement());
-		ProcessDefinition directInfo = scenarios.getFirst().getProcesses().getFirst();
-		assertEquals(ProcessRole.SERVER, directInfo.getRole());
-		assertEquals("Direct backend", directInfo.getDisplayName());
-		assertEquals("Local server under test", directInfo.getDescription());
-		assertEquals("Local JAR: " + Path.of("unresolved", "server.jar"), directInfo.getDistribution());
-		assertEquals("26.1.2", directInfo.getMinecraftVersion());
-		assertNull(directInfo.getDistributionVersion());
-		assertTrue(directInfo.isOnlineMode());
-		assertEquals(1536, directInfo.getMemoryMegabytes());
-		assertTrue(directInfo.getBackendNames().isEmpty());
+		assertEquals(List.of("direct-environment", "proxy-environment"), scenarios.stream().map(ScenarioDescriptor::name).toList());
+		assertEquals(List.of("direct-server"), scenarios.getFirst().processes().stream().map(ProcessDefinition::name).toList());
+		assertNull(scenarios.getFirst().executionProviderId());
+		assertEquals(0, scenarios.getFirst().startupTimeoutMillis());
+		assertEquals(0, scenarios.getFirst().shutdownTimeoutMillis());
+		assertEquals("Project default", scenarios.getFirst().javaRequirement());
+		ProcessDefinition directInfo = scenarios.getFirst().processes().getFirst();
+		assertEquals(ProcessRole.SERVER, directInfo.role());
+		assertEquals("Direct backend", directInfo.displayName());
+		assertEquals("Local server under test", directInfo.description());
+		assertEquals("Local JAR: " + Path.of("unresolved", "server.jar"), directInfo.distribution());
+		assertEquals("26.1.2", directInfo.minecraftVersion());
+		assertNull(directInfo.distributionVersion());
+		assertTrue(directInfo.onlineMode());
+		assertEquals(1536, directInfo.memoryMegabytes());
+		assertTrue(directInfo.backendNames().isEmpty());
 
 		ScenarioDescriptor topology = scenarios.get(1);
-		assertEquals("Proxy investigation", topology.getDisplayName());
-		assertEquals("Two backends behind one proxy", topology.getDescription());
-		assertEquals("Routing", topology.getCategory());
-		assertEquals(List.of("matrix"), topology.getTags());
-		assertEquals("proxy", topology.getEntrypoint());
-		assertEquals(75000, topology.getStartupTimeoutMillis());
-		assertEquals(7000, topology.getShutdownTimeoutMillis());
-		assertEquals("local", topology.getExecutionProviderId());
-		assertTrue(topology.isManual());
-		assertEquals(List.of("lobby", "game", "proxy"), topology.getProcesses().stream().map(ProcessDefinition::getName).toList());
-		assertEquals("Lobby", topology.getProcesses().getFirst().getDisplayName());
-		assertEquals("Artifact: lobby-runtime", topology.getProcesses().getFirst().getDistribution());
-		assertEquals("1.21.11 (SHA-256 " + "a".repeat(64) + ")", topology.getProcesses().get(1).getDistribution());
-		ProcessDefinition route = topology.getProcesses().getLast();
-		assertEquals(ProcessRole.PROXY, route.getRole());
-		assertEquals("velocity", route.getPlatform());
-		assertEquals("3.5.1", route.getDistributionVersion());
-		assertEquals("latest", route.getDistributionBuild());
-		assertEquals("3.5.1 (build latest)", route.getDistribution());
-		assertNull(route.getMinecraftVersion());
-		assertEquals(List.of("lobby", "game"), route.getBackendNames());
-		assertEquals("lobby", route.getDefaultBackend());
-		assertEquals("Java 21 · temurin · release 21.0.10 (scenario)", route.getJavaRequirement());
-		assertThrows(UnsupportedOperationException.class, () -> route.getBackendNames().add("other"));
-		assertThrows(UnsupportedOperationException.class, () -> topology.getProcesses().clear());
+		assertEquals("Proxy investigation", topology.displayName());
+		assertEquals("Two backends behind one proxy", topology.description());
+		assertEquals("Routing", topology.category());
+		assertEquals(List.of("matrix"), topology.tags());
+		assertEquals("proxy", topology.entrypoint());
+		assertEquals(75000, topology.startupTimeoutMillis());
+		assertEquals(7000, topology.shutdownTimeoutMillis());
+		assertEquals("local", topology.executionProviderId());
+		assertTrue(topology.manual());
+		assertEquals(List.of("lobby", "game", "proxy"), topology.processes().stream().map(ProcessDefinition::name).toList());
+		assertEquals("Lobby", topology.processes().getFirst().displayName());
+		assertEquals("Artifact: lobby-runtime", topology.processes().getFirst().distribution());
+		assertEquals("1.21.11 (SHA-256 " + "a".repeat(64) + ")", topology.processes().get(1).distribution());
+		ProcessDefinition route = topology.processes().getLast();
+		assertEquals(ProcessRole.PROXY, route.role());
+		assertEquals("velocity", route.platform());
+		assertEquals("3.5.1", route.distributionVersion());
+		assertEquals("latest", route.distributionBuild());
+		assertEquals("3.5.1 (build latest)", route.distribution());
+		assertNull(route.minecraftVersion());
+		assertEquals(List.of("lobby", "game"), route.backendNames());
+		assertEquals("lobby", route.defaultBackend());
+		assertEquals("Java 21 · temurin · release 21.0.10 (scenario)", route.javaRequirement());
+		assertThrows(UnsupportedOperationException.class, () -> route.backendNames().add("other"));
+		assertThrows(UnsupportedOperationException.class, () -> topology.processes().clear());
 
-		var json = new ObjectMapper();
+		// As the tooling protocol writes them: through their fields, since their accessors are fluent.
+		var json = new ObjectMapper()
+				.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
+				.setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
+				.setVisibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE);
 		var encoded = json.readTree(json.writeValueAsString(scenarios));
 		assertEquals("PROXY", encoded.get(1).path("processes").get(2).path("role").asText());
 		assertFalse(encoded.get(1).has("setupHook"));
@@ -144,15 +150,15 @@ class ScenarioDescriptorFactoryTest {
 		ScenarioDescriptor descriptor = ScenarioDescriptorFactory.describe("example.Definition", scenario);
 		String home = "Java home: " + Path.of("unresolved", "scenario-jdk");
 
-		assertEquals("Java 21; " + home, descriptor.getJavaRequirement());
-		assertEquals("Java 21 (scenario); " + home + " (scenario)", descriptor.getProcesses().get(0).getJavaRequirement());
-		assertEquals("Java 25; " + home + " (scenario)", descriptor.getProcesses().get(1).getJavaRequirement());
+		assertEquals("Java 21; " + home, descriptor.javaRequirement());
+		assertEquals("Java 21 (scenario); " + home + " (scenario)", descriptor.processes().get(0).javaRequirement());
+		assertEquals("Java 25; " + home + " (scenario)", descriptor.processes().get(1).javaRequirement());
 		assertEquals(
 				"Java 21 (scenario); Java archive: https://invalid.example/jdk.tar.gz",
-				descriptor.getProcesses().get(2).getJavaRequirement()
+				descriptor.processes().get(2).javaRequirement()
 		);
 		assertEquals("Planned default LTS; Java executable: " + Path.of("unresolved", "custom-java"),
-				descriptor.getProcesses().get(3).getJavaRequirement());
+				descriptor.processes().get(3).javaRequirement());
 	}
 
 	private static MinecraftServer server(String name, Distribution distribution) {

@@ -38,10 +38,10 @@ class ConnectionPacketsTest {
 				new RegistryEntry(Key.key("example:flagged"), described(NbtMap.builder().putBoolean("ultrawarm", true)))
 		)));
 
-		assertTrue(respawnInto(0).getDimensionType().isFastLava());
-		assertFalse(respawnInto(1).getDimensionType().isFastLava());
-		assertTrue(respawnInto(2).getDimensionType().isFastLava());
-		assertFalse(respawnInto(3).getDimensionType().isFastLava());
+		assertTrue(respawnInto(0).dimensionType().fastLava());
+		assertFalse(respawnInto(1).dimensionType().fastLava());
+		assertTrue(respawnInto(2).dimensionType().fastLava());
+		assertFalse(respawnInto(3).dimensionType().fastLava());
 	}
 
 	private ClientboundRespawn respawnInto(int type) {

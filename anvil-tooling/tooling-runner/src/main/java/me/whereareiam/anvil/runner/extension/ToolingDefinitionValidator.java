@@ -15,20 +15,20 @@ import java.util.Set;
  */
 final class ToolingDefinitionValidator {
 	static ActionDefinition action(ActionDefinition definition) {
-		identifier(definition.getId());
+		identifier(definition.id());
 		Set<String> names = new HashSet<>();
-		for (ActionInput input : definition.getInputs()) {
-			if (!input.getName().matches("[A-Za-z][A-Za-z0-9_-]*") || !names.add(input.getName()))
-				throw new IllegalArgumentException("Invalid or duplicate action input: " + input.getName());
-			if (input.isSensitive() && input.getDefaultValue() != null)
-				throw new IllegalArgumentException("Sensitive inputs cannot publish defaults: " + input.getName());
-			if (input.getType() != ActionInputType.CHOICE && !input.getChoices().isEmpty())
-				throw new IllegalArgumentException("Only choice inputs may declare choices: " + input.getName());
-			if (input.isSensitive() && input.getType() != ActionInputType.TEXT)
-				throw new IllegalArgumentException("Sensitive inputs must be text: " + input.getName());
-			if (input.getType() == ActionInputType.CHOICE && input.getChoices().isEmpty())
-				throw new IllegalArgumentException("Choice input has no choices: " + input.getName());
-			if (input.getDefaultValue() != null) input.validate(input.getDefaultValue());
+		for (ActionInput input : definition.inputs()) {
+			if (!input.name().matches("[A-Za-z][A-Za-z0-9_-]*") || !names.add(input.name()))
+				throw new IllegalArgumentException("Invalid or duplicate action input: " + input.name());
+			if (input.sensitive() && input.defaultValue() != null)
+				throw new IllegalArgumentException("Sensitive inputs cannot publish defaults: " + input.name());
+			if (input.type() != ActionInputType.CHOICE && !input.choices().isEmpty())
+				throw new IllegalArgumentException("Only choice inputs may declare choices: " + input.name());
+			if (input.sensitive() && input.type() != ActionInputType.TEXT)
+				throw new IllegalArgumentException("Sensitive inputs must be text: " + input.name());
+			if (input.type() == ActionInputType.CHOICE && input.choices().isEmpty())
+				throw new IllegalArgumentException("Choice input has no choices: " + input.name());
+			if (input.defaultValue() != null) input.validate(input.defaultValue());
 		}
 
 		return definition;
@@ -41,16 +41,16 @@ final class ToolingDefinitionValidator {
 	static ToolingArguments arguments(ActionDefinition definition, Map<String, String> supplied) {
 		Set<String> names = new HashSet<>();
 		Map<String, String> values = new LinkedHashMap<>();
-		for (ActionInput input : definition.getInputs()) {
-			names.add(input.getName());
-			String value = supplied.getOrDefault(input.getName(), input.getDefaultValue());
+		for (ActionInput input : definition.inputs()) {
+			names.add(input.name());
+			String value = supplied.getOrDefault(input.name(), input.defaultValue());
 			if (value == null) {
-				if (input.isRequired()) throw new IllegalArgumentException("Missing action input: " + input.getName());
+				if (input.required()) throw new IllegalArgumentException("Missing action input: " + input.name());
 				continue;
 			}
 
 			input.validate(value);
-			values.put(input.getName(), value);
+			values.put(input.name(), value);
 		}
 
 		if (!names.containsAll(supplied.keySet())) {

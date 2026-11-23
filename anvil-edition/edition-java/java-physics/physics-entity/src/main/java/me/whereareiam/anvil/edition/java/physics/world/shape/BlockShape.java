@@ -30,8 +30,8 @@ public final class BlockShape {
 		this.coordinates = coordinates;
 		this.solid = solid;
 		this.fullBlock = boxes.size() == 1 && boxes.getFirst().isFullBlock();
-		this.large = boxes.stream().anyMatch(box -> box.getMinX() < 0.0 || box.getMinY() < 0.0 || box.getMinZ() < 0.0
-				|| box.getMaxX() > 1.0 || box.getMaxY() > 1.0 || box.getMaxZ() > 1.0);
+		this.large = boxes.stream().anyMatch(box -> box.minX() < 0.0 || box.minY() < 0.0 || box.minZ() < 0.0
+				|| box.maxX() > 1.0 || box.maxY() > 1.0 || box.maxZ() > 1.0);
 	}
 
 	/**
@@ -41,7 +41,7 @@ public final class BlockShape {
 	 * @return the voxel shape
 	 */
 	public static @NotNull BlockShape of(@NotNull CollisionShape shape) {
-		List<CollisionBox> boxes = List.copyOf(shape.getBoxes());
+		List<CollisionBox> boxes = List.copyOf(shape.boxes());
 		ShapeGrid grid = ShapeGrid.of(boxes);
 		return new BlockShape(boxes, grid.coordinates(), grid.solid());
 	}
@@ -104,8 +104,8 @@ public final class BlockShape {
 	public boolean intersects(int @NotNull [] block, @NotNull Box box) {
 		for (CollisionBox part : boxes)
 			if (box.intersects(new Box(
-					new Vector(part.getMinX() + block[0], part.getMinY() + block[1], part.getMinZ() + block[2]),
-					new Vector(part.getMaxX() + block[0], part.getMaxY() + block[1], part.getMaxZ() + block[2])
+					new Vector(part.minX() + block[0], part.minY() + block[1], part.minZ() + block[2]),
+					new Vector(part.maxX() + block[0], part.maxY() + block[1], part.maxZ() + block[2])
 			))) return true;
 
 		return false;

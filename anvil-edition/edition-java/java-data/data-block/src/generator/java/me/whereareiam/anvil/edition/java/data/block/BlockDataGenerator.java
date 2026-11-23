@@ -60,26 +60,26 @@ public final class BlockDataGenerator {
 	 * @throws IllegalStateException when the data or the facts break a rule
 	 */
 	public static void generate(@NotNull GenerationRequest request) throws IOException {
-		BlockFacts facts = BlockFacts.read(request.getFacts());
-		Path output = clean(request.getOutput());
+		BlockFacts facts = BlockFacts.read(request.facts());
+		Path output = clean(request.output());
 		Set<String> names = new HashSet<>();
 		Set<Integer> protocols = new TreeSet<>();
-		for (GenerationRequest.PinnedProtocol pinned : request.getProtocols()) {
-			BlockRegistry registry = registry(request.getRelease(), pinned, facts, names);
-			Path resource = output.resolve(JavaBlockData.registryResource(pinned.getProtocol()));
+		for (GenerationRequest.PinnedProtocol pinned : request.protocols()) {
+			BlockRegistry registry = registry(request.release(), pinned, facts, names);
+			Path resource = output.resolve(JavaBlockData.registryResource(pinned.protocol()));
 			try (OutputStream file = Files.newOutputStream(resource)) {
 				BlockDataCodec.writeRegistry(registry, file);
 			}
-			protocols.add(pinned.getProtocol());
+			protocols.add(pinned.protocol());
 		}
 
 		facts.names().stream().filter(name -> !names.contains(name)).sorted().findFirst().ifPresent(name -> {
 			throw new IllegalStateException("block-facts.toml names " + name + ", which no protocol of block-data.toml has");
 		});
 		Map<Integer, String> missing = new TreeMap<>();
-		GenerationRequest.Release release = request.getRelease();
-		for (int protocol : request.getMissing())
-			missing.put(protocol, release.getRepository() + " " + release.getVersion() + " has no block data for it");
+		GenerationRequest.Release release = request.release();
+		for (int protocol : request.missing())
+			missing.put(protocol, release.repository() + " " + release.version() + " has no block data for it");
 		try (OutputStream file = Files.newOutputStream(output.resolve(JavaBlockData.indexResource()))) {
 			BlockDataCodec.writeIndex(new JavaBlockData(protocols, missing), file);
 		}
@@ -91,21 +91,21 @@ public final class BlockDataGenerator {
 			BlockFacts facts,
 			Set<String> names
 	) throws IOException {
-		String context = "minecraft-data " + pinned.getFiles().getBlocks().getPath() + " for protocol " + pinned.getProtocol();
-		List<MinecraftDataBlock> blocks = JSON.readValue(pinned.getFiles().getBlocks().getFile().toFile(), new TypeReference<>() {
+		String context = "minecraft-data " + pinned.files().blocks().path() + " for protocol " + pinned.protocol();
+		List<MinecraftDataBlock> blocks = JSON.readValue(pinned.files().blocks().file().toFile(), new TypeReference<>() {
 		});
-		MinecraftDataShapes shapes = JSON.readValue(pinned.getFiles().getCollisionShapes().getFile().toFile(), MinecraftDataShapes.class);
+		MinecraftDataShapes shapes = JSON.readValue(pinned.files().collisionShapes().file().toFile(), MinecraftDataShapes.class);
 		RegistryAssembly.Assembled assembled = RegistryAssembly.assemble(context, blocks, shapes, facts);
 		names.addAll(assembled.names());
 
 		BlockDataSource source = BlockDataSource.builder()
-				.repository(release.getRepository())
-				.version(release.getVersion())
-				.commit(release.getCommit())
-				.blocks(pinned.getFiles().getBlocks().getPath())
-				.collisionShapes(pinned.getFiles().getCollisionShapes().getPath())
+				.repository(release.repository())
+				.version(release.version())
+				.commit(release.commit())
+				.blocks(pinned.files().blocks().path())
+				.collisionShapes(pinned.files().collisionShapes().path())
 				.build();
-		return new BlockRegistry(pinned.getProtocol(), source, assembled.blocks(), assembled.states());
+		return new BlockRegistry(pinned.protocol(), source, assembled.blocks(), assembled.states());
 	}
 
 	/**

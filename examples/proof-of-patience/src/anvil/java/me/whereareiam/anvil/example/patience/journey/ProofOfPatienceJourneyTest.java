@@ -50,7 +50,7 @@ class ProofOfPatienceJourneyTest {
 		session.connect();
 		session.connected();
 
-		UUID initialUuid = arrivals.joined(alice).getProfile().getUniqueId();
+		UUID initialUuid = arrivals.joined(alice).profile().uniqueId();
 		assertNotNull(initialUuid);
 		assertNotEquals(AUTHENTICATED_UUID, initialUuid);
 
@@ -66,10 +66,10 @@ class ProofOfPatienceJourneyTest {
 
 		session.rejoin();
 		session.connected();
-		UUID authenticatedUuid = arrivals.joined(alice).getProfile().getUniqueId();
+		UUID authenticatedUuid = arrivals.joined(alice).profile().uniqueId();
 		assertEquals(AUTHENTICATED_UUID, authenticatedUuid);
 		assertNotEquals(initialUuid, authenticatedUuid);
-		assertEquals(AUTHENTICATED_UUID, authentication.profile(alice).orElseThrow().getUniqueId());
+		assertEquals(AUTHENTICATED_UUID, authentication.profile(alice).orElseThrow().uniqueId());
 
 		alice.destroy();
 	}

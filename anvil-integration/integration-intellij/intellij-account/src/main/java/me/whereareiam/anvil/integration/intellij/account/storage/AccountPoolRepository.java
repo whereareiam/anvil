@@ -103,7 +103,7 @@ public final class AccountPoolRepository {
 	private static void requireOneLibraryPerId(List<String> ids, Collection<AuthenticationAccount> accounts) throws IOException {
 		Map<String, Set<String>> libraries = new TreeMap<>();
 		for (AuthenticationAccount account : accounts)
-			libraries.computeIfAbsent(account.getAccountId(), id -> new TreeSet<>()).add(account.getLibraryId());
+			libraries.computeIfAbsent(account.accountId(), id -> new TreeSet<>()).add(account.libraryId());
 
 		for (String id : ids) {
 			Set<String> stored = libraries.getOrDefault(id, Set.of());

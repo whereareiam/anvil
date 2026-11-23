@@ -1,5 +1,7 @@
 package me.whereareiam.anvil.player.library.mcprotocol.worker.transport;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -27,7 +29,12 @@ import java.util.function.Function;
 public final class WorkerMessageCodec {
 	private static final String FRAME_PREFIX = "ANVIL:";
 	private static final String VALUE = "value";
-	private final ObjectMapper mapper = new ObjectMapper();
+	// Envelopes and control payloads read through fluent accessors, which are no JavaBean getters: their fields are their
+	// members.
+	private final ObjectMapper mapper = new ObjectMapper()
+			.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
+			.setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
+			.setVisibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE);
 	// Player operation and event values, in the Java protocol's JSON form: immutable classes read through their creator
 	// parameters, and polymorphic values, such as packets and texts, by the names of their kinds.
 	private final ObjectMapper values = JavaProtocolJson.configure(new ObjectMapper());
@@ -38,7 +45,7 @@ public final class WorkerMessageCodec {
 
 	public @NotNull WorkerRequest decodeRequest(@NotNull String line) {
 		WorkerRequest request = decode(readObject(line), WorkerRequest.class);
-		if (request.getId() <= 0 || request.getOperation().isBlank() || !request.getArguments().isObject())
+		if (request.id() <= 0 || request.operation().isBlank() || !request.arguments().isObject())
 			throw invalidMessage();
 		return request;
 	}
@@ -53,15 +60,15 @@ public final class WorkerMessageCodec {
 		JsonNode value = readObject(line.substring(FRAME_PREFIX.length()));
 		if (value.has("id")) {
 			WorkerResponse response = decode(value, WorkerResponse.class);
-			if (response.getId() <= 0 || !value.path("success").isBoolean()
-					|| (response.isSuccess() ? response.getResult() == null : response.getError() == null))
+			if (response.id() <= 0 || !value.path("success").isBoolean()
+					|| (response.success() ? response.result() == null : response.error() == null))
 				throw invalidMessage();
 			return Optional.of(response);
 		}
 
 		if (WorkerReady.EVENT.equals(value.path("event").asText())) {
 			WorkerReady ready = decode(value, WorkerReady.class);
-			if (ready.getProtocol() <= 0 || !value.path("release").isTextual() || ready.getRelease().isBlank()
+			if (ready.protocol() <= 0 || !value.path("release").isTextual() || ready.release().isBlank()
 					|| !value.path("segments").isObject()
 					|| !value.path("capabilities").isArray()
 					|| !value.path("unavailable").isObject())
@@ -70,7 +77,7 @@ public final class WorkerMessageCodec {
 		}
 
 		WorkerEvent event = decode(value, WorkerEvent.class);
-		if (event.getEvent().isBlank()) throw invalidMessage();
+		if (event.event().isBlank()) throw invalidMessage();
 
 		return Optional.of(event);
 	}
@@ -146,7 +153,7 @@ public final class WorkerMessageCodec {
 			@NotNull Function<Q, R> handler
 	) {
 		return request -> {
-			R response = handler.apply(open(request, operation.getRequestType()));
+			R response = handler.apply(open(request, operation.requestType()));
 			return envelope(operation.response(response));
 		};
 	}

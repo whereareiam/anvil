@@ -57,7 +57,7 @@ final class ChannelPacketTap implements PacketTap {
 
 	@Override
 	public @NotNull TappedPacket received(@NotNull String name, @NotNull Duration timeout) {
-		if (!selection.isEvery() && !selection.getNames().contains(name))
+		if (!selection.everyPacket() && !selection.names().contains(name))
 			throw new IllegalArgumentException("The tap takes no packets named " + name + "; it takes " + describe());
 
 		Predicate<TappedPacket> matcher = packet -> packet.name().filter(name::equals).isPresent();
@@ -81,7 +81,7 @@ final class ChannelPacketTap implements PacketTap {
 
 		TappedPacket packet = Objects.requireNonNull(cursor.find(matcher));
 		throw new IllegalStateException("Player received a " + type.getSimpleName() + " it must not, as packet #"
-				+ packet.getSequence() + " of the tap: " + packet.packet().orElseThrow());
+				+ packet.sequence() + " of the tap: " + packet.packet().orElseThrow());
 	}
 
 	@Override
@@ -113,21 +113,21 @@ final class ChannelPacketTap implements PacketTap {
 	 */
 	void receive(@NotNull TappedFrame frame) {
 		synchronized (packets) {
-			ClientboundPacket packet = frame.getPacket();
-			packets.add(new TappedPacket(packets.size(), frame.getState(), frame.getId(), frame.getName(),
+			ClientboundPacket packet = frame.packet();
+			packets.add(new TappedPacket(packets.size(), frame.state(), frame.id(), frame.name(),
 					packet == null || selection.keepsValue(packet) ? packet : null));
 		}
 	}
 
 	private <P extends ClientboundPacket> Predicate<TappedPacket> matcher(Class<P> type, Predicate<? super P> condition) {
-		if (!selection.isEvery() && !selection.getTypes().contains(type))
+		if (!selection.everyPacket() && !selection.types().contains(type))
 			throw new IllegalArgumentException("The tap takes no " + type.getSimpleName() + "; it takes " + describe());
 
 		return packet -> packet.packet(type).filter(condition).isPresent();
 	}
 
 	private String describe() {
-		return "the packets " + selection.getTypes().stream().map(Class::getSimpleName).sorted().toList()
-				+ " and the names " + selection.getNames().stream().sorted().toList();
+		return "the packets " + selection.types().stream().map(Class::getSimpleName).sorted().toList()
+				+ " and the names " + selection.names().stream().sorted().toList();
 	}
 }

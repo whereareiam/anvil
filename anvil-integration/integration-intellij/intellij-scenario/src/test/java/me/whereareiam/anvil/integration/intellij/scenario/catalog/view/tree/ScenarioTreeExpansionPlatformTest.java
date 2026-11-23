@@ -54,7 +54,7 @@ public class ScenarioTreeExpansionPlatformTest extends ScenarioPlatformTestCase 
 				List.of(first.toBuilder().displayName("Renamed scenario").build(), second), "");
 		assertTrue(tree.isExpanded(group(tree, 0)));
 		assertFalse(tree.isExpanded(group(tree, 1)));
-		assertEquals("paper", tree.selectedProcess().getName());
+		assertEquals("paper", tree.selectedProcess().name());
 		tree.collapsePath(group(tree, 0));
 		tree.showScenarios(List.of(first, second), "");
 		assertFalse(tree.isExpanded(group(tree, 0)));
@@ -181,9 +181,9 @@ public class ScenarioTreeExpansionPlatformTest extends ScenarioPlatformTestCase 
 		ScenarioDescriptor complete = ScenarioFixtures.scenario();
 		ScenarioDescriptor pending =
 				ScenarioDescriptor.builder()
-						.definition(complete.getDefinition())
-						.name(complete.getName())
-						.displayName(complete.getDisplayName())
+						.definition(complete.definition())
+						.name(complete.name())
+						.displayName(complete.displayName())
 						.build();
 		for (boolean automatic : List.of(false, true)) {
 			ScenarioSettings.getInstance().update(ScenarioSettings.getInstance().values().toBuilder().expandScenarios(automatic).build());

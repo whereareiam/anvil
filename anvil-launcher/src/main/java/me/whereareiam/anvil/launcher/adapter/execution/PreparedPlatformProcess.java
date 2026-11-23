@@ -47,7 +47,7 @@ final class PreparedPlatformProcess implements PreparedProcess {
 		try {
 			platforms.configure(plan, request);
 		} catch (IOException failure) {
-			String name = plan.getDeclaration().getName();
+			String name = plan.declaration().name();
 			throw new ProcessException(name, "Could not configure process '" + name + "'", failure);
 		}
 
@@ -56,7 +56,7 @@ final class PreparedPlatformProcess implements PreparedProcess {
 
 	@Override
 	public @NotNull ProcessFiles files() {
-		return request.getFiles();
+		return request.files();
 	}
 
 	@Override

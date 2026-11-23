@@ -63,7 +63,7 @@ class ClientMovementTest {
 
 		assertEquals(List.of(confirmation(8.5, 65.0, 8.5, 90.0F, 10.0F), confirmation(9.5, 65.0, 7.5, 95.0F, 110.0F)),
 				client.player.sent());
-		assertEquals(9.5, state().getPosition().getX());
+		assertEquals(9.5, state().position().x());
 		assertEquals(new ViewRotation(95.0F, 110.0F), client.player.viewRotation());
 	}
 
@@ -74,7 +74,7 @@ class ClientMovementTest {
 		client.player.deliver(teleport(new Vec3d(8.5, 65.0, 8.5), 90.0F, 10.0F, Set.of()));
 
 		assertEquals(List.of(), client.player.sent());
-		assertEquals(8.5, state().getPosition().getX());
+		assertEquals(8.5, state().position().x());
 	}
 
 	@Test
@@ -96,7 +96,7 @@ class ClientMovementTest {
 		TestClient client = physics(new TestClient("1.21.11").load(0, 0));
 		client.player.deliver(teleport(new Vec3d(8.5, 120.0, 8.5), 0.0F, 0.0F, Set.of()));
 		ticks(5);
-		double falling = state().getMotion().getY();
+		double falling = state().motion().y();
 
 		client.player.deliver(ClientboundPlayerPosition.builder()
 				.position(Vec3d.ZERO)
@@ -104,11 +104,11 @@ class ClientMovementTest {
 				.relatives(EnumSet.of(Relative.X, Relative.Y, Relative.Z, Relative.YAW, Relative.PITCH, Relative.DELTA_Y))
 				.build());
 
-		assertEquals(0.5, state().getMotion().getX());
-		assertEquals(falling, state().getMotion().getY());
-		assertEquals(0.0, state().getMotion().getZ());
+		assertEquals(0.5, state().motion().x());
+		assertEquals(falling, state().motion().y());
+		assertEquals(0.0, state().motion().z());
 		client.player.deliver(teleport(new Vec3d(8.5, 120.0, 8.5), 0.0F, 0.0F, EnumSet.of(Relative.YAW)));
-		assertEquals(0.0, state().getMotion().getY());
+		assertEquals(0.0, state().motion().y());
 	}
 
 	@Test
@@ -117,22 +117,22 @@ class ClientMovementTest {
 		client.player.deliver(teleport(new Vec3d(8.5, 120.0, 8.5), 0.0F, 0.0F, Set.of()));
 		ticks(1);
 
-		client.player.deliver(new ClientboundSetEntityMotion(new EntityId(TestClient.ENTITY_ID.getValue() + 1), new Vec3d(1.0, 1.0, 1.0)));
+		client.player.deliver(new ClientboundSetEntityMotion(new EntityId(TestClient.ENTITY_ID.value() + 1), new Vec3d(1.0, 1.0, 1.0)));
 		client.player.deliver(new ClientboundSetEntityMotion(TestClient.ENTITY_ID, new Vec3d(0.25, 0.5, -0.125)));
 
-		assertEquals(0.25, state().getMotion().getX());
-		assertEquals(0.5, state().getMotion().getY());
-		assertEquals(-0.125, state().getMotion().getZ());
+		assertEquals(0.25, state().motion().x());
+		assertEquals(0.5, state().motion().y());
+		assertEquals(-0.125, state().motion().z());
 	}
 
 	@Test
 	void tellsWhyAReleaseWithoutBlockDataCannotSimulateAndStaysOff() {
 		bind(new TestClient("26.2")).join();
 
-		String reason = operations.call(MovementChannel.PHYSICS, true).getRefusal();
+		String reason = operations.call(MovementChannel.PHYSICS, true).refusal();
 
 		assertTrue(reason != null && reason.contains("776"), reason);
-		assertFalse(state().isPhysics());
+		assertFalse(state().physics());
 		assertEquals(new PhysicsChange(null), operations.call(MovementChannel.PHYSICS, false));
 	}
 
@@ -145,10 +145,10 @@ class ClientMovementTest {
 		ticks(20);
 
 		MovementState state = state();
-		assertEquals(20, state.getTicks());
-		assertEquals(65.0, state.getPosition().getY());
-		assertTrue(state.getPosition().isOnGround());
-		assertEquals(-0.0784000015258789, state.getMotion().getY());
+		assertEquals(20, state.ticks());
+		assertEquals(65.0, state.position().y());
+		assertTrue(state.position().onGround());
+		assertEquals(-0.0784000015258789, state.motion().y());
 		List<?> ticked = client.player.sent().subList(sent, client.player.sent().size());
 		assertEquals(20, ticked.stream().filter(ServerboundClientTickEnd.class::isInstance).count());
 		assertTrue(ticked.getFirst() instanceof ServerboundMovePlayerPos, ticked.getFirst().toString());
@@ -162,7 +162,7 @@ class ClientMovementTest {
 
 		ticks(20);
 
-		assertTrue(state().getPosition().getZ() > 5.0, "the player walked to " + state().getPosition());
+		assertTrue(state().position().z() > 5.0, "the player walked to " + state().position());
 		assertEquals(List.of(), client.player.sent(ServerboundClientTickEnd.class));
 	}
 
@@ -174,8 +174,8 @@ class ClientMovementTest {
 
 		ticks(10);
 
-		assertEquals(0, state().getTicks());
-		assertEquals(80.0, state().getPosition().getY());
+		assertEquals(0, state().ticks());
+		assertEquals(80.0, state().position().y());
 		assertEquals(10, client.player.sent().size() - sent);
 		assertEquals(10, client.player.sent(ServerboundClientTickEnd.class).size());
 	}
@@ -186,11 +186,11 @@ class ClientMovementTest {
 		client.player.deliver(teleport(new Vec3d(8.5, 65.0, 8.5), 0.0F, 0.0F, Set.of()));
 
 		operations.call(MovementChannel.MOVE, Position.builder().x(4.5).y(70.0).z(4.5).build());
-		assertEquals(70.0, state().getPosition().getY());
+		assertEquals(70.0, state().position().y());
 		ticks(2);
 
-		assertEquals(4.5, state().getPosition().getX());
-		assertTrue(state().getPosition().getY() < 70.0);
+		assertEquals(4.5, state().position().x());
+		assertTrue(state().position().y() < 70.0);
 	}
 
 	@Test
@@ -209,8 +209,8 @@ class ClientMovementTest {
 		operations.call(MovementChannel.LOOK, new ViewRotation(90.0F, 0.0F));
 		assertEquals(sent, client.player.sent().size());
 		ticks(1);
-		assertTrue(client.player.sent(ServerboundMovePlayerRot.class).stream().anyMatch(rotation -> rotation.getYaw() == 90.0F)
-				|| client.player.sent(ServerboundMovePlayerPosRot.class).stream().anyMatch(move -> move.getYaw() == 90.0F));
+		assertTrue(client.player.sent(ServerboundMovePlayerRot.class).stream().anyMatch(rotation -> rotation.yaw() == 90.0F)
+				|| client.player.sent(ServerboundMovePlayerPosRot.class).stream().anyMatch(move -> move.yaw() == 90.0F));
 	}
 
 	@Test
@@ -220,8 +220,8 @@ class ClientMovementTest {
 
 		client.player.rejoin();
 
-		assertNull(state().getPosition());
-		assertTrue(state().isPhysics());
+		assertNull(state().position());
+		assertTrue(state().physics());
 	}
 
 	@Test
@@ -237,8 +237,8 @@ class ClientMovementTest {
 
 		ticks(1);
 
-		assertEquals(1, state().getTicks());
-		assertTrue(state().getMotion().getY() < 0.0);
+		assertEquals(1, state().ticks());
+		assertTrue(state().motion().y() < 0.0);
 	}
 
 	@Test
@@ -264,16 +264,16 @@ class ClientMovementTest {
 
 		ticks(10);
 
-		assertEquals(2.5, state().getPosition().getZ());
+		assertEquals(2.5, state().position().z());
 		List<?> ticked = client.player.sent().subList(sent, client.player.sent().size());
 		assertTrue(ticked.stream().allMatch(ServerboundClientTickEnd.class::isInstance), ticked.toString());
 
 		client.player.deliver(ClientboundRespawn.builder().dimension("minecraft:overworld").dimensionType(client.dimension)
 				.build());
-		assertNull(state().getPosition());
+		assertNull(state().position());
 		client.player.deliver(teleport(new Vec3d(8.5, 65.0, 2.5), 0.0F, 0.0F, Set.of()));
 		ticks(10);
-		assertTrue(state().getPosition().getZ() > 2.5, "the respawned player walks again");
+		assertTrue(state().position().z() > 2.5, "the respawned player walks again");
 	}
 
 	@Test
@@ -287,7 +287,7 @@ class ClientMovementTest {
 			ticks(3);
 
 			boolean command = client.player.sent(ServerboundPlayerCommand.class).stream()
-					.anyMatch(sent -> sent.getAction() == PlayerCommandAction.PRESS_SHIFT_KEY);
+					.anyMatch(sent -> sent.action() == PlayerCommandAction.PRESS_SHIFT_KEY);
 			assertEquals(!carried, command);
 			assertEquals(carried, !client.player.sent(ServerboundPlayerInput.class).isEmpty());
 			movement.close();
@@ -321,10 +321,10 @@ class ClientMovementTest {
 	void tellsWhyAReleaseWithoutTheAbilitiesPacketCannotSimulate() {
 		bind(new TestClient("1.21.11", type -> type != ServerboundPlayerAbilities.class)).join();
 
-		String reason = operations.call(MovementChannel.PHYSICS, true).getRefusal();
+		String reason = operations.call(MovementChannel.PHYSICS, true).refusal();
 
 		assertTrue(reason != null && reason.contains(ServerboundPlayerAbilities.class.getSimpleName()), reason);
-		assertFalse(state().isPhysics());
+		assertFalse(state().physics());
 	}
 
 	@Test
@@ -336,15 +336,15 @@ class ClientMovementTest {
 		client.player.deliver(teleport(new Vec3d(8.5, 200.0, 8.5), 0.0F, 0.0F, Set.of()));
 
 		long started = System.nanoTime();
-		awaitState(state -> state.getTicks() >= 10);
+		awaitState(state -> state.ticks() >= 10);
 		assertTrue(System.nanoTime() - started >= Duration.ofMillis(400).toNanos(), "ten ticks take half a second");
 		operations.call(MovementChannel.PHYSICS, false);
-		long ticks = state().getTicks();
+		long ticks = state().ticks();
 
 		sleep(150);
-		assertEquals(ticks, state().getTicks());
-		assertFalse(state().isPhysics());
-		assertTrue(state().getPosition().getY() < 200.0);
+		assertEquals(ticks, state().ticks());
+		assertFalse(state().physics());
+		assertTrue(state().position().y() < 200.0);
 	}
 
 	@Test
@@ -360,19 +360,19 @@ class ClientMovementTest {
 			operations.call(MovementChannel.PHYSICS, true);
 			client.player.deliver(teleport(new Vec3d(8.5, 66.0, 8.5), 0.0F, 0.0F, Set.of()));
 
-			awaitState(state -> state.getFailure() != null);
+			awaitState(state -> state.failure() != null);
 			sleep(150);
 		} finally {
 			System.setErr(standardError);
 		}
 
-		assertFalse(state().isPhysics());
-		assertTrue(state().getFailure().contains("has no block state"), state().getFailure());
+		assertFalse(state().physics());
+		assertTrue(state().failure().contains("has no block state"), state().failure());
 		String lines = reported.toString(StandardCharsets.UTF_8);
 		assertEquals(1, lines.lines().count(), lines);
 		assertTrue(lines.contains("'Alice'"), lines);
 		assertEquals(new PhysicsChange(null), operations.call(MovementChannel.PHYSICS, true));
-		assertNull(state().getFailure());
+		assertNull(state().failure());
 	}
 
 	private void awaitState(@NotNull Predicate<MovementState> reached) {

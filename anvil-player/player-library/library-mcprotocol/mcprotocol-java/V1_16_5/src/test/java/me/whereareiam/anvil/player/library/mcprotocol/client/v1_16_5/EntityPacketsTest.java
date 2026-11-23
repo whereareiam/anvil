@@ -74,9 +74,9 @@ class EntityPacketsTest {
 
 	@Test
 	void namesTheTypesTheLibraryNamesAfterOlderNamesByTheirRegistryKeys() {
-		assertEquals(EntityTypeKey.minecraft("ender_pearl"), added(12, EntityType.THROWN_ENDERPEARL).getType());
-		assertEquals(EntityTypeKey.minecraft("tnt"), added(13, EntityType.PRIMED_TNT).getType());
-		assertEquals(EntityTypeKey.minecraft("chest_minecart"), added(14, EntityType.MINECART_CHEST).getType());
+		assertEquals(EntityTypeKey.minecraft("ender_pearl"), added(12, EntityType.THROWN_ENDERPEARL).type());
+		assertEquals(EntityTypeKey.minecraft("tnt"), added(13, EntityType.PRIMED_TNT).type());
+		assertEquals(EntityTypeKey.minecraft("chest_minecart"), added(14, EntityType.MINECART_CHEST).type());
 	}
 
 	@Test
@@ -133,7 +133,7 @@ class EntityPacketsTest {
 	}
 
 	private List<EntityDataValue> decodeData(ServerEntityMetadataPacket data) {
-		return assertInstanceOf(ClientboundSetEntityData.class, packets.decode(data)).getValues();
+		return assertInstanceOf(ClientboundSetEntityData.class, packets.decode(data)).values();
 	}
 
 	private static ServerEntityMetadataPacket data(int entityId, EntityMetadata... metadata) {

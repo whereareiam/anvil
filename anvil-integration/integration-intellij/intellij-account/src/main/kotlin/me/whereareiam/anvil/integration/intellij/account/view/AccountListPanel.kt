@@ -116,10 +116,10 @@ class AccountListPanel(
 		override fun getValueAt(row: Int, column: Int): Any {
 			val entry = accounts[row]
 			return when (column) {
-				0 -> entry.account.username ?: "Profile not available"
-				1 -> entry.account.accountId
+				0 -> entry.account.username() ?: "Profile not available"
+				1 -> entry.account.accountId()
 				2 -> entry.source.label
-				else -> entry.account.libraryId
+				else -> entry.account.libraryId()
 			}
 		}
 	}

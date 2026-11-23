@@ -131,10 +131,10 @@ public final class CapabilityRuntime<C extends Capability, X extends CapabilityC
 			CapabilitySet<C> capabilities
 	) {
 		CapabilityDescriptor descriptor = provider.descriptor();
-		String reason = unavailable.get(descriptor.getId());
+		String reason = unavailable.get(descriptor.id());
 		if (reason != null) return reason;
 
-		for (Class<? extends Capability> dependency : descriptor.getRequiredCapabilities()) {
+		for (Class<? extends Capability> dependency : descriptor.requiredCapabilities()) {
 			String missing = capabilities.unavailable().get(dependency);
 			if (missing != null) return "requires " + dependency.getName() + ", which is unavailable: " + missing;
 		}
@@ -150,17 +150,17 @@ public final class CapabilityRuntime<C extends Capability, X extends CapabilityC
 	) {
 		CapabilityDescriptor descriptor = provider.descriptor();
 		try {
-			X context = contextFactory.apply(capabilities.context(descriptor.getId(), dependencies(descriptor)));
+			X context = contextFactory.apply(capabilities.context(descriptor.id(), dependencies(descriptor)));
 			T capability = provider.create(context);
 			if (!provider.capability().isInstance(capability))
-				throw new CapabilityException("Provider '" + descriptor.getId() + "' for " + ownerDescription
+				throw new CapabilityException("Provider '" + descriptor.id() + "' for " + ownerDescription
 						+ " returned " + (capability == null ? "null" : capability.getClass().getName())
 						+ " instead of " + provider.capability().getName());
 			capabilities.add(provider.capability(), capability);
 		} catch (CapabilityException exception) {
 			throw exception;
 		} catch (RuntimeException exception) {
-			throw new CapabilityException("Could not create provider '" + descriptor.getId()
+			throw new CapabilityException("Could not create provider '" + descriptor.id()
 					+ "' for " + ownerDescription, exception);
 		}
 	}
@@ -173,30 +173,30 @@ public final class CapabilityRuntime<C extends Capability, X extends CapabilityC
 		Map<Class<? extends Capability>, String> byCapability = new LinkedHashMap<>();
 		for (CapabilityProvider<? extends C, ? super X> provider : candidates) {
 			CapabilityDescriptor descriptor = provider.descriptor();
-			if (descriptor.getId().isBlank())
+			if (descriptor.id().isBlank())
 				throw new CapabilityException("Anvil provider ID must not be blank: " + provider.getClass().getName());
-			if (descriptor.getApiVersion() != CapabilityDescriptor.CURRENT_API_VERSION)
-				throw new CapabilityException("Provider '" + descriptor.getId() + "' targets API "
-						+ descriptor.getApiVersion() + " but Anvil supports " + CapabilityDescriptor.CURRENT_API_VERSION);
-			validateOwnerType(ownerType, provider.capability(), descriptor.getId());
+			if (descriptor.apiVersion() != CapabilityDescriptor.CURRENT_API_VERSION)
+				throw new CapabilityException("Provider '" + descriptor.id() + "' targets API "
+						+ descriptor.apiVersion() + " but Anvil supports " + CapabilityDescriptor.CURRENT_API_VERSION);
+			validateOwnerType(ownerType, provider.capability(), descriptor.id());
 			for (Class<? extends Capability> dependency : dependencies(descriptor))
-				validateOwnerType(ownerType, dependency, descriptor.getId());
+				validateOwnerType(ownerType, dependency, descriptor.id());
 
-			CapabilityProvider<? extends C, ? super X> duplicate = byId.putIfAbsent(descriptor.getId(), provider);
+			CapabilityProvider<? extends C, ? super X> duplicate = byId.putIfAbsent(descriptor.id(), provider);
 			if (duplicate != null)
-				throw new CapabilityException("Duplicate Anvil provider ID '" + descriptor.getId() + "': "
+				throw new CapabilityException("Duplicate Anvil provider ID '" + descriptor.id() + "': "
 						+ duplicate.getClass().getName() + " and " + provider.getClass().getName());
-			String capabilityOwner = byCapability.putIfAbsent(provider.capability(), descriptor.getId());
+			String capabilityOwner = byCapability.putIfAbsent(provider.capability(), descriptor.id());
 			if (capabilityOwner != null)
 				throw new CapabilityException("Capability " + provider.capability().getName()
-						+ " is provided by both '" + capabilityOwner + "' and '" + descriptor.getId() + "'");
+						+ " is provided by both '" + capabilityOwner + "' and '" + descriptor.id() + "'");
 		}
 
 		for (CapabilityProvider<? extends C, ? super X> provider : byId.values()) {
-			Set<Class<? extends Capability>> missing = new LinkedHashSet<>(provider.descriptor().getRequiredCapabilities());
+			Set<Class<? extends Capability>> missing = new LinkedHashSet<>(provider.descriptor().requiredCapabilities());
 			missing.removeAll(byCapability.keySet());
 			if (!missing.isEmpty())
-				throw new CapabilityException("Provider '" + provider.descriptor().getId()
+				throw new CapabilityException("Provider '" + provider.descriptor().id()
 						+ "' requires missing capabilities " + missing.stream().map(Class::getName).toList());
 		}
 
@@ -215,8 +215,8 @@ public final class CapabilityRuntime<C extends Capability, X extends CapabilityC
 	 * ones.
 	 */
 	private static Set<Class<? extends Capability>> dependencies(CapabilityDescriptor descriptor) {
-		Set<Class<? extends Capability>> dependencies = new LinkedHashSet<>(descriptor.getRequiredCapabilities());
-		dependencies.addAll(descriptor.getOptionalCapabilities());
+		Set<Class<? extends Capability>> dependencies = new LinkedHashSet<>(descriptor.requiredCapabilities());
+		dependencies.addAll(descriptor.optionalCapabilities());
 		return dependencies;
 	}
 

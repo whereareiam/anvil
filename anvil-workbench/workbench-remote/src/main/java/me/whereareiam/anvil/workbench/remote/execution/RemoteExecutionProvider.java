@@ -26,17 +26,17 @@ public final class RemoteExecutionProvider implements BoundExecutionProvider {
 
 	@Override
 	public @NotNull String id() {
-		return offered.getId();
+		return offered.id();
 	}
 
 	@Override
 	public boolean preservesClientAddress() {
-		return offered.isPreservesClientAddress();
+		return offered.preservesClientAddress();
 	}
 
 	@Override
 	public boolean connectsEnvironments() {
-		return offered.isConnectsEnvironments();
+		return offered.connectsEnvironments();
 	}
 
 	@Override
@@ -48,7 +48,7 @@ public final class RemoteExecutionProvider implements BoundExecutionProvider {
 	public @NotNull ExecutionSession open(@NotNull ExecutionContext context) {
 		return new RemoteExecutionSession(
 				connection,
-				connection.call(new OpenSession(offered.getId(), context)).getHandle(),
+				connection.call(new OpenSession(offered.id(), context)).handle(),
 				mirrorAddress
 		);
 	}

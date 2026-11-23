@@ -37,10 +37,10 @@ final class PacketDataCodec {
 		try (DataOutputStream data = new DataOutputStream(new GZIPOutputStream(output))) {
 			data.writeInt(registry.protocol());
 			PacketDataSource source = registry.source();
-			data.writeUTF(source.getRepository());
-			data.writeUTF(source.getVersion());
-			data.writeUTF(source.getCommit());
-			data.writeUTF(source.getProtocol());
+			data.writeUTF(source.repository());
+			data.writeUTF(source.version());
+			data.writeUTF(source.commit());
+			data.writeUTF(source.protocol());
 
 			data.writeInt(ConnectionState.values().length);
 			for (ConnectionState state : ConnectionState.values()) {

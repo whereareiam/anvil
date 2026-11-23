@@ -51,6 +51,6 @@ public class ProcessSpec {
 	 * @return console directory
 	 */
 	public @NotNull Path consoleDirectory() {
-		return consoleDirectory == null ? request.getWorkspace() : consoleDirectory;
+		return consoleDirectory == null ? request.workspace() : consoleDirectory;
 	}
 }

@@ -54,7 +54,7 @@ class BlockRegistryTest {
 		BlockRegistry registry = registry(protocol);
 
 		assertEquals(states, registry.stateCount());
-		assertEquals(stairs, block(registry, "minecraft:oak_stairs").getDefaultStateId());
+		assertEquals(stairs, block(registry, "minecraft:oak_stairs").defaultStateId());
 	}
 
 	@ParameterizedTest
@@ -63,16 +63,16 @@ class BlockRegistryTest {
 		BlockRegistry registry = registry(protocol);
 
 		assertTrue(registry.isAir(0));
-		assertTrue(registry.state(0).getCollision().isEmpty());
-		assertTrue(registry.isAir(state(registry, "minecraft:cave_air").getId()));
+		assertTrue(registry.state(0).collision().isEmpty());
+		assertTrue(registry.isAir(state(registry, "minecraft:cave_air").id()));
 		BlockState stone = registry.state(1);
-		assertEquals("minecraft:stone", stone.getBlock().getName());
-		assertTrue(stone.getCollision().isFullBlock());
+		assertEquals("minecraft:stone", stone.block().name());
+		assertTrue(stone.collision().isFullBlock());
 		assertFalse(stone.isAir());
-		assertEquals(BlockKind.OTHER, stone.getBlock().getKind());
-		assertEquals(CollisionKind.FIXED, stone.getBlock().getCollision());
-		assertEquals(0.6F, stone.getBlock().getMovement().getFriction());
-		assertEquals(FluidType.NONE, stone.getFluid());
+		assertEquals(BlockKind.OTHER, stone.block().kind());
+		assertEquals(CollisionKind.FIXED, stone.block().collision());
+		assertEquals(0.6F, stone.block().movement().friction());
+		assertEquals(FluidType.NONE, stone.fluid());
 	}
 
 	@ParameterizedTest
@@ -80,8 +80,8 @@ class BlockRegistryTest {
 	void aBottomSlabIsTheLowerHalf(int protocol) {
 		BlockState slab = state(registry(protocol), "minecraft:oak_slab");
 
-		assertEquals(Map.of("type", "bottom", "waterlogged", "false"), slab.getProperties());
-		assertEquals(List.of(new CollisionBox(0, 0, 0, 1, 0.5, 1)), slab.getCollision().getBoxes());
+		assertEquals(Map.of("type", "bottom", "waterlogged", "false"), slab.properties());
+		assertEquals(List.of(new CollisionBox(0, 0, 0, 1, 0.5, 1)), slab.collision().boxes());
 	}
 
 	@ParameterizedTest
@@ -89,13 +89,13 @@ class BlockRegistryTest {
 	void decodesStatePropertiesInVanillaOrder(int protocol) {
 		BlockRegistry registry = registry(protocol);
 		BlockType stairs = block(registry, "minecraft:oak_stairs");
-		BlockState first = registry.state(stairs.getMinStateId());
+		BlockState first = registry.state(stairs.minStateId());
 
-		assertEquals(List.of("facing", "half", "shape", "waterlogged"), List.copyOf(first.getProperties().keySet()));
-		assertEquals(Map.of("facing", "north", "half", "top", "shape", "straight", "waterlogged", "true"), first.getProperties());
-		assertEquals(FluidType.WATER, first.getFluid());
+		assertEquals(List.of("facing", "half", "shape", "waterlogged"), List.copyOf(first.properties().keySet()));
+		assertEquals(Map.of("facing", "north", "half", "top", "shape", "straight", "waterlogged", "true"), first.properties());
+		assertEquals(FluidType.WATER, first.fluid());
 		assertEquals(Map.of("facing", "north", "half", "bottom", "shape", "straight", "waterlogged", "false"),
-				registry.state(stairs.getDefaultStateId()).getProperties());
+				registry.state(stairs.defaultStateId()).properties());
 		assertEquals(80, registry.states(stairs).size());
 	}
 
@@ -104,9 +104,9 @@ class BlockRegistryTest {
 	void stairsCollideWithSeveralBoxes(int protocol) {
 		BlockState stairs = state(registry(protocol), "minecraft:oak_stairs");
 
-		assertTrue(stairs.getCollision().getBoxes().size() > 1, stairs.getCollision().toString());
-		assertTrue(stairs.getCollision().getBoxes().stream().anyMatch(box -> box.getMinY() == 0 && box.getMaxY() == 0.5));
-		assertTrue(stairs.getCollision().getBoxes().stream().anyMatch(box -> box.getMaxY() == 1));
+		assertTrue(stairs.collision().boxes().size() > 1, stairs.collision().toString());
+		assertTrue(stairs.collision().boxes().stream().anyMatch(box -> box.minY() == 0 && box.maxY() == 0.5));
+		assertTrue(stairs.collision().boxes().stream().anyMatch(box -> box.maxY() == 1));
 	}
 
 	@ParameterizedTest
@@ -114,7 +114,7 @@ class BlockRegistryTest {
 	void aFenceIsOneAndAHalfBlocksHigh(int protocol) {
 		BlockState post = state(registry(protocol), "minecraft:oak_fence");
 
-		assertEquals(List.of(new CollisionBox(0.375, 0, 0.375, 0.625, 1.5, 0.625)), post.getCollision().getBoxes());
+		assertEquals(List.of(new CollisionBox(0.375, 0, 0.375, 0.625, 1.5, 0.625)), post.collision().boxes());
 	}
 
 	@ParameterizedTest
@@ -122,20 +122,20 @@ class BlockRegistryTest {
 	void carriesVanillaMovementFacts(int protocol) {
 		BlockRegistry registry = registry(protocol);
 
-		assertEquals(0.98F, movement(registry, "minecraft:ice").getFriction());
-		assertEquals(0.989F, movement(registry, "minecraft:blue_ice").getFriction());
+		assertEquals(0.98F, movement(registry, "minecraft:ice").friction());
+		assertEquals(0.989F, movement(registry, "minecraft:blue_ice").friction());
 		BlockMovement slime = movement(registry, "minecraft:slime_block");
-		assertEquals(0.8F, slime.getFriction());
-		assertEquals(1.0, slime.getBounceFactor());
+		assertEquals(0.8F, slime.friction());
+		assertEquals(1.0, slime.bounceFactor());
 		assertTrue(slime.has(MovementBehaviour.SLIME_STEP));
 		BlockMovement honey = movement(registry, "minecraft:honey_block");
-		assertEquals(0.4F, honey.getSpeedFactor());
-		assertEquals(0.5F, honey.getJumpFactor());
+		assertEquals(0.4F, honey.speedFactor());
+		assertEquals(0.5F, honey.jumpFactor());
 		assertTrue(honey.has(MovementBehaviour.HONEY_SLIDE));
-		assertEquals(0.4F, movement(registry, "minecraft:soul_sand").getSpeedFactor());
-		assertEquals((double) 0.66F, movement(registry, "minecraft:red_bed").getBounceFactor());
-		assertEquals(new StuckSpeed(0.25, (double) 0.05F), movement(registry, "minecraft:cobweb").getStuckSpeed());
-		assertNull(movement(registry, "minecraft:stone").getStuckSpeed());
+		assertEquals(0.4F, movement(registry, "minecraft:soul_sand").speedFactor());
+		assertEquals((double) 0.66F, movement(registry, "minecraft:red_bed").bounceFactor());
+		assertEquals(new StuckSpeed(0.25, (double) 0.05F), movement(registry, "minecraft:cobweb").stuckSpeed());
+		assertNull(movement(registry, "minecraft:stone").stuckSpeed());
 		assertTrue(movement(registry, "minecraft:ladder").has(MovementBehaviour.CLIMBABLE));
 		assertTrue(movement(registry, "minecraft:scaffolding").has(MovementBehaviour.CLIMBABLE));
 		assertFalse(movement(registry, "minecraft:stone").has(MovementBehaviour.CLIMBABLE));
@@ -146,23 +146,23 @@ class BlockRegistryTest {
 	void knowsTheKindsVanillasMovementCodeAsksFor(int protocol) {
 		BlockRegistry registry = registry(protocol);
 
-		assertEquals(BlockKind.AIR, block(registry, "minecraft:void_air").getKind());
-		assertEquals(BlockKind.FENCE, block(registry, "minecraft:oak_fence").getKind());
-		assertEquals(BlockKind.WALL, block(registry, "minecraft:cobblestone_wall").getKind());
-		assertEquals(BlockKind.FENCE_GATE, block(registry, "minecraft:spruce_fence_gate").getKind());
-		assertEquals(BlockKind.TRAPDOOR, block(registry, "minecraft:iron_trapdoor").getKind());
-		assertEquals(BlockKind.LADDER, block(registry, "minecraft:ladder").getKind());
-		assertEquals(BlockKind.SCAFFOLDING, block(registry, "minecraft:scaffolding").getKind());
-		assertEquals(BlockKind.WATER, block(registry, "minecraft:water").getKind());
-		assertEquals(BlockKind.OTHER, block(registry, "minecraft:kelp").getKind());
-		assertEquals(BlockKind.ICE, block(registry, "minecraft:frosted_ice").getKind());
-		assertEquals(BlockKind.OTHER, block(registry, "minecraft:packed_ice").getKind());
-		assertEquals(BlockKind.MOVING_PISTON, block(registry, "minecraft:moving_piston").getKind());
+		assertEquals(BlockKind.AIR, block(registry, "minecraft:void_air").kind());
+		assertEquals(BlockKind.FENCE, block(registry, "minecraft:oak_fence").kind());
+		assertEquals(BlockKind.WALL, block(registry, "minecraft:cobblestone_wall").kind());
+		assertEquals(BlockKind.FENCE_GATE, block(registry, "minecraft:spruce_fence_gate").kind());
+		assertEquals(BlockKind.TRAPDOOR, block(registry, "minecraft:iron_trapdoor").kind());
+		assertEquals(BlockKind.LADDER, block(registry, "minecraft:ladder").kind());
+		assertEquals(BlockKind.SCAFFOLDING, block(registry, "minecraft:scaffolding").kind());
+		assertEquals(BlockKind.WATER, block(registry, "minecraft:water").kind());
+		assertEquals(BlockKind.OTHER, block(registry, "minecraft:kelp").kind());
+		assertEquals(BlockKind.ICE, block(registry, "minecraft:frosted_ice").kind());
+		assertEquals(BlockKind.OTHER, block(registry, "minecraft:packed_ice").kind());
+		assertEquals(BlockKind.MOVING_PISTON, block(registry, "minecraft:moving_piston").kind());
 		registry.block("minecraft:powder_snow")
-				.ifPresent(powderSnow -> assertEquals(BlockKind.POWDER_SNOW, powderSnow.getKind()));
-		assertEquals(CollisionKind.DYNAMIC, block(registry, "minecraft:scaffolding").getCollision());
-		assertEquals(CollisionKind.OFFSET, block(registry, "minecraft:bamboo").getCollision());
-		assertEquals(CollisionKind.FIXED, block(registry, "minecraft:oak_fence").getCollision());
+				.ifPresent(powderSnow -> assertEquals(BlockKind.POWDER_SNOW, powderSnow.kind()));
+		assertEquals(CollisionKind.DYNAMIC, block(registry, "minecraft:scaffolding").collision());
+		assertEquals(CollisionKind.OFFSET, block(registry, "minecraft:bamboo").collision());
+		assertEquals(CollisionKind.FIXED, block(registry, "minecraft:oak_fence").collision());
 	}
 
 	@ParameterizedTest
@@ -170,13 +170,13 @@ class BlockRegistryTest {
 	void knowsTheFluidOfEachState(int protocol) {
 		BlockRegistry registry = registry(protocol);
 
-		assertEquals(FluidType.WATER, state(registry, "minecraft:water").getFluid());
-		assertEquals(FluidType.WATER, state(registry, "minecraft:kelp").getFluid());
-		assertEquals(FluidType.LAVA, state(registry, "minecraft:lava").getFluid());
-		assertTrue(state(registry, "minecraft:water").getCollision().isEmpty());
+		assertEquals(FluidType.WATER, state(registry, "minecraft:water").fluid());
+		assertEquals(FluidType.WATER, state(registry, "minecraft:kelp").fluid());
+		assertEquals(FluidType.LAVA, state(registry, "minecraft:lava").fluid());
+		assertTrue(state(registry, "minecraft:water").collision().isEmpty());
 		BlockType slab = block(registry, "minecraft:oak_slab");
 		assertEquals(FluidType.WATER, registry.states(slab).stream()
-				.filter(state -> state.property("waterlogged").orElseThrow().equals("true")).findFirst().orElseThrow().getFluid());
+				.filter(state -> state.property("waterlogged").orElseThrow().equals("true")).findFirst().orElseThrow().fluid());
 	}
 
 	@ParameterizedTest
@@ -186,7 +186,7 @@ class BlockRegistryTest {
 
 		assertEquals(
 				List.of("1", "2", "3", "4", "5", "6", "7", "8"),
-				block(registry, "minecraft:snow").getProperties().getFirst().getValues()
+				block(registry, "minecraft:snow").properties().getFirst().values()
 		);
 		assertEquals("1", state(registry, "minecraft:snow").property("layers").orElseThrow());
 		assertEquals("0", state(registry, "minecraft:wheat").property("age").orElseThrow());
@@ -210,9 +210,9 @@ class BlockRegistryTest {
 		int next = 0;
 		for (int id = 0; id < registry.blocks().size(); id++) {
 			BlockType block = registry.blocks().get(id);
-			assertEquals(id, block.getId());
-			assertEquals(next, block.getMinStateId());
-			next = block.getMaxStateId() + 1;
+			assertEquals(id, block.id());
+			assertEquals(next, block.minStateId());
+			next = block.maxStateId() + 1;
 		}
 		assertEquals(registry.stateCount(), next);
 	}
@@ -222,7 +222,7 @@ class BlockRegistryTest {
 	}
 
 	private static @NotNull BlockMovement movement(@NotNull BlockRegistry registry, @NotNull String name) {
-		return block(registry, name).getMovement();
+		return block(registry, name).movement();
 	}
 
 	private static @NotNull BlockType block(@NotNull BlockRegistry registry, @NotNull String name) {
@@ -230,6 +230,6 @@ class BlockRegistryTest {
 	}
 
 	private static @NotNull BlockState state(@NotNull BlockRegistry registry, @NotNull String name) {
-		return registry.state(block(registry, name).getDefaultStateId());
+		return registry.state(block(registry, name).defaultStateId());
 	}
 }

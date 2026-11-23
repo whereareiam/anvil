@@ -113,7 +113,7 @@ public abstract class ConnectionTranslation implements PacketTranslation<Packet>
 	 * Records the level a login names for the connection's other translations.
 	 */
 	private ClientboundLogin entered(ClientboundLogin login) {
-		level.enter(new Level(login.getDimension(), login.getDimensionType()));
+		level.enter(new Level(login.dimension(), login.dimensionType()));
 		return login;
 	}
 
@@ -121,7 +121,7 @@ public abstract class ConnectionTranslation implements PacketTranslation<Packet>
 	 * Records the level a respawn names for the connection's other translations.
 	 */
 	private ClientboundRespawn entered(ClientboundRespawn respawn) {
-		level.enter(new Level(respawn.getDimension(), respawn.getDimensionType()));
+		level.enter(new Level(respawn.dimension(), respawn.dimensionType()));
 		return respawn;
 	}
 
@@ -182,7 +182,7 @@ public abstract class ConnectionTranslation implements PacketTranslation<Packet>
 			throw new IllegalStateException("The server described the dimension type " + key + " with a fast_lava "
 					+ "attribute that is no boolean");
 
-		String modifier = modified.string("modifier").map(NbtString::getValue).orElse(null);
+		String modifier = modified.string("modifier").map(NbtString::value).orElse(null);
 		NbtNumber argument = modified.number("argument").orElse(null);
 		if (modifier == null || argument == null)
 			throw new IllegalStateException("The server described the dimension type " + key + " with a fast_lava "
@@ -248,8 +248,8 @@ public abstract class ConnectionTranslation implements PacketTranslation<Packet>
 			throw new IllegalStateException("The server sent the dimension type " + id
 					+ ", which its configuration did not list");
 
-		NbtCompound description = entry.getData();
-		return description == null ? known(entry.getKey()) : described(entry.getKey(), description);
+		NbtCompound description = entry.data();
+		return description == null ? known(entry.key()) : described(entry.key(), description);
 	}
 
 	/**
@@ -297,6 +297,6 @@ public abstract class ConnectionTranslation implements PacketTranslation<Packet>
 	}
 
 	private static @Nullable String string(@NotNull NbtCompound description, @NotNull String field) {
-		return description.string(field).map(NbtString::getValue).orElse(null);
+		return description.string(field).map(NbtString::value).orElse(null);
 	}
 }

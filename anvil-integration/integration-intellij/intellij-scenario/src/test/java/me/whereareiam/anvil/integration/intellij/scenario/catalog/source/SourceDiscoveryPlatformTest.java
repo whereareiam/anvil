@@ -132,7 +132,7 @@ public class SourceDiscoveryPlatformTest extends ScenarioPlatformTestCase {
 		provider.imported(3, 1);
 		applyLatestImport();
 		assertSame(run, session.getActiveSession());
-		assertEquals(SessionState.RUNNING, run.getSnapshot().getState());
+		assertEquals(SessionState.RUNNING, run.getSnapshot().state());
 		assertEquals(1, exports.size());
 		assertEquals(1, running.getStarts().get());
 		running.setHoldCleanup(true);
@@ -267,7 +267,7 @@ public class SourceDiscoveryPlatformTest extends ScenarioPlatformTestCase {
 
 	private EnvironmentSession startRun() throws Exception {
 		var run = session.run(getProject().getService(ScenarioCatalog.class).snapshot().getSource(), getProject().getService(ScenarioCatalog.class).snapshot().getScenarios().getFirst(), null);
-		await(() -> run.getSnapshot().getState() == SessionState.RUNNING);
+		await(() -> run.getSnapshot().state() == SessionState.RUNNING);
 		return run;
 	}
 

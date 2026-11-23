@@ -91,7 +91,7 @@ public interface Cookies extends PlayerCapability {
 	 * CookieWatch asked = cookies.watch();
 	 * session.rejoin();
 	 * CookieRequest request = asked.requested("example:ticket", Duration.ofSeconds(10));
-	 * assertNull(request.getAnswer());
+	 * assertNull(request.answer());
 	 * }</pre>
 	 *
 	 * @return a watch that starts after the last request made so far

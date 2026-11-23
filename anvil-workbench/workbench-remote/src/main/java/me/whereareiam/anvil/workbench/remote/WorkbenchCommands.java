@@ -40,10 +40,10 @@ public final class WorkbenchCommands {
 		String engine = InetAddress.getLocalHost().getHostName();
 		Pairing pairing = WorkbenchConnection.pair(arguments[1], arguments[2], arguments[3], engine);
 		pairings.save(pairing);
-		System.out.println("Paired with workbench '" + pairing.getName() + "' at " + pairing.getAddress()
-				+ " (certificate " + pairing.getFingerprint() + ")");
+		System.out.println("Paired with workbench '" + pairing.name() + "' at " + pairing.address()
+				+ " (certificate " + pairing.fingerprint() + ")");
 		if (pairings.defaultName().isEmpty()) {
-			pairings.setDefault(pairing.getName());
+			pairings.setDefault(pairing.name());
 			System.out.println("Runs now use it by default; 'default local' runs them on this machine again.");
 		}
 		System.out.println("Pairings are kept in " + pairings.directory());
@@ -53,8 +53,8 @@ public final class WorkbenchCommands {
 		Optional<String> preferred = pairings.defaultName();
 		System.out.println((preferred.isEmpty() ? "* " : "  ") + "local (this machine)");
 		for (Pairing pairing : pairings.all())
-			System.out.println((preferred.filter(pairing.getName()::equals).isPresent() ? "* " : "  ")
-					+ pairing.getName() + "  " + pairing.getAddress());
+			System.out.println((preferred.filter(pairing.name()::equals).isPresent() ? "* " : "  ")
+					+ pairing.name() + "  " + pairing.address());
 	}
 
 	private static void setDefault(Pairings pairings, String[] arguments) throws IOException {

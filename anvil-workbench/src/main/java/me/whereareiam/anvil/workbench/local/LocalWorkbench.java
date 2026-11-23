@@ -55,12 +55,12 @@ public final class LocalWorkbench implements Workbench {
 	public LocalWorkbench(@NotNull EngineOptions options, @NotNull Map<String, ExecutionProvider> executions) {
 		this.options = options;
 		provisioning = new ProvisioningServices(options);
-		JavaExecutionRuntime java = new JavaExecutionRuntime(provisioning.getJava());
+		JavaExecutionRuntime java = new JavaExecutionRuntime(provisioning.java());
 		ExecutionServices services = ExecutionServices.builder()
-				.cacheDirectory(options.getCacheDirectory())
+				.cacheDirectory(options.cacheDirectory())
 				.localRuntime(java)
 				.runtimeValidator(java)
-				.imageLocks(new CacheImageLocks(provisioning.getCache()))
+				.imageLocks(new CacheImageLocks(provisioning.cache()))
 				.ports(new PortSelection())
 				.build();
 		Map<String, BoundExecutionProvider> bound = new LinkedHashMap<>();
@@ -97,12 +97,12 @@ public final class LocalWorkbench implements Workbench {
 
 	@Override
 	public @NotNull Path workDirectory() {
-		return options.getWorkDirectory();
+		return options.workDirectory();
 	}
 
 	@Override
 	public @NotNull Path cacheDirectory() {
-		return options.getCacheDirectory();
+		return options.cacheDirectory();
 	}
 
 	/**
@@ -126,35 +126,35 @@ public final class LocalWorkbench implements Workbench {
 	@Override
 	public @NotNull Process launch(@NotNull JavaMainLaunch launch) throws IOException {
 		int java = Runtime.version().feature();
-		if (java < launch.getJavaVersion())
-			throw new IllegalStateException(launch.getMainClass() + " requires Java " + launch.getJavaVersion()
+		if (java < launch.javaVersion())
+			throw new IllegalStateException(launch.mainClass() + " requires Java " + launch.javaVersion()
 					+ ", but the local workbench runs Java " + java);
 
 		String executable = System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win") ? "java.exe" : "java";
 		List<String> command = new ArrayList<>();
 		command.add(Path.of(System.getProperty("java.home"), "bin", executable).toString());
-		command.addAll(launch.getJvmArguments());
+		command.addAll(launch.jvmArguments());
 		command.add("-cp");
-		command.add(String.join(File.pathSeparator, launch.getClasspath().stream().map(Path::toString).toList()));
-		command.add(launch.getMainClass());
-		command.addAll(launch.getArguments());
+		command.add(String.join(File.pathSeparator, launch.classpath().stream().map(Path::toString).toList()));
+		command.add(launch.mainClass());
+		command.addAll(launch.arguments());
 
 		return new ProcessBuilder(command).start();
 	}
 
 	@Override
 	public @NotNull ArtifactResolver artifacts() {
-		return provisioning.getArtifacts();
+		return provisioning.artifacts();
 	}
 
 	@Override
 	public @NotNull JavaProvisioner java() {
-		return provisioning.getJava();
+		return provisioning.java();
 	}
 
 	@Override
 	public @NotNull WorkspaceProvisioner workspaces() {
-		return provisioning.getWorkspaces();
+		return provisioning.workspaces();
 	}
 
 	/**

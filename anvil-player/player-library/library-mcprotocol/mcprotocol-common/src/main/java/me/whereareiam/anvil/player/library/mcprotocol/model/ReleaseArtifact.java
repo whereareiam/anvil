@@ -38,7 +38,7 @@ public class ReleaseArtifact {
 	/**
 	 * Tests whether the artifact has a checksum pin.
 	 *
-	 * @return whether {@link #getSha256()} is not empty
+	 * @return whether {@link #sha256()} is not empty
 	 */
 	public boolean pinned() {
 		return !sha256.isEmpty();

@@ -34,10 +34,10 @@ class CommandPacketsTest {
 
 		ClientboundCommands tree = assertInstanceOf(ClientboundCommands.class, packets.decode(declared));
 
-		assertEquals(0, tree.getRootIndex());
-		assertEquals(CommandNode.builder().type(CommandNodeType.ROOT).child(1).build(), tree.getNodes().get(0));
+		assertEquals(0, tree.rootIndex());
+		assertEquals(CommandNode.builder().type(CommandNodeType.ROOT).child(1).build(), tree.nodes().get(0));
 		assertEquals(CommandNode.builder().type(CommandNodeType.LITERAL).name("give").child(2).build(),
-				tree.getNodes().get(1));
+				tree.nodes().get(1));
 		assertEquals(CommandNode.builder()
 				.type(CommandNodeType.ARGUMENT)
 				.name("amount")
@@ -47,9 +47,9 @@ class CommandPacketsTest {
 				.min(1D)
 				.max(64D)
 				.suggestions("minecraft:ask_server")
-				.build(), tree.getNodes().get(2));
-		assertEquals(StringArgumentMode.GREEDY_PHRASE, tree.getNodes().get(3).getStringMode());
-		assertEquals("minecraft:summonable_entities", tree.getNodes().get(3).getSuggestions());
+				.build(), tree.nodes().get(2));
+		assertEquals(StringArgumentMode.GREEDY_PHRASE, tree.nodes().get(3).stringMode());
+		assertEquals("minecraft:summonable_entities", tree.nodes().get(3).suggestions());
 	}
 
 	@Test

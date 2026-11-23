@@ -49,12 +49,12 @@ class BlockFactsTest {
 				""");
 
 		BlockFact snow = facts.of("minecraft:powder_snow");
-		assertEquals(new StuckSpeed((double) 0.9F, 1.5), snow.getMovement().getStuckSpeed());
-		assertEquals(CollisionKind.DYNAMIC, snow.getCollision());
-		assertEquals(Set.of(MovementBehaviour.CLIMBABLE), facts.of("minecraft:scaffolding").getMovement().getBehaviours());
-		assertEquals(0.98F, facts.of("minecraft:snow").getMovement().getFriction());
-		assertEquals(BlockKind.FENCE, facts.of("minecraft:snow").getKind());
-		assertEquals(Map.of("layers", 1), facts.of("minecraft:snow").getPropertyStarts());
+		assertEquals(new StuckSpeed((double) 0.9F, 1.5), snow.movement().stuckSpeed());
+		assertEquals(CollisionKind.DYNAMIC, snow.collision());
+		assertEquals(Set.of(MovementBehaviour.CLIMBABLE), facts.of("minecraft:scaffolding").movement().behaviours());
+		assertEquals(0.98F, facts.of("minecraft:snow").movement().friction());
+		assertEquals(BlockKind.FENCE, facts.of("minecraft:snow").kind());
+		assertEquals(Map.of("layers", 1), facts.of("minecraft:snow").propertyStarts());
 		assertEquals(BlockFact.DEFAULT, facts.of("minecraft:stone"));
 		assertEquals(Set.of("minecraft:powder_snow", "minecraft:scaffolding", "minecraft:snow"), facts.names());
 	}

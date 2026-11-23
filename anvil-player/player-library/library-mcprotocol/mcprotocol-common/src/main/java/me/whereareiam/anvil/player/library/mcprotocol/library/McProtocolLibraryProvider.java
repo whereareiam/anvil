@@ -46,7 +46,7 @@ public final class McProtocolLibraryProvider implements ProtocolLibraryProvider 
 	}
 
 	/**
-	 * Returns the built-in releases and the additional releases of {@link ProtocolLibraryContext#getAdditionalReleases()}.
+	 * Returns the built-in releases and the additional releases of {@link ProtocolLibraryContext#additionalReleases()}.
 	 *
 	 * @param context engine-scoped inputs, optionally naming a user-supplied release file
 	 * @return releases ordered by release key
@@ -54,13 +54,13 @@ public final class McProtocolLibraryProvider implements ProtocolLibraryProvider 
 	 */
 	@Override
 	public @NotNull List<ProtocolRelease> releases(@NotNull ProtocolLibraryContext context) {
-		return catalog(context.getAdditionalReleases()).releases();
+		return catalog(context.additionalReleases()).releases();
 	}
 
 	@Override
 	public @NotNull ProtocolLibrary create(@NotNull ProtocolLibraryContext context) {
-		return new McProtocolClientPool(context.getCacheDirectory(), catalog(context.getAdditionalReleases()),
-				new MicrosoftAuthentication(context.getAccountsDirectory()), context.getArtifacts(), context.getWorkers());
+		return new McProtocolClientPool(context.cacheDirectory(), catalog(context.additionalReleases()),
+				new MicrosoftAuthentication(context.accountsDirectory()), context.artifacts(), context.workers());
 	}
 
 	@Override

@@ -22,7 +22,7 @@ final class InsideBlocks {
 
 	InsideBlocks(@NotNull EntityBody body) {
 		this.body = body;
-		this.reader = body.getLevel();
+		this.reader = body.level();
 	}
 
 	/**
@@ -44,42 +44,42 @@ final class InsideBlocks {
 	 */
 	private void entityInside(int @NotNull [] block) {
 		BlockState state = state(block);
-		BlockMovement movement = state.getBlock().getMovement();
-		StuckSpeed stuck = movement.getStuckSpeed();
-		boolean powderSnow = state.getBlock().getKind() == BlockKind.POWDER_SNOW;
-		if (stuck != null && (!powderSnow || state(body.blockPosition()).getBlock() == state.getBlock())) makeStuck(stuck);
+		BlockMovement movement = state.block().movement();
+		StuckSpeed stuck = movement.stuckSpeed();
+		boolean powderSnow = state.block().kind() == BlockKind.POWDER_SNOW;
+		if (stuck != null && (!powderSnow || state(body.blockPosition()).block() == state.block())) makeStuck(stuck);
 		if (movement.has(MovementBehaviour.HONEY_SLIDE) && slidingDown(block)) slideDown();
 		if (movement.has(MovementBehaviour.BUBBLE_COLUMN)) bubbleColumn(state, block);
 	}
 
 	private void makeStuck(@NotNull StuckSpeed stuck) {
 		body.resetFallDistance();
-		body.setStuckSpeedMultiplier(new Vector(stuck.getHorizontal(), stuck.getVertical(), stuck.getHorizontal()));
+		body.stuckSpeedMultiplier(new Vector(stuck.horizontal(), stuck.vertical(), stuck.horizontal()));
 	}
 
 	/**
 	 * {@code HoneyBlock.isSlidingDown}: in the air against the block's side, falling faster than {@code 0.08}.
 	 */
 	private boolean slidingDown(int @NotNull [] block) {
-		Vector position = body.getPosition();
-		if (body.isOnGround() || position.y > block[1] + 0.9375 - 1.0E-7 || body.getDeltaMovement().y >= -0.08)
+		Vector position = body.position();
+		if (body.onGround() || position.y > block[1] + 0.9375 - 1.0E-7 || body.deltaMovement().y >= -0.08)
 			return false;
 
-		double reach = 0.4375 + body.getDimensions().getWidth() / 2.0F;
+		double reach = 0.4375 + body.dimensions().width() / 2.0F;
 		return Math.abs(block[0] + 0.5 - position.x) + 1.0E-7 > reach
 				|| Math.abs(block[2] + 0.5 - position.z) + 1.0E-7 > reach;
 	}
 
 	private void slideDown() {
-		Vector delta = body.getDeltaMovement();
+		Vector delta = body.deltaMovement();
 		body.resetFallDistance();
 		if (!(delta.y < -0.13)) {
-			body.setDeltaMovement(new Vector(delta.x, -0.05, delta.z));
+			body.deltaMovement(new Vector(delta.x, -0.05, delta.z));
 			return;
 		}
 
 		double factor = -0.05 / delta.y;
-		body.setDeltaMovement(new Vector(delta.x * factor, -0.05, delta.z * factor));
+		body.deltaMovement(new Vector(delta.x * factor, -0.05, delta.z * factor));
 	}
 
 	/**
@@ -89,14 +89,14 @@ final class InsideBlocks {
 	 */
 	private void bubbleColumn(@NotNull BlockState state, int @NotNull [] block) {
 		boolean drag = "true".equals(state.property("drag").orElse("false"));
-		Vector delta = body.getDeltaMovement();
+		Vector delta = body.deltaMovement();
 		if (state(new int[] {block[0], block[1] + 1, block[2]}).isAir()) {
-			body.setDeltaMovement(new Vector(delta.x, drag ? Math.max(-0.9, delta.y - 0.03) : Math.min(1.8, delta.y + 0.1),
+			body.deltaMovement(new Vector(delta.x, drag ? Math.max(-0.9, delta.y - 0.03) : Math.min(1.8, delta.y + 0.1),
 					delta.z));
 			return;
 		}
 
-		body.setDeltaMovement(new Vector(delta.x, drag ? Math.max(-0.3, delta.y - 0.03) : Math.min(0.7, delta.y + 0.06),
+		body.deltaMovement(new Vector(delta.x, drag ? Math.max(-0.3, delta.y - 0.03) : Math.min(0.7, delta.y + 0.06),
 				delta.z));
 		body.resetFallDistance();
 	}

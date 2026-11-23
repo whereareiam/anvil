@@ -48,10 +48,10 @@ class ChunkPacketsTest {
 		ClientboundLevelChunkWithLight chunk = assertInstanceOf(ClientboundLevelChunkWithLight.class,
 				packets.decode(chunk(water, stone)));
 
-		assertEquals(new ChunkPosition(0, 0), chunk.getPosition());
-		assertEquals(86, chunk.getSections().getFirst().blockState(1, 2, 3));
-		assertEquals(LevelChunkSection.AIR, chunk.getSections().getFirst().blockState(0, 0, 0));
-		assertEquals(1, chunk.getSections().get(1).blockState(4, 5, 6));
+		assertEquals(new ChunkPosition(0, 0), chunk.position());
+		assertEquals(86, chunk.sections().getFirst().blockState(1, 2, 3));
+		assertEquals(LevelChunkSection.AIR, chunk.sections().getFirst().blockState(0, 0, 0));
+		assertEquals(1, chunk.sections().get(1).blockState(4, 5, 6));
 	}
 
 	private static ChunkSection section(int fluids) {

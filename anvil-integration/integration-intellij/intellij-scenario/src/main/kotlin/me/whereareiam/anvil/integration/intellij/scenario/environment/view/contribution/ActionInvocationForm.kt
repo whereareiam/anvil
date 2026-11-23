@@ -47,11 +47,11 @@ internal class ActionInvocationForm(
 
 	val component = panel {
 		row { label(targetLabel) }
-		action.definition.description?.let { row { label(it) } }
-		for (input in action.definition.inputs) {
+		action.definition().description()?.let { row { label(it) } }
+		for (input in action.definition().inputs()) {
 			val widget = createInput(input, draft, histories, historyLimit)
 			inputs[input] = widget
-			val label = input.displayName ?: input.name
+			val label = input.displayName() ?: input.name()
 			widget.accessibleContext.accessibleName = label
 			row(label) { cell(widget).align(AlignX.FILL) }
 		}
@@ -65,15 +65,15 @@ internal class ActionInvocationForm(
 		histories: Map<String, List<String>>,
 		historyLimit: Int
 	): JComponent {
-		val value = draft[input.name] ?: input.defaultValue.orEmpty()
-		if (input.isSensitive) return JPasswordField(value, 28)
-		if (input.type == ActionInputType.BOOLEAN || input.type == ActionInputType.CHOICE) {
-			val choices = if (input.type == ActionInputType.BOOLEAN) listOf("false", "true") else input.choices
+		val value = draft[input.name()] ?: input.defaultValue().orEmpty()
+		if (input.sensitive()) return JPasswordField(value, 28)
+		if (input.type() == ActionInputType.BOOLEAN || input.type() == ActionInputType.CHOICE) {
+			val choices = if (input.type() == ActionInputType.BOOLEAN) listOf("false", "true") else input.choices()
 			return JComboBox((listOf("") + choices).toTypedArray()).apply { selectedItem = value }
 		}
 		return TextFieldWithHistory().apply {
 			setHistorySize(historyLimit)
-			history = histories[input.name].orEmpty()
+			history = histories[input.name()].orEmpty()
 			text = value
 		}
 	}
@@ -84,7 +84,7 @@ internal class ActionInvocationForm(
 			is TextFieldWithHistory -> component.text
 			else -> (component as JComboBox<*>).selectedItem as String?
 		}
-		if (input.type != ActionInputType.TEXT && value.isNullOrBlank()) return null
+		if (input.type() != ActionInputType.TEXT && value.isNullOrBlank()) return null
 		return value
 	}
 
@@ -101,20 +101,20 @@ internal class ActionInvocationForm(
 
 	fun arguments(): Map<String, String> = buildMap {
 		for ((input, component) in inputs)
-			value(input, component)?.let { put(input.name, it) }
+			value(input, component)?.let { put(input.name(), it) }
 	}
 
 	fun draft(): Map<String, String> = buildMap {
 		for ((input, component) in inputs) {
-			if (input.isSensitive) continue
-			value(input, component)?.let { put(input.name, it) }
+			if (input.sensitive()) continue
+			value(input, component)?.let { put(input.name(), it) }
 		}
 	}
 
 	fun showResult(result: ActionResult) {
-		resultMessage.text = result.message ?: if (result.isSuccessful) "Completed" else "Action failed"
-		resultModel.setDataVector(result.rows.map { it.toTypedArray() }.toTypedArray(), result.columns.toTypedArray())
-		resultRow.visible(result.columns.isNotEmpty())
+		resultMessage.text = result.message() ?: if (result.successful()) "Completed" else "Action failed"
+		resultModel.setDataVector(result.rows().map { it.toTypedArray() }.toTypedArray(), result.columns().toTypedArray())
+		resultRow.visible(result.columns().isNotEmpty())
 		component.revalidate()
 	}
 }

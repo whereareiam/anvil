@@ -41,35 +41,35 @@ class ToolingCapabilitiesSystemTest {
 			messages.set(channel);
 		}).build();
 		var options = EngineOptions.builder().eulaAccepted(true).workDirectory(Path.of("build", "tooling-actions-live")).build();
-		String identity = "embedded:" + scenario.getName();
+		String identity = "embedded:" + scenario.name();
 		try (RunnerSession runner = new RunnerSession(() -> AnvilLauncher.create(options),
 				ScenarioRepository.fromScenarios(List.of(scenario)))) {
 			runner.start(identity, null);
-			assertEquals("Connected", runner.snapshot().getObservations().stream()
-					.filter(value -> value.getDefinition().getId().equals("anvil.session.connection"))
+			assertEquals("Connected", runner.snapshot().observations().stream()
+					.filter(value -> value.definition().id().equals("anvil.session.connection"))
 					.findFirst()
 					.orElseThrow()
-					.getValue()
-					.getText());
-			assertTrue(runner.invoke(request(runner, "anvil.messages.command", "anvil-fixture ping")).isSuccessful());
+					.value()
+					.text());
+			assertTrue(runner.invoke(request(runner, "anvil.messages.command", "anvil-fixture ping")).successful());
 			messages.get().received("anvil:pong", Duration.ofSeconds(10));
-			assertTrue(runner.invoke(request(runner, "anvil.messages.chat", "tooling-extension-chat")).isSuccessful());
+			assertTrue(runner.invoke(request(runner, "anvil.messages.chat", "tooling-extension-chat")).successful());
 			messages.get().received("tooling-extension-chat", Duration.ofSeconds(10));
 			connection.get().disconnect();
 			connection.get().disconnected();
-			assertEquals("Disconnected", runner.snapshot().getObservations().stream()
-					.filter(value -> value.getDefinition().getId().equals("anvil.session.connection"))
+			assertEquals("Disconnected", runner.snapshot().observations().stream()
+					.filter(value -> value.definition().id().equals("anvil.session.connection"))
 					.findFirst()
 					.orElseThrow()
-					.getValue()
-					.getText());
-			assertTrue(runner.snapshot().getActions().stream().noneMatch(action -> action.getAvailability().isEnabled()));
+					.value()
+					.text());
+			assertTrue(runner.snapshot().actions().stream().noneMatch(action -> action.availability().enabled()));
 			assertThrows(IllegalStateException.class, () -> runner.invoke(request(runner, "anvil.messages.command", "anvil-fixture ping")));
 		}
 	}
 
 	private ActionRequest request(RunnerSession runner, String id, String text) {
-		return ActionRequest.builder().sessionId(runner.snapshot().getSessionId()).actionId(id)
+		return ActionRequest.builder().sessionId(runner.snapshot().sessionId()).actionId(id)
 				.target(ActionTarget.builder().type(ActionTargetType.PLAYER).name("ToolingProbe").build())
 				.argument("text", text).build();
 	}

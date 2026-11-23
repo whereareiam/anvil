@@ -114,7 +114,7 @@ public final class AccountLibrary implements PersistentStateComponent<AccountLib
 		read(projectDirectory, AccountSource.PROJECT, available, problems);
 		if (globalDirectory != null) read(globalDirectory, AccountSource.GLOBAL, available, problems);
 
-		available.sort(Comparator.comparing(account -> account.getAccount().getAccountId()));
+		available.sort(Comparator.comparing(account -> account.getAccount().accountId()));
 		addDuplicateProblems(available, problems);
 
 		Map<String, List<String>> projectPools = readPools(projectDirectory, problems);
@@ -212,7 +212,7 @@ public final class AccountLibrary implements PersistentStateComponent<AccountLib
 	private static void addDuplicateProblems(@NotNull List<AvailableAccount> available, @NotNull List<String> problems) {
 		Set<String> ids = new HashSet<>();
 		for (AvailableAccount account : available) {
-			String id = account.getAccount().getAccountId();
+			String id = account.getAccount().accountId();
 			if (!ids.add(id))
 				problems.add("Duplicate account ID '" + id + "'. Remove the project duplicate or disable global"
 						+ " accounts before running.");

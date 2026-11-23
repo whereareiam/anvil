@@ -64,16 +64,16 @@ class RegistryAssemblyTest {
 		RegistryAssembly.Assembled assembled = assemble(blocks(null, 2));
 
 		BlockType snow = assembled.blocks().get(1);
-		assertEquals(BlockKind.AIR, assembled.blocks().getFirst().getKind());
-		assertEquals(List.of("1", "2"), snow.getProperties().getFirst().getValues());
-		assertEquals(0.98F, snow.getMovement().getFriction());
-		assertEquals((double) 0.66F, snow.getMovement().getBounceFactor());
-		assertEquals(Set.of(MovementBehaviour.SLIME_STEP, MovementBehaviour.CLIMBABLE), snow.getMovement().getBehaviours());
+		assertEquals(BlockKind.AIR, assembled.blocks().getFirst().kind());
+		assertEquals(List.of("1", "2"), snow.properties().getFirst().values());
+		assertEquals(0.98F, snow.movement().friction());
+		assertEquals((double) 0.66F, snow.movement().bounceFactor());
+		assertEquals(Set.of(MovementBehaviour.SLIME_STEP, MovementBehaviour.CLIMBABLE), snow.movement().behaviours());
 		BlockState thin = assembled.states()[2];
-		assertEquals(Map.of("layers", "2"), thin.getProperties());
-		assertEquals(new CollisionShape(List.of(new CollisionBox(0, 0, 0, 1, 0.125, 1))), thin.getCollision());
-		assertSame(CollisionShape.EMPTY, assembled.states()[1].getCollision());
-		assertEquals(FluidType.NONE, thin.getFluid());
+		assertEquals(Map.of("layers", "2"), thin.properties());
+		assertEquals(new CollisionShape(List.of(new CollisionBox(0, 0, 0, 1, 0.125, 1))), thin.collision());
+		assertSame(CollisionShape.EMPTY, assembled.states()[1].collision());
+		assertEquals(FluidType.NONE, thin.fluid());
 		assertEquals(Set.of("minecraft:air", "minecraft:snow"), assembled.names());
 	}
 

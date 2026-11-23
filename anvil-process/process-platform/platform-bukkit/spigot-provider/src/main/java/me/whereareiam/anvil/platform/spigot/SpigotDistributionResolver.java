@@ -17,36 +17,36 @@ import java.util.Locale;
  */
 final class SpigotDistributionResolver {
 	void validate(@NotNull MinecraftServer server) {
-		var distribution = server.getDistribution();
+		var distribution = server.distribution();
 		if (distribution.isLocal() || distribution.isArtifact())
 			return;
-		String version = distribution.getVersion();
+		String version = distribution.version();
 		if (version == null || !version.matches("[0-9]+(?:\\.[0-9]+){1,2}"))
 			throw new PlatformException("GetBukkit requires an exact numeric Minecraft version");
-		if (distribution.getBuild() != null)
+		if (distribution.build() != null)
 			throw new PlatformException("GetBukkit does not use BuildTools build IDs; use Distribution.pinned(version, sha256)");
-		String checksum = distribution.getSha256();
+		String checksum = distribution.sha256();
 		if (checksum == null || !checksum.matches("[a-fA-F0-9]{64}"))
 			throw new PlatformException("GetBukkit Spigot requires a 64-digit SHA-256 pin");
 	}
 
 	@NotNull ResolvedDistribution resolve(@NotNull MinecraftServer server, @NotNull PlatformContext context) throws IOException {
 		validate(server);
-		var distribution = server.getDistribution();
+		var distribution = server.distribution();
 		if (distribution.isLocal()) {
-			Path jar = distribution.getLocalJar().toAbsolutePath().normalize();
+			Path jar = distribution.localJar().toAbsolutePath().normalize();
 			if (!Files.isRegularFile(jar))
 				throw new PlatformException("Expected Spigot artifact does not exist: " + jar);
-			return ResolvedDistribution.builder().jar(context.getArtifactSource().store(jar)).description("local Spigot").build();
+			return ResolvedDistribution.builder().jar(context.artifactSource().store(jar)).description("local Spigot").build();
 		}
 
-		String version = distribution.getVersion();
-		String checksum = distribution.getSha256().toLowerCase(Locale.ROOT);
+		String version = distribution.version();
+		String checksum = distribution.sha256().toLowerCase(Locale.ROOT);
 		URI source = URI.create("https://cdn.getbukkit.org/spigot/spigot-" + version + ".jar");
-		Path destination = context.getCacheDirectory().resolve("distributions/getbukkit/spigot")
+		Path destination = context.cacheDirectory().resolve("distributions/getbukkit/spigot")
 				.resolve(version).resolve(checksum).resolve("spigot-" + version + ".jar");
 		// The obtained JAR lies on the workbench, which verified it against the pin.
-		Path jar = context.getArtifactSource().obtain(source, destination, checksum);
+		Path jar = context.artifactSource().obtain(source, destination, checksum);
 		return ResolvedDistribution.builder().jar(jar).description("GetBukkit Spigot " + version + " (SHA-256 " + checksum + ")").build();
 	}
 }

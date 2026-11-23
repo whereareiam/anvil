@@ -64,13 +64,13 @@ public class PlatformVersions {
 			throw new IllegalArgumentException("The agent's minimum Java must be a Java feature version, not " + agentMinimumJava);
 
 		List<JavaCompatibility> rows = new ArrayList<>(javaCompatibilities);
-		rows.sort(Comparator.comparing(JavaCompatibility::getSince, Comparator.nullsFirst(Comparator.naturalOrder())));
+		rows.sort(Comparator.comparing(JavaCompatibility::since, Comparator.nullsFirst(Comparator.naturalOrder())));
 		for (int index = 0; index < rows.size(); index++) {
 			JavaCompatibility row = rows.get(index);
-			if (index > 0 && row.getSince() == null)
+			if (index > 0 && row.since() == null)
 				throw new IllegalArgumentException("Only the first Java row may omit 'since'");
-			if (index > 0 && row.getSince().equals(rows.get(index - 1).getSince()))
-				throw new IllegalArgumentException("Duplicate Java row for " + row.getSince());
+			if (index > 0 && row.since().equals(rows.get(index - 1).since()))
+				throw new IllegalArgumentException("Duplicate Java row for " + row.since());
 			validate(row);
 		}
 
@@ -148,7 +148,7 @@ public class PlatformVersions {
 	 * @return start version of the first row, or null when the first row applies from the oldest version
 	 */
 	public @Nullable MinecraftVersion firstVersion() {
-		return javaCompatibilities.getFirst().getSince();
+		return javaCompatibilities.getFirst().since();
 	}
 
 	/**
@@ -169,19 +169,19 @@ public class PlatformVersions {
 	}
 
 	private static void validate(JavaCompatibility row) {
-		String label = row.getSince() == null ? "The first Java row" : "Java row since " + row.getSince();
-		if (row.getMinimum() > row.getPreferred())
-			throw new IllegalArgumentException(label + " prefers Java " + row.getPreferred()
-					+ " below its minimum " + row.getMinimum());
-		if (row.getMaximum() != null && row.getPreferred() > row.getMaximum())
-			throw new IllegalArgumentException(label + " prefers Java " + row.getPreferred()
-					+ " above its maximum " + row.getMaximum());
-		if (!JavaCompatibility.isLongTermSupport(row.getPreferred()))
-			throw new IllegalArgumentException(label + " prefers Java " + row.getPreferred() + ", which is not an LTS release");
-		if (row.getMaximumBypassProperty() == null) return;
-		if (row.getMaximum() == null)
+		String label = row.since() == null ? "The first Java row" : "Java row since " + row.since();
+		if (row.minimum() > row.preferred())
+			throw new IllegalArgumentException(label + " prefers Java " + row.preferred()
+					+ " below its minimum " + row.minimum());
+		if (row.maximum() != null && row.preferred() > row.maximum())
+			throw new IllegalArgumentException(label + " prefers Java " + row.preferred()
+					+ " above its maximum " + row.maximum());
+		if (!JavaCompatibility.isLongTermSupport(row.preferred()))
+			throw new IllegalArgumentException(label + " prefers Java " + row.preferred() + ", which is not an LTS release");
+		if (row.maximumBypassProperty() == null) return;
+		if (row.maximum() == null)
 			throw new IllegalArgumentException(label + " names a maximum bypass property without a maximum");
-		if (row.getMaximumBypassProperty().isBlank())
+		if (row.maximumBypassProperty().isBlank())
 			throw new IllegalArgumentException(label + " names a blank maximum bypass property");
 	}
 
@@ -189,12 +189,12 @@ public class PlatformVersions {
 		String label = "Verified Java " + java + " for " + version;
 		if (!JavaCompatibility.isLongTermSupport(java))
 			throw new IllegalArgumentException(label + " is not an LTS release");
-		if (java < row.getMinimum())
-			throw new IllegalArgumentException(label + " is below the row minimum " + row.getMinimum());
+		if (java < row.minimum())
+			throw new IllegalArgumentException(label + " is below the row minimum " + row.minimum());
 		if (agent != null && java < agent)
 			throw new IllegalArgumentException(label + " is below the agent's minimum Java " + agent);
-		if (row.exceedsMaximum(java) && row.getMaximumBypassProperty() == null)
-			throw new IllegalArgumentException(label + " is above the row maximum " + row.getMaximum()
+		if (row.exceedsMaximum(java) && row.maximumBypassProperty() == null)
+			throw new IllegalArgumentException(label + " is above the row maximum " + row.maximum()
 					+ " and the row has no bypass");
 	}
 }
