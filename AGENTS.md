@@ -839,7 +839,8 @@ then rerun the `Release drafter` workflow; text typed into the draft is lost on 
   initialized, observes the project independently of open views, and reloads wait for environment cleanup.
 - `ToolingClient` owns handshake, ordered request submission, response correlation, and pending-result
   completion on closure or failure. `ToolingMessageCodec` owns typed JSON binding and version checks over the
-  payloads' field-based JSON form, which `tooling-api`'s `ToolingJson` sets for both peers; transport frames stay
+  payloads' JSON form, which `tooling-api`'s `ToolingJson.builder()` sets for both peers: fields, no scalar
+  coercion; transport frames stay
   internal. Portable `tooling-api` payloads use Jackson-compatible Lombok builders
   and are reused by both peers; do not recreate their fields in a manual JSON model reader.
   `ScenarioOperations`, `EnvironmentOperations`, and `ProcessOperations` declare predefined

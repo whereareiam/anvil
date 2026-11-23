@@ -1,6 +1,5 @@
 package me.whereareiam.anvil.runner;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import me.whereareiam.anvil.api.model.PresentationMetadata;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
@@ -107,7 +106,7 @@ class ScenarioDescriptorFactoryTest {
 		assertThrows(UnsupportedOperationException.class, () -> topology.processes().clear());
 
 		// As the tooling protocol writes them.
-		var json = ToolingJson.configure(new ObjectMapper());
+		var json = ToolingJson.builder().build();
 		var encoded = json.readTree(json.writeValueAsString(scenarios));
 		assertEquals("PROXY", encoded.get(1).path("processes").get(2).path("role").asText());
 		assertFalse(encoded.get(1).has("setupHook"));

@@ -4,12 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.cfg.CoercionAction;
-import com.fasterxml.jackson.databind.cfg.CoercionInputShape;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.databind.type.LogicalType;
 import me.whereareiam.anvil.tooling.api.ToolingJson;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,19 +15,7 @@ import java.io.IOException;
  * Decodes transport headers and binds operation payloads before the runner invokes the session.
  */
 final class ToolingRequestReader {
-	private final @NotNull ObjectMapper json = ToolingJson.configure(JsonMapper.builder()
-			.disable(MapperFeature.ALLOW_COERCION_OF_SCALARS)
-			.disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)
-			.enable(DeserializationFeature.FAIL_ON_NUMBERS_FOR_ENUMS)
-			.enable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
-			.build());
-
-	ToolingRequestReader() {
-		json.coercionConfigFor(LogicalType.Textual)
-				.setCoercion(CoercionInputShape.Integer, CoercionAction.Fail)
-				.setCoercion(CoercionInputShape.Float, CoercionAction.Fail)
-				.setCoercion(CoercionInputShape.Boolean, CoercionAction.Fail);
-	}
+	private final @NotNull ObjectMapper json = ToolingJson.builder().build();
 
 	@NotNull Request read(@NotNull String line) throws IOException {
 		if (line.length() > 65536) throw new IOException("Request is too large");

@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ToolingPayloadMappingTest {
-	private final ObjectMapper json = ToolingJson.configure(new ObjectMapper());
+	private final ObjectMapper json = ToolingJson.builder().build();
 
 	@Test
 	void preservesResolvedNamesAndOptionalPresentation() throws Exception {

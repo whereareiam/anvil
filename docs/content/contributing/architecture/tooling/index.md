@@ -100,10 +100,11 @@ and are rejected by the version check.
 Portable payloads such as `ScenarioDescriptor`, `SessionSnapshot`, `LogEvent`, `ActionRequest`, and
 `ActionResult` live in `tooling-api`. Their immutable Lombok builders carry Jackson binding metadata,
 so both peers use the model's field definitions and defaults. Their accessors are fluent, so the payloads'
-JSON form, which `ToolingJson` at the `tooling-api` root configures and both peers' mappers take, reads and writes
-them through their fields. Typed binding, reading strictness, version checks, transport headers,
+JSON form, which `ToolingJson.builder()` at the `tooling-api` root starts and both peers' mappers are built from,
+reads and writes them through their fields and reads a value only in the shape it is written: it rejects scalar
+type coercion, enums by ordinal and primitives from `null`. Typed binding, version checks, transport headers,
 request correlation, and dispatch remain in the implementations. Missing required model values and
-invalid enums or identifiers fail decoding; protocol mappers reject scalar type coercion.
+invalid enums or identifiers fail decoding.
 
 Predefined operation contracts live at the `tooling-api` root. Each `ToolingOperation<Q, R>` declares one stable
 name, a request class, and a response type reference. A `Void` request type uses null and emits only the
