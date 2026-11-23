@@ -2,6 +2,7 @@ package me.whereareiam.anvil.player.library.mcprotocol.worker.child;
 
 import me.whereareiam.anvil.api.model.MinecraftVersion;
 import me.whereareiam.anvil.player.library.mcprotocol.client.McProtocolClient;
+import me.whereareiam.anvil.player.library.mcprotocol.segment.linkage.ClassPath;
 import me.whereareiam.anvil.player.library.mcprotocol.type.WorkerControlOperation;
 import me.whereareiam.anvil.player.library.mcprotocol.worker.transport.WorkerMessageWriter;
 import me.whereareiam.anvil.player.worker.WorkerExtensions;
@@ -24,7 +25,10 @@ public final class McProtocolWorkerMain {
 
 		MinecraftVersion version = MinecraftVersion.parse(arguments[0]);
 		int expected = Integer.parseInt(arguments[1]);
-		WorkerSegments segments = WorkerSegments.verify(McProtocolWorkerMain.class.getClassLoader(), version, System.err::println);
+		WorkerSegments segments;
+		try (ClassPath classPath = ClassPath.running()) {
+			segments = WorkerSegments.verify(McProtocolWorkerMain.class.getClassLoader(), classPath, version, System.err::println);
+		}
 		McProtocolClient<Object> client = segments.client();
 		int actual = client.protocolNumber();
 		if (expected != actual) throw new IllegalStateException("Expected protocol " + expected + " but loaded " + actual);

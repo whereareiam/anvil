@@ -153,7 +153,9 @@ After adding a release, check every segment against the locked closures:
 ```
 
 The `check` task runs the same verification. A segment's report is
-`build/reports/segment/linkage.txt` in its project.
+`build/reports/segment/linkage.txt` in its project. The check reads class files and runs the MCProtocolLib
+library's own linkage code, the code each worker checks its segments with at run time, so a segment that passes
+the build also passes the worker's self-check on every release it serves.
 
 - **Everything links:** the new release reuses the newest segment of each side; no code changes.
 - **The release is older than every segment of a side:** no segment serves it. Add one named after its key that

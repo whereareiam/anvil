@@ -31,6 +31,13 @@ object LibraryRegistry {
 		.toSortedMap()
 
 	/**
+	 * Path of library [library]'s common project, `library-X/X-common`, which holds its worker and the linkage of its
+	 * segments that the build and the worker check.
+	 */
+	fun commonProjectPath(library: String): String =
+		":" + familyDirectory.replace('/', ':') + ":$libraryDirectoryPrefix$library:$library-common"
+
+	/**
 	 * Names the library a library side folder belongs to: the one registered id among its hyphen-separated
 	 * words, as in `messages-mcprotocol` or `mcprotocol-java`.
 	 *

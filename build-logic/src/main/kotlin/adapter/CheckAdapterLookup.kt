@@ -1,6 +1,6 @@
 package me.whereareiam.anvil.buildlogic.adapter
 
-import me.whereareiam.anvil.buildlogic.adapter.linkage.LinkageCollector
+import me.whereareiam.anvil.buildlogic.adapter.linkage.SegmentLinkageTool
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
@@ -9,7 +9,9 @@ import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+import org.gradle.workers.WorkerExecutor
 import java.io.File
+import javax.inject.Inject
 
 /**
  * Verifies that a library side's own classes, its capability wiring, obtain release-specific adapters only through
@@ -26,20 +28,35 @@ abstract class CheckAdapterLookup : DefaultTask() {
 	abstract val classes: ConfigurableFileCollection
 
 	/**
+	 * The library's common project with its runtime dependencies, whose segment linkage tool finds the classes a
+	 * class file uses.
+	 */
+	@get:Classpath
+	abstract val linkageTool: ConfigurableFileCollection
+
+	/**
 	 * Summary of the checked classes.
 	 */
 	@get:OutputFile
 	abstract val report: RegularFileProperty
 
+	/**
+	 * Runs the linkage tool in a class loader of its own.
+	 */
+	@get:Inject
+	abstract val workers: WorkerExecutor
+
 	@TaskAction
 	fun check() {
 		val files = classes.files.filter(File::isDirectory)
 			.flatMap { root -> root.walkTopDown().filter { it.isFile && it.name.endsWith(".class") }.map { root to it }.toList() }
-		val offending = files.mapNotNull { (root, file) ->
-			val collector = LinkageCollector().apply { add(file.readBytes(), file.path) }
-			val lookups = collector.referencedClasses.filter { it == serviceLoader || it.startsWith("$serviceLoader$") }
-			if (lookups.isEmpty()) null else file.relativeTo(root).invariantSeparatorsPath.removeSuffix(".class").replace('/', '.')
-		}.sorted()
+		val lookups = if (files.isEmpty()) emptySet()
+		else SegmentLinkageTool(workers, linkageTool, temporaryDir)
+			.run("uses", "--of", serviceLoader, "--files", SegmentLinkageTool.paths(files.map { it.second }))
+			.mapTo(mutableSetOf()) { it.substringBefore('\t') }
+		val offending = files.filter { (_, file) -> file.path in lookups }
+			.map { (root, file) -> file.relativeTo(root).invariantSeparatorsPath.removeSuffix(".class").replace('/', '.') }
+			.sorted()
 
 		report.get().asFile.writeText("${files.size} classes checked for service lookups\n" + offending.joinToString("") { "$it\n" })
 		if (offending.isNotEmpty())

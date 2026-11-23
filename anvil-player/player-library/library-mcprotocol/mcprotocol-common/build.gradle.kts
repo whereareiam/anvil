@@ -9,6 +9,7 @@ plugins {
 description = "MCProtocolLib library provider, release data, worker host and the MCProtocolLib-free worker shell"
 
 dependencies {
+	implementation(libs.asm)
 	implementation(libs.jackson.databind)
 	implementation(libs.jackson.toml)
 	implementation(libs.minecraft.auth)

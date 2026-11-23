@@ -7,6 +7,7 @@ import me.whereareiam.anvil.buildlogic.adapter.SegmentPlanSource
 import me.whereareiam.anvil.buildlogic.adapter.SyncSegmentBase
 import me.whereareiam.anvil.buildlogic.adapter.WriteSegmentManifest
 import me.whereareiam.anvil.buildlogic.adapter.linkage.CheckSegmentLinkage
+import me.whereareiam.anvil.buildlogic.adapter.linkage.segmentLinkageTool
 
 plugins {
 	java
@@ -41,6 +42,9 @@ base {
 // the classes it takes from its base, through a variant of its own, so the chain resolves transitively and a class
 // that one segment replaced never returns to the segments extending it.
 val segmentProjectPath = path
+// The library's own segment linkage tool writes the linkage manifest, finds the classes base classes use and checks
+// the manifest against each release, as the library's worker checks it at run time.
+val linkageToolClasspath = segmentLinkageTool(plan.library)
 val segment = extensions.create("segment", SegmentExtension::class, dependencies, segmentProjectPath, plan.segment)
 val segmentBase = configurations.dependencyScope(SegmentExtension.BASE_CONFIGURATION)
 val segmentClassesUsage = objects.named<Usage>(SegmentExtension.CLASSES_USAGE)
@@ -53,6 +57,7 @@ val sharedBase = tasks.register<SyncSegmentBase>("syncSegmentBase") {
 	base.from(baseClasses)
 	segmentPath.set(segmentProjectPath)
 	replaced.set(segment.replaced)
+	linkageTool.from(linkageToolClasspath)
 	destination.set(layout.buildDirectory.dir("segment/base"))
 }
 configurations.consumable("segmentClassesElements") {
@@ -99,6 +104,7 @@ val manifest = tasks.register<WriteSegmentManifest>("writeSegmentManifest") {
 	classpath.from(configurations.named("compileClasspath"))
 	projectDependencies.from(projectClasses)
 	jdk.set(toolchainJdk)
+	linkageTool.from(linkageToolClasspath)
 	destination.set(layout.buildDirectory.dir("generated/segment"))
 }
 
@@ -126,6 +132,7 @@ val linkageCheck = tasks.register<CheckSegmentLinkage>("checkSegmentLinkage") {
 	release.set(compiledRelease)
 	laterReleases.set(laterReleaseClasspaths)
 	jdk.set(toolchainJdk)
+	linkageTool.from(linkageToolClasspath)
 	report.set(layout.buildDirectory.file("reports/segment/linkage.txt"))
 }
 

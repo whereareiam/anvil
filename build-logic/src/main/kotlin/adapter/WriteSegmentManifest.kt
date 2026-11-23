@@ -1,9 +1,7 @@
 package me.whereareiam.anvil.buildlogic.adapter
 
 import me.whereareiam.anvil.buildlogic.adapter.linkage.CheckSegmentLinkage
-import me.whereareiam.anvil.buildlogic.adapter.linkage.ClassIndex
-import me.whereareiam.anvil.buildlogic.adapter.linkage.JdkClasses
-import me.whereareiam.anvil.buildlogic.adapter.linkage.LinkageCollector
+import me.whereareiam.anvil.buildlogic.adapter.linkage.SegmentLinkageTool
 import me.whereareiam.anvil.buildlogic.library.MinecraftVersion
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
@@ -17,7 +15,9 @@ import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.gradle.jvm.toolchain.JavaLauncher
+import org.gradle.workers.WorkerExecutor
 import java.io.File
+import javax.inject.Inject
 
 /**
  * Writes the resources that describe a segment inside its JAR:
@@ -28,8 +28,8 @@ import java.io.File
  *   the JDK, its own packages and its project dependencies' packages, which the worker verifies against the
  *   loaded release and [CheckSegmentLinkage] verifies against later releases.
  *
- * The JDK is the one of the project's toolchain and is an input, so the manifest does not depend on the JDK that
- * runs Gradle.
+ * The library's own segment linkage tool writes the manifest, so the format has one writer and one reader. The JDK
+ * is the one of the project's toolchain and is an input, so the manifest does not depend on the JDK that runs Gradle.
  */
 @CacheableTask
 abstract class WriteSegmentManifest : DefaultTask() {
@@ -76,33 +76,39 @@ abstract class WriteSegmentManifest : DefaultTask() {
 	abstract val jdk: Property<JavaLauncher>
 
 	/**
+	 * The library's common project with its runtime dependencies, which provides the segment linkage tool.
+	 */
+	@get:Classpath
+	abstract val linkageTool: ConfigurableFileCollection
+
+	/**
 	 * Resource root receiving `META-INF/anvil`.
 	 */
 	@get:OutputDirectory
 	abstract val destination: DirectoryProperty
 
+	/**
+	 * Runs the linkage tool in a class loader of its own.
+	 */
+	@get:Inject
+	abstract val workers: WorkerExecutor
+
 	@TaskAction
 	fun write() {
 		val segment = SegmentName(MinecraftVersion.parse(since.get()))
-		val collector = LinkageCollector()
-		classes.files.filter(File::isDirectory)
-			.flatMap { root -> root.walkTopDown().filter { it.isFile && it.name.endsWith(".class") }.toList() }
-			.forEach { collector.add(it.readBytes(), it.path) }
-
-		val references = JdkClasses.open(jdk.get().metadata.installationPath.asFile).use { jdkClasses ->
-			val buildPackages = (collector.classNames + ClassIndex.of(projectDependencies.files, jdkClasses).classNames).map(::packageOf).toSet()
-			collector.externalReferences(ClassIndex.of(classpath.files, jdkClasses))
-				.filterNot { packageOf(it.owner) in buildPackages || jdkClasses.contains(it.owner) }
-		}
-
 		val root = destination.get().asFile
 		root.deleteRecursively()
 		File(root, "META-INF/anvil/segment").mkdirs()
 		File(root, "META-INF/anvil/segment.properties").writeText(
 			"library=${library.get()}\nowner=${owner.get()}\nsince=${segment.since}\n"
 		)
-		File(root, "META-INF/anvil/segment/linkage.txt").writeText(references.joinToString("") { it.line + "\n" })
+		SegmentLinkageTool(workers, linkageTool, temporaryDir).run(
+			"write",
+			"--classes", SegmentLinkageTool.paths(classes.files.filter(File::isDirectory)),
+			"--classpath", SegmentLinkageTool.paths(classpath.files),
+			"--project-classes", SegmentLinkageTool.paths(projectDependencies.files),
+			"--jdk", jdk.get().metadata.installationPath.asFile.path,
+			"--output", File(root, "META-INF/anvil/segment/linkage.txt").path,
+		)
 	}
-
-	private fun packageOf(className: String): String = className.substringBeforeLast('/', "")
 }
