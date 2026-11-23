@@ -79,7 +79,7 @@ ServerWorld arena = worlds.create(WorldCreation.builder()
 		.generator(WorldGenerator.FLAT)
 		.build());
 
-worlds.send(alice, arena.getKey());
+worlds.send(alice, arena.key());
 changes.changed(alice, "minecraft:arena_nether", Duration.ofSeconds(10));
 
 worlds.send(alice, "overworld");

@@ -330,7 +330,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   `RequirementCheck` before planning; an unmet requirement throws `ScenarioRequirementsException` with every reason,
   which JUnit turns into a skip unless `anvil.requirements=strict`. An execution provider reports why it cannot run
   processes through `unavailableReason()`; Docker's pings its daemon.
-- A process's workspace is reached through `ProcessFiles` (`RunningProcess.files()`, `PlatformContext.getFiles()`,
+- A process's workspace is reached through `ProcessFiles` (`RunningProcess.files()`, `PlatformContext.files()`,
   `PreparedProcess.files()`), never through a local path, because its workbench may keep it on another machine.
   Platform providers write configuration only through it; `WorkspaceProvisioner.files(workspace)` opens the local
   implementation, `WorkspaceProcessFiles`, which confines paths as scenario-declared paths are. `PlatformContext`
@@ -342,7 +342,7 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   preparation stores every path asset, providers store local distribution JARs, and layouts and caches are rooted
   at `Workbench.workDirectory()` and `cacheDirectory()`, never at the engine options' directories. The host never
   opens a workbench path.
-- Protocol libraries start their worker JVMs through `ProtocolLibraryContext.getWorkers()` (`ProtocolWorkerLauncher`),
+- Protocol libraries start their worker JVMs through `ProtocolLibraryContext.workers()` (`ProtocolWorkerLauncher`),
   never with their own `ProcessBuilder`: the launcher binds it to `Workbench.launch`, which runs the worker where the
   scenario's processes run, so players' game traffic stays on the workbench. A `WorkerLaunch` keeps the library's
   closure, resolved through the context's artifacts on the workbench, apart from the engine's own class path
@@ -461,6 +461,18 @@ pathfinding, autonomous AI, and crafting automation are outside the current proj
   do not repeat identical try/catch blocks for each resource.
 - Prefer Lombok for immutable values, constructors, getters, and builders. Prefer final fields;
   add mutation only where lifecycle integration requires it. Do not add empty default constructors.
+- Anvil has one accessor style, Lombok's fluent accessors, set once in the root `lombok.config`
+  (`lombok.accessors.fluent = true`) and never through `@Accessors`: a field `name` is read through `name()`, a
+  boolean `connected` through `connected()`, and a `@Setter` field set through `name(value)`. Hand-written and
+  interface methods that read a property follow it too (`ProcessExecution.alive()`, `ClientPhysics.enabled()`);
+  `isX()` stays only for a predicate computed from other state, such as `AssetSource.isPath()` or
+  `CollisionShape.isEmpty()`, and methods of foreign types keep their names. A module whose framework binds by
+  JavaBean names keeps getters as a whole, never per class, through its own `lombok.config`
+  (`lombok.accessors.fluent = false`) naming that framework: `anvil-integration/integration-gradle` (Gradle) and
+  `anvil-integration/integration-intellij` (IntelliJ's `XmlSerializer`); such a module still calls other modules'
+  types by their fluent names. Jackson does not take fluent accessors for getters, so every mapper that writes or
+  reads Anvil's values sees their fields instead (field visibility `ANY`, getter and is-getter visibility `NONE`),
+  which keeps the JSON as the fields name it.
 - For long constructor parameter lists, put each parameter on its own line and the closing
   parenthesis on its own line.
 - Use JetBrains `@NotNull`/`@Nullable` consistently. Guard actual input/failure boundaries; do not

@@ -53,7 +53,7 @@ not accept fails the press: text longer than its maximum length, a checkbox valu
 `false`, an option the input does not have, or a number outside the slider's range.
 
 The payload a `custom` or `dynamic/custom` action declares stays in the player's worker, which sends it with
-the click; the action's `DialogAction` carries the ID and a `getHandle()` that the press names it by. Pressing
+the click; the action's `DialogAction` carries the ID and a `handle()` that the press names it by. Pressing
 such a button fails with an `IllegalStateException` when the server replaced or cleared its dialog, or the
 connection that showed it ended, before the click was sent.
 
@@ -80,7 +80,7 @@ While the client asks, `confirmation()` returns the command and the reason, and 
 ```java
 dialogs.press("Teleport");
 CommandConfirmation question = dialogs.confirmation().orElseThrow();
-assertEquals(CommandCheck.PERMISSIONS_REQUIRED, question.getReason());
+assertEquals(CommandCheck.PERMISSIONS_REQUIRED, question.reason());
 dialogs.confirm();
 ```
 
@@ -109,12 +109,12 @@ dialog's external title; a dialog tag lists nothing. Its text is plain text, bui
 [Messages](../messages/index.md#read-received-text) builds received messages, so a default notice button
 reads `gui.ok`.
 
-A dialog shown during the configuration phase has `isConfiguration()` set. The client runs no commands
+A dialog shown during the configuration phase has `configuration()` set. The client runs no commands
 there: a button that runs one sends nothing and leaves the dialog as it is.
 
 The server may refer to a dialog of its dialog registry, such as one from a data pack, instead of sending
 it. Anvil resolves it from the registry the server sent during configuration and keeps its
-`getRegistryId()` and `getRegistryName()`. The server leaves the data of the built-in dialogs out of
+`registryId()` and `registryName()`. The server leaves the data of the built-in dialogs out of
 the registry, because the client tells it that it knows vanilla's own data pack, and Anvil fills them in
 as a vanilla client does: `minecraft:server_links`, `minecraft:custom_options` and
 `minecraft:quick_actions`, the same on every release from Minecraft 1.21.6 to 26.3. A custom-options or
@@ -130,8 +130,8 @@ press, so the earlier dialog cannot satisfy the wait:
 ```java
 DialogWatch shown = dialogs.watch();
 dialogs.press("Log in", Map.of("password", "wrong"));
-Dialog again = shown.shown(dialog -> dialog.getBody().contains("Invalid password."), Duration.ofSeconds(10));
-shown.neverShown(dialog -> dialog.getTitle().contains("Welcome"), Duration.ofSeconds(2));
+Dialog again = shown.shown(dialog -> dialog.body().contains("Invalid password."), Duration.ofSeconds(10));
+shown.neverShown(dialog -> dialog.title().contains("Welcome"), Duration.ofSeconds(2));
 ```
 
 A watch sees only the dialogs shown after it was created, and each wait continues after the dialog the previous

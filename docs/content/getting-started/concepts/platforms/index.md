@@ -36,13 +36,13 @@ MinecraftProxy proxy = MinecraftProxy.builder()
 		.name("proxy")
 		.platform(Platforms.VELOCITY)
 		.distribution(Distribution.remote("4.3.1", "45"))
-		.server(lobby.getName())
-		.defaultServer(lobby.getName())
+		.server(lobby.name())
+		.defaultServer(lobby.name())
 		.build();
 ```
 
 In the scenario's return builder, register `.server(lobby)` and `.proxy(proxy)`, and replace the
-entrypoint with `.entrypoint(proxy.getName())`. The resulting route is Alice → proxy → lobby.
+entrypoint with `.entrypoint(proxy.name())`. The resulting route is Alice → proxy → lobby.
 When adapting the first test, also change its expected backend and console lookup from `server`
 to `lobby`; the player uses the new proxy entrypoint automatically. These declarations do not start
 either process; the engine starts the completed scenario.

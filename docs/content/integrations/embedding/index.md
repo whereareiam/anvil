@@ -64,7 +64,7 @@ public final class EmbeddedScenario {
 
 		try (ScenarioEngine engine = AnvilLauncher.create(options);
 		     ScenarioContext context = engine.start(scenario)) {
-			var entrypoint = context.processes().get(scenario.getEntrypoint());
+			var entrypoint = context.processes().get(scenario.entrypoint());
 			System.out.println("Ready at " + entrypoint.address());
 			// Perform application actions and assertions while the context is open.
 		}

@@ -47,7 +47,7 @@ Each change is a `DimensionChange` with the dimension the player came `from` and
 `from` is `null` when the connection had not joined a level yet, and equals `to` after a respawn in the
 same dimension. `changed(matcher, timeout)` waits for any change a predicate accepts, for example a
 proxy moving the player to another server's overworld:
-`dimensions.changed(change -> change.getTo().equals("minecraft:overworld"), timeout)`.
+`dimensions.changed(change -> change.to().equals("minecraft:overworld"), timeout)`.
 
 ## Read what the client knows about its level
 
@@ -58,14 +58,14 @@ joined a level yet. `world.level()` gives the rest of what the client was told a
 
 ```java
 Level level = world.level().orElseThrow();
-assertEquals("minecraft:the_nether", level.getType().getKey());
-assertEquals(Environment.NETHER, level.getType().getEnvironment());
-assertEquals(0, level.getType().getMinY());
-assertEquals(256, level.getType().getHeight());
-assertEquals(LevelGeneration.NORMAL, level.getGeneration());
+assertEquals("minecraft:the_nether", level.type().key());
+assertEquals(Environment.NETHER, level.type().environment());
+assertEquals(0, level.type().minY());
+assertEquals(256, level.type().height());
+assertEquals(LevelGeneration.NORMAL, level.generation());
 
 ServerLevels server = world.server().orElseThrow();
-assertTrue(server.getLevels().contains("minecraft:arena"));
+assertTrue(server.levels().contains("minecraft:arena"));
 ```
 
 | Member | Meaning |
@@ -80,7 +80,7 @@ assertTrue(server.getLevels().contains("minecraft:arena"));
 | `ServerLevels.levels` | The keys of every level the server has, in the server's order. |
 
 The level changes with every join and respawn, and each `DimensionChange` carries the `Level` of the
-level it entered as `getLevel()`. The server info changes only when the player joins a server, which a
+level it entered as `level()`. The server info changes only when the player joins a server, which a
 proxy does when it moves the player to another one. `world.changes()` lists every change in order, across
 reconnects.
 
@@ -119,8 +119,8 @@ console.sendCommand("weather thunder");
 states.until(state -> state.weatherType() == WeatherType.THUNDER, Duration.ofSeconds(20));
 
 console.sendCommand("time set noon");
-states.until(state -> state.getTime() != null
-		&& state.getTime().timeOfDay().orElse(-1) >= 6000, Duration.ofSeconds(10));
+states.until(state -> state.time() != null
+		&& state.time().timeOfDay().orElse(-1) >= 6000, Duration.ofSeconds(10));
 ```
 
 `until` checks the state now and every state the client is told afterwards, so a state that lasts only
@@ -213,5 +213,5 @@ A `Block` has its `position`, the global ID of its `state` in the player's proto
 `identity()`, its name and properties, which Anvil reads from the block data it ships for every supported
 protocol. A state that is not vanilla's, such as a modded server's block, has no name: `name()` and the
 queries by name, property or air then throw `UnknownBlockNameException`, while `BlockQuery.state(id)` and
-`BlockQuery.any()` still work. `isLoaded(chunk)` and `loadedChunks()` tell which chunk columns the client
+`BlockQuery.any()` still work. `loaded(chunk)` and `loadedChunks()` tell which chunk columns the client
 has, by `ChunkPosition`, and `ChunkPosition.containing(block)` names the column of a block.

@@ -77,7 +77,7 @@ class PlayerJoinTest {
 		session.connected();
 
 		var visit = arrivals.joined(alice);
-		assertEquals("Alice", visit.getProfile().getUsername());
+		assertEquals("Alice", visit.profile().username());
 
 		anvil.processes().server("server").console()
 				.sendCommand("say anvil-first-test");

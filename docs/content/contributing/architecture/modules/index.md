@@ -379,6 +379,16 @@ Use imports, JetBrains nullability annotations, and useful multiline Javadocs on
 immutable values and Lombok for routine construction. Java source uses tabs; dependencies and other
 shared build behavior follow `build-logic` conventions and the grouped version catalog.
 
+Accessors are fluent everywhere: the root `lombok.config` sets `lombok.accessors.fluent = true`, so a field
+`name` is read through `name()`, a boolean `connected` through `connected()` and a `@Setter` field set through
+`name(value)`. Write hand-written and interface property reads the same way, and keep `isX()` only for a
+predicate computed from other state, such as `AssetSource.isPath()`. Never put `@Accessors` on a class. A module
+whose framework binds by JavaBean names keeps getters as a whole through its own `lombok.config` with
+`lombok.accessors.fluent = false` and a comment naming the framework; today these are the Gradle integration
+(`anvil-integration/integration-gradle`) and the IntelliJ plugin (`anvil-integration/integration-intellij`).
+Jackson does not see fluent accessors as properties, so a mapper that reads or writes Anvil's values makes
+their fields visible and getters invisible, which keeps the JSON named after the fields.
+
 ## Verify a boundary change
 
 Update project dependencies, public imports, service filenames, descriptor contents, and published

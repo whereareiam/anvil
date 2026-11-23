@@ -114,8 +114,8 @@ channel.answer(DialogsChannel.CLICK, click -> null);
 Dialogs dialogs = new DialogsProvider().create(new TestProtocolPlayerCapabilityContext(channel)
 		.withCapability(Commands.class, commands));
 
-assertEquals(List.of(DialogsChannel.REGISTRY.getId(), DialogsChannel.SHOWN.getId(),
-		DialogsChannel.CLEARED.getId(), DialogsChannel.RESET.getId()), channel.subscriptions());
+assertEquals(List.of(DialogsChannel.REGISTRY.id(), DialogsChannel.SHOWN.id(),
+		DialogsChannel.CLEARED.id(), DialogsChannel.RESET.id()), channel.subscriptions());
 ```
 
 No test implements `ProtocolChannel`, a capability context or another contract with a shared test double itself:

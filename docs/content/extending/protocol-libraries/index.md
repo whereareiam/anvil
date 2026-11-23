@@ -72,7 +72,7 @@ with that reason.
 `ProtocolLibraryContext` supplies the Anvil cache root, in which your library owns its own
 subdirectory, the account directory, and a `ProtocolArtifactResolver`. The resolver's
 `resolve(uri, destination, sha256)` operation supplies one exact, checksum-verified artifact, such as
-a native runtime JAR; it does not expose generic acquisition or cache APIs. `getAdditionalReleases()`
+a native runtime JAR; it does not expose generic acquisition or cache APIs. `additionalReleases()`
 returns the file a user configured for your library ID through `protocolReleases`, or `null`. Read it
 in your own release-data format and mark its releases with `additional(true)`, so they are assessed
 as `UNTESTED`. See [Versions and compatibility](../../building-blocks/environments/platforms/versions/index.md#add-release-data)
@@ -85,9 +85,9 @@ with the engine. `ProtocolLibrary.create(PlayerRequest)` receives who logs in, w
 
 | Group | Content |
 |---|---|
-| `getName()`, `getLogin()` | The player name and its `PlayerLogin`: the authentication mode and either an offline username, an account ID, or a session identity. `getUsername()` returns the offline username, or the name when the login declares none |
-| `getClientVersion()` | The exact Minecraft version the client speaks. Each Minecraft version appears in only one of your releases, so resolve the release from it through your own release data |
-| `getConnection()` | `GameConnection`: the game listener's address, the optional virtual host the handshake announces, and the optional source address the socket binds to |
+| `name()`, `login()` | The player name and its `PlayerLogin`: the authentication mode and either an offline username, an account ID, or a session identity. `username()` returns the offline username, or the name when the login declares none |
+| `clientVersion()` | The exact Minecraft version the client speaks. Each Minecraft version appears in only one of your releases, so resolve the release from it through your own release data |
+| `connection()` | `GameConnection`: the game listener's address, the optional virtual host the handshake announces, and the optional source address the socket binds to |
 
 A leased login never reaches the library; Anvil replaces it with the leased account first. Your library
 must honour the virtual host and source address, or refuse the player when it is created; it never ignores
@@ -139,7 +139,7 @@ Two kits hold the runtime, so a library supplies only its connection and its pac
 A worker player implements `PlayerBindingContext<Object>` with them:
 
 ```java
-JavaPacketDispatcher java = new JavaPacketDispatcher("example", release.getProtocolNumber(), connection);
+JavaPacketDispatcher java = new JavaPacketDispatcher("example", release.protocolNumber(), connection);
 WorkerProtocols protocols = WorkerProtocols.builder("example")
 		.speak(JavaProtocol.class, java, java::scoped)
 		.build();

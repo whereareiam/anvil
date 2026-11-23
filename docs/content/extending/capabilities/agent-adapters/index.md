@@ -34,9 +34,9 @@ import org.jetbrains.annotations.NotNull;
  */
 public final class EchoProvider implements AgentProcessCapabilityProvider<Echo> {
 	private static final ChannelOperation<String, String> ECHO = new ChannelOperation<>(
-			EchoOperations.ECHO.getName(),
-			EchoOperations.ECHO.getRequestType(),
-			EchoOperations.ECHO.getResponseType()
+			EchoOperations.ECHO.name(),
+			EchoOperations.ECHO.requestType(),
+			EchoOperations.ECHO.responseType()
 	);
 
 	@Override
@@ -106,7 +106,7 @@ import me.whereareiam.anvil.capability.api.event.scenario.ScenarioFinished;
 Set<String> created = ConcurrentHashMap.newKeySet();
 context.on(ScenarioFinished.class, finished -> {
 	// A failed scenario keeps what it created for diagnostics.
-	if (finished.isPassed()) created.forEach(key -> context.channel().request(REMOVE, key));
+	if (finished.passed()) created.forEach(key -> context.channel().request(REMOVE, key));
 	created.clear();
 });
 ```

@@ -63,18 +63,18 @@ found. Each condition returns a new locator:
 | `lore("Click to buy")` | with a line of lore that reads exactly so |
 | `loreContaining("64 coins")` | with a line of lore that contains the text |
 | `lore("description", line -> ...)` | with a line of lore that satisfies the condition |
-| `matching("description", item -> ...)` | that satisfies the condition, such as `item.getSlot() < 27` |
+| `matching("description", item -> ...)` | that satisfies the condition, such as `item.slot() < 27` |
 
 Names and lore are compared by the plain text the player reads. They are `Text` values, the text the server sent,
 so a condition can check colors and styles as well, as [Messages](../messages/index.md) does for chat:
 
 ```java
 InventoryItem buy = shop.items().named("Buy").item();
-assertEquals(TextColor.GREEN, buy.getDisplay().getName().span("Buy").orElseThrow().getStyle().getColor());
+assertEquals(TextColor.GREEN, buy.display().name().span("Buy").orElseThrow().style().color());
 ```
 
 An item's own name is its custom name, else its item name, which Minecraft 1.20.5 introduced;
-`getDisplay().getNameSource()` says which, `CUSTOM` or `ITEM`. An item without either is shown by the game's
+`display().nameSource()` says which, `CUSTOM` or `ITEM`. An item without either is shown by the game's
 translated name of its type, which a simulated player does not have, so find it by `type(...)` or `matching(...)`.
 
 A locator is strict. `item()` and `click(...)` wait, ten seconds by default, until exactly one item matches. When
@@ -92,11 +92,11 @@ shown.
 
 | Message | Next check |
 | --- | --- |
-| `Player did not find exactly one item named 'Buy' ...` | Read `inventory.snapshot().getItems()` to see the names and lore the client received. Formatting codes and spaces count. |
+| `Player did not find exactly one item named 'Buy' ...` | Read `inventory.snapshot().items()` to see the names and lore the client received. Formatting codes and spaces count. |
 | `Player found 2 items ... in the slots 11, 15` | Add a condition, or pick one with `first()` or `nth(index)`. |
 | `... the screen is no longer open` | The server opened another screen or closed the menu before the action. Wait for the new screen through the watch. |
 | `Cannot find an item of type ...: the player's items have no type` | Anvil ships no item data for the player's protocol. Locate the item by name, lore or `matching(...)`. |
-| `Player did not see a screen titled 'Shop'` | Check that the watch started before the action, and compare the title with `inventory.snapshot().getTitle()`. |
+| `Player did not see a screen titled 'Shop'` | Check that the watch started before the action, and compare the title with `inventory.snapshot().title()`. |
 
 ## Wait for screens
 
@@ -118,16 +118,16 @@ it can return at once when the current state already does, so write a condition 
 
 An `InventorySnapshot` carries:
 
-- `getContainerId()`: `0` for the player's own inventory, else the open container's ID.
-- `getScreen()`: the screen's number. Each container the server opens, and each return to the player's inventory, is
+- `containerId()`: `0` for the player's own inventory, else the open container's ID.
+- `screen()`: the screen's number. Each container the server opens, and each return to the player's inventory, is
   a new screen; later changes of one screen keep its number.
-- `getTitle()` and `getMenuType()`: the container's title and menu type, `null` for the player's inventory.
-- `getStateId()`: the state ID the next click carries.
-- `getItems()`: one `InventoryItem` per filled slot:
-  - `getSlot()` and `getAmount()`;
-  - `getType()`: its `getIdentifier()`, the registry key such as `minecraft:emerald`, and `getProtocolId()`, the
+- `title()` and `menuType()`: the container's title and menu type, `null` for the player's inventory.
+- `stateId()`: the state ID the next click carries.
+- `items()`: one `InventoryItem` per filled slot:
+  - `slot()` and `amount()`;
+  - `type()`: its `identifier()`, the registry key such as `minecraft:emerald`, and `protocolId()`, the
     numeric ID, which differs between Minecraft versions;
-  - `getDisplay()`: the text the player reads, its `getName()`, `getNameSource()` and `getLore()`.
+  - `display()`: the text the player reads, its `name()`, `nameSource()` and `lore()`.
 
 The player keeps its screens as the vanilla client does. A container the server opens is the screen until the server
 closes it or opens another; contents and slot changes of other containers and of the cursor are ignored. An opened

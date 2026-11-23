@@ -56,7 +56,7 @@ final class PlayerExample {
 			var session = alice.capability(Session.class);
 			session.connect();
 			session.connected();
-			return arrivals.joined(alice).getProfile();
+			return arrivals.joined(alice).profile();
 		} finally {
 			alice.destroy();
 		}

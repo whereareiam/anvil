@@ -34,7 +34,7 @@ Cookies cookies = alice.capability(Cookies.class);
 CookieWatch asked = cookies.watch();
 byte[] ticket = cookies.stored("example:ticket", Duration.ofSeconds(10));
 CookieRequest request = asked.requested("example:ticket", Duration.ofSeconds(10));
-String answered = new String(request.getAnswer(), StandardCharsets.UTF_8);
+String answered = new String(request.answer(), StandardCharsets.UTF_8);
 ```
 
 `stored(key)` waits until Alice holds a cookie under the key and returns a copy of its payload. A watch

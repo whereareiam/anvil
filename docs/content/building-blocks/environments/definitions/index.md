@@ -45,10 +45,10 @@ public final class PreparedEnvironment implements AnvilScenarioDefinition {
 
 		return AnvilScenario.builder()
 				.name("prepared-paper")
-				.entrypoint(server.getName())
+				.entrypoint(server.name())
 				.server(server)
 				.setupHook(access -> {
-					PlayerWatch arrivals = access.processes().server(server.getName())
+					PlayerWatch arrivals = access.processes().server(server.name())
 							.capability(Players.class).watch();
 					var guide = access.players().create("GuideBot");
 					var session = guide.capability(Session.class);

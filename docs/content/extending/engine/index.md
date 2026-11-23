@@ -34,7 +34,7 @@ public final class ScenarioLogExtension implements EngineExtension {
 	@Override
 	public void install(@NotNull EngineRegistration registration) {
 		registration.scenarios(scenario -> {
-			String name = scenario.definition().getName();
+			String name = scenario.definition().name();
 			messages.accept("Started " + name);
 			return successful -> messages.accept((successful ? "Completed " : "Failed ") + name);
 		});

@@ -28,7 +28,8 @@ as its entity interaction packet.
 This diagnostic operation returns a supplied message without sending a game packet. It checks the
 host/worker installation path. Put the request in your feature API and the operation descriptor in
 your wiring artifact, both under `src/main/java/com/example/roundtrip`. Enable Lombok and Java's
-`-parameters` compiler option for immutable request construction.
+`-parameters` compiler option for immutable request construction. The player's channel writes a value's fields,
+not its getters, so its JSON is named after its fields.
 
 `RoundTripRequest.java`:
 
@@ -162,7 +163,7 @@ such as `packet.chat` and `packet.interaction`, one class per game packet:
 
 ```java
 JavaProtocol protocol = player.protocol(JavaProtocol.class);
-Subscription chat = protocol.listen(ClientboundSystemChat.class, packet -> received(packet.getText().plain()));
+Subscription chat = protocol.listen(ClientboundSystemChat.class, packet -> received(packet.text().plain()));
 protocol.send(new ServerboundChatCommand("spawn"));
 ```
 
@@ -183,8 +184,8 @@ keep state such as counters in an object created by `bind`, so different players
 
 ```java
 Subscription listening = Subscription.all(
-		protocol.listen(ClientboundSystemChat.class, packet -> received(packet.getText())),
-		protocol.listen(ClientboundPlayerChat.class, packet -> received(packet.getText()))
+		protocol.listen(ClientboundSystemChat.class, packet -> received(packet.text())),
+		protocol.listen(ClientboundPlayerChat.class, packet -> received(packet.text()))
 );
 return listening::close;
 ```

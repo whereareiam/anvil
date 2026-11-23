@@ -30,17 +30,17 @@ HeardSound ping = sounds.heard("block.note_block.pling", Duration.ofSeconds(10))
 A key without a namespace means `minecraft`, so `block.note_block.pling` and
 `minecraft:block.note_block.pling` are the same sound, while a plugin's own sound keeps its namespace, such
 as `example:alert`. Any predicate on the `HeardSound` works too:
-`sounds.heard(sound -> sound.is("block.note_block.pling") && sound.getPitch() > 1F, timeout)`.
+`sounds.heard(sound -> sound.is("block.note_block.pling") && sound.pitch() > 1F, timeout)`.
 
 ## Read a heard sound
 
 | Property | Holds |
 | --- | --- |
-| `getKey()` | The namespaced key, such as `minecraft:entity.player.levelup` |
-| `getCategory()` | The `SoundCategory`, the volume slider it belongs to, with vanilla names such as `PLAYERS` |
-| `getVolume()`, `getPitch()` | Volume, where `1` is full, and pitch, where `1` is unchanged |
-| `getPosition()` | Where a positioned sound plays, or `null` |
-| `getEntityId()` | The entity a following sound plays at, or `null` |
+| `key()` | The namespaced key, such as `minecraft:entity.player.levelup` |
+| `category()` | The `SoundCategory`, the volume slider it belongs to, with vanilla names such as `PLAYERS` |
+| `volume()`, `pitch()` | Volume, where `1` is full, and pitch, where `1` is unchanged |
+| `position()` | Where a positioned sound plays, or `null` |
+| `entityId()` | The entity a following sound plays at, or `null` |
 
 Servers refer to built-in sounds by their registry ID and to other sounds by name; both arrive with their
 key. Sounds a client plays on its own, such as footsteps or the sound of a block it breaks, never reach it

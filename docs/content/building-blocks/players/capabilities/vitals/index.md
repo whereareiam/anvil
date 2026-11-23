@@ -62,7 +62,7 @@ death; respawn it the same way.
 
 When the server turns the death screen off with the `doImmediateRespawn` game rule (`immediate_respawn`
 from Minecraft 1.21.11), the client respawns by itself as soon as it dies, as the game's client does.
-The death is still recorded, with `isRespawnedImmediately()` true, and `dead()` stays false.
+The death is still recorded, with `respawnedImmediately()` true, and `dead()` stays false.
 
 ## Players do not fall by themselves
 

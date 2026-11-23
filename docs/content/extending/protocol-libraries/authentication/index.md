@@ -18,7 +18,7 @@ prompts and status:
 | `logout(accountId, output)` | Remove the named account from the private store |
 
 Each `AuthenticationAccount` that `accounts()` returns names your library ID as its
-`getLibraryId()`. Account IDs are local to a library, so two libraries may store the same ID.
+`libraryId()`. Account IDs are local to a library, so two libraries may store the same ID.
 
 The `accountsDirectory` argument is the configured local account root. Put credential documents in a
 library-owned private location. Access and refresh tokens stay inside your library; never return them

@@ -31,5 +31,5 @@ precedence. Existing unrelated configuration values are retained, while formatti
 change when a file is serialized.
 
 Add the server with `.server(server)` on the scenario. For a direct environment, set
-`.entrypoint(server.getName())`; for a proxied environment, use the
+`.entrypoint(server.name())`; for a proxied environment, use the
 [proxy topology guide](../proxies/index.md). Only Paper and Spigot servers can be proxy backends.

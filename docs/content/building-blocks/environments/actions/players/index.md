@@ -50,8 +50,8 @@ public final class LobbyChecks {
 		session.connected();
 
 		PlayerVisit visit = arrivals.joined(alice);
-		assertEquals("Alice", visit.getProfile().getUsername());
-		assertEquals("Alice", lobby.profile(alice).orElseThrow().getUsername());
+		assertEquals("Alice", visit.profile().username());
+		assertEquals("Alice", lobby.profile(alice).orElseThrow().username());
 
 		moves.joined(alice, "lobby");
 		assertEquals(Optional.of("lobby"), proxy.backend(alice));
@@ -86,8 +86,8 @@ after a backend's `joined(player)`, and it can still name the previous backend. 
 wait on the proxy's watch with `joined(player, backend)`; read `backend(player)` only once that wait
 has returned or when nothing is moving the player.
 
-A `PlayerVisit` describes one stay of a player on the process: `getProfile()` as the process reports
-it, `getJoinedAt()`, and `getLeftAt()`, which is empty while the player is still there.
+A `PlayerVisit` describes one stay of a player on the process: `profile()` as the process reports
+it, `joinedAt()`, and `leftAt()`, which is empty while the player is still there.
 
 `profile(player)` can differ from the profile the client was granted. A backend sees what the proxy
 forwarded, and a plugin may change the name or UUID a process uses. Compare the two when testing that

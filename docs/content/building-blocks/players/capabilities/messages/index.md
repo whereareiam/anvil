@@ -111,10 +111,10 @@ import me.whereareiam.anvil.player.api.model.text.click.RunCommandClick;
 import me.whereareiam.anvil.player.api.model.text.content.TranslatedContent;
 
 Text welcome = chat.received("Welcome to Arbor", Duration.ofSeconds(10));
-SpanStyle arbor = welcome.span("Arbor").orElseThrow().getStyle();
-assertEquals(TextColor.GOLD, arbor.getColor());
-assertTrue(arbor.isBold());
-assertEquals(new RunCommandClick("/arbor help"), arbor.getClick());
+SpanStyle arbor = welcome.span("Arbor").orElseThrow().style();
+assertEquals(TextColor.GOLD, arbor.color());
+assertTrue(arbor.bold());
+assertEquals(new RunCommandClick("/arbor help"), arbor.click());
 ```
 
 `span(text)` returns the first span containing the text; text that crosses a change of style is in no span, so
@@ -122,11 +122,11 @@ look up a word that has one style. `spans()` lists them all for an exact compari
 
 | Member | Holds |
 |---|---|
-| `getColor()` | The colour, a `TextColor` such as `TextColor.GOLD` or `new TextColor(0x12ab34)`, or `null` for the chat's default colour |
-| `isBold()`, `isItalic()`, `isUnderlined()`, `isStrikethrough()`, `isObfuscated()` | Each decoration, `false` unless the part or a part around it turns it on |
-| `getClick()` | What a click does, such as `RunCommandClick`, `SuggestCommandClick`, `OpenUrlClick`, `CopyToClipboardClick` or `ChangePageClick`; `null` without a click |
-| `getHover()` | What the game shows on hover: `ShowTextHover` with its `Text`, `ShowItemHover` or `ShowEntityHover`; `null` without one |
-| `getShadowColor()`, `getFont()`, `getInsertion()` | The shadow colour (Minecraft 1.21.4 and later), the font's key and the text a shift-click inserts, or `null` |
+| `color()` | The colour, a `TextColor` such as `TextColor.GOLD` or `new TextColor(0x12ab34)`, or `null` for the chat's default colour |
+| `bold()`, `italic()`, `underlined()`, `strikethrough()`, `obfuscated()` | Each decoration, `false` unless the part or a part around it turns it on |
+| `click()` | What a click does, such as `RunCommandClick`, `SuggestCommandClick`, `OpenUrlClick`, `CopyToClipboardClick` or `ChangePageClick`; `null` without a click |
+| `hover()` | What the game shows on hover: `ShowTextHover` with its `Text`, `ShowItemHover` or `ShowEntityHover`; `null` without one |
+| `shadowColor()`, `font()`, `insertion()` | The shadow colour (Minecraft 1.21.4 and later), the font's key and the text a shift-click inserts, or `null` |
 
 A named colour and the same colour sent as `#rrggbb` are equal. A click on a dialog (`ShowDialogClick`) or a custom
 action (`CustomClick`, by its identifier) keeps its payload in the player's worker, as the
@@ -141,14 +141,14 @@ translation itself:
 ```java
 Text joined = chat.received("multiplayer.player.joined", Duration.ofSeconds(10));
 TranslatedContent translation = joined.find(TranslatedContent.class).orElseThrow();
-assertEquals("multiplayer.player.joined", translation.getKey());
-assertEquals("Ivan", translation.getArguments().getFirst().plain());
+assertEquals("multiplayer.player.joined", translation.key());
+assertEquals("Ivan", translation.arguments().getFirst().plain());
 ```
 
 `find(type)` returns the first content of that kind in reading order, a translation's arguments before what follows
 the translation. The kinds of content are in `me.whereareiam.anvil.player.api.model.text.content`:
 `LiteralContent`, `TranslatedContent`, `KeybindContent`, `SelectorContent`, `ScoreContent`, `NbtContent`, and the
-`SpriteContent` and `PlayerHeadContent` of Minecraft 1.21.9. `getContent()`, `getStyle()` and `getChildren()` walk
+`SpriteContent` and `PlayerHeadContent` of Minecraft 1.21.9. `content()`, `style()` and `children()` walk
 the components as the server sent them; a component's `TextStyle` holds only what it sets itself.
 
 A player chat message holds the content its sender or the server sent, without the decoration the game draws
@@ -213,7 +213,7 @@ assertFalse(messages.chatLines().contains("secret"));
 ```
 
 Import `me.whereareiam.anvil.capability.messages.model.ChatLines` to use its constants. `chatLines()` returns a
-snapshot without waiting: `getLines()` lists the lines oldest first, and `contains(text)` tells whether any line
+snapshot without waiting: `lines()` lists the lines oldest first, and `contains(text)` tells whether any line
 contains the text. It follows the client's rules, which are the same on every supported version:
 
 | The client | The model |
