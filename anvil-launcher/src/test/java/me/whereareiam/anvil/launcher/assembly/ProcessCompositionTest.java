@@ -25,7 +25,10 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ProcessCompositionTest {
 
@@ -48,7 +51,10 @@ class ProcessCompositionTest {
 			var server = MinecraftServer.builder().name(name).platform("test")
 					.distribution(Distribution.remote("1.21.11", "test")).build();
 			scenario.server(server);
-			plan.process(name, ProcessPlan.builder().declaration(server).agent(agents).javaSelection(JavaSelection.builder().requirement(JavaRequirement.builder().featureVersion(21).build()).build())
+			plan.process(name, ProcessPlan.builder()
+					.declaration(server)
+					.agent(agents)
+					.javaSelection(JavaSelection.builder().requirement(JavaRequirement.builder().featureVersion(21).build()).build())
 					.workspace(WorkspacePlan.builder().build())
 					.forwarding(ForwardingConfiguration.builder().build())
 					.readinessPattern(Pattern.compile("READY")).stopCommand("stop").build());

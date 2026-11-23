@@ -160,7 +160,8 @@ class ManagedProcessTest {
 	void boundsHistoryWhilePersistingAllOutputAndKeepsSnapshotsImmutable() throws Exception {
 		ManagedServer process = process("history");
 		start(process,
-				List.of("sh", "-c", "i=0; while [ $i -lt 2100 ]; do echo line-$i; i=$((i + 1)); done; echo READY; while read line; do [ \"$line\" = stop ] && exit 0; done"),
+				List.of("sh", "-c", "i=0; while [ $i -lt 2100 ]; do echo line-$i; i=$((i + 1)); done; echo READY; "
+						+ "while read line; do [ \"$line\" = stop ] && exit 0; done"),
 				Map.of(), Pattern.compile("READY"), Duration.ofSeconds(3)
 		);
 		try {

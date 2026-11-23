@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.environment.execution.docker.execution;
 
+import me.whereareiam.anvil.api.exception.ProvisioningException;
 import me.whereareiam.anvil.api.model.java.JavaRequirement;
 import me.whereareiam.anvil.api.model.java.JavaSelection;
 import me.whereareiam.anvil.environment.execution.api.ExecutionServices;
@@ -14,7 +15,6 @@ import me.whereareiam.anvil.environment.execution.docker.DockerEngine;
 import me.whereareiam.anvil.environment.execution.docker.DockerNetwork;
 import me.whereareiam.anvil.environment.execution.managed.process.PortSelection;
 import me.whereareiam.anvil.testkit.support.FixtureArtifacts;
-import me.whereareiam.anvil.api.exception.ProvisioningException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
@@ -22,23 +22,27 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
-import java.util.function.UnaryOperator;
 import java.util.ArrayList;
-import java.util.UUID;
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.UnaryOperator;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Runs against the Docker engine of the machine, in the {@code dockerTest} suite. The image comes from the
@@ -254,7 +258,10 @@ class DockerEngineTest {
 				Files.createDirectories(workspace);
 				Path jar = Files.copy(FixtureArtifacts.process(), workspace.resolve("process.jar"));
 				var request = ProcessRequest.builder().name("smoke").workspace(workspace)
-						.javaSelection(JavaSelection.builder().requirement(JavaRequirement.builder().featureVersion(21).build()).build()).build();
+						.javaSelection(JavaSelection.builder()
+								.requirement(JavaRequirement.builder().featureVersion(21).build())
+								.build())
+						.build();
 				try (var target = session.prepare(change.apply(request))) {
 					var process = target.start(JavaCommand.builder().jar(jar).memoryMegabytes(256).build());
 					try {

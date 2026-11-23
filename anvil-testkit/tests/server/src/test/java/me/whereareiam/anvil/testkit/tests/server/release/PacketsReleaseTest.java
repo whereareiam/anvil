@@ -28,7 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Taps and records the packets the server sends the player: the console moves the player high above a far column, whose
- * chunk a tap waits for, places a block below it and removes it again, which every release sends as a block update among the many the world's own activity sends.
+ * chunk a tap waits for, places a block below it and removes it again, which every release sends as a block update among
+ * the many the world's own activity sends.
  * A recording made meanwhile keeps the chunk columns as their bytes alone, while the chunk tap gets their values.
  */
 @Release

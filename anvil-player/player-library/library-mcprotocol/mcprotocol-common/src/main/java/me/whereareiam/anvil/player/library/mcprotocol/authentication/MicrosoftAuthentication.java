@@ -100,7 +100,13 @@ public final class MicrosoftAuthentication implements ProtocolAuthentication {
 		MinecraftToken token = manager.getMinecraftToken().getUpToDate();
 		if (profile == null || token == null)
 			throw new IllegalStateException("Microsoft account has no licensed Minecraft Java profile");
-		accounts.write(accountId, McProtocolClient.LIBRARY_ID, profile.getName(), profile.getId(), JavaAuthManager.toJson(manager).toString());
+		accounts.write(
+				accountId,
+				McProtocolClient.LIBRARY_ID,
+				profile.getName(),
+				profile.getId(),
+				JavaAuthManager.toJson(manager).toString()
+		);
 		return AuthenticationSession.builder()
 				.username(profile.getName())
 				.uuid(profile.getId())

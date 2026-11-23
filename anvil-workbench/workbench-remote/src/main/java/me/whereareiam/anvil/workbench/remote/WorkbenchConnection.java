@@ -23,9 +23,6 @@ import me.whereareiam.anvil.workbench.protocol.model.message.ServerMessage;
 import me.whereareiam.anvil.workbench.remote.pairing.Pairing;
 import org.jetbrains.annotations.NotNull;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.TrustManager;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
@@ -39,6 +36,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.TrustManager;
 
 /**
  * An engine's connection to one paired workbench: a control connection for requests, and further TLS connections
@@ -94,7 +94,12 @@ public final class WorkbenchConnection implements AutoCloseable {
 	 * @return the new pairing
 	 * @throws IOException when the workbench cannot be reached or refuses the code
 	 */
-	public static @NotNull Pairing pair(@NotNull String name, @NotNull String address, @NotNull String code, @NotNull String engine) throws IOException {
+	public static @NotNull Pairing pair(
+			@NotNull String name,
+			@NotNull String address,
+			@NotNull String code,
+			@NotNull String engine
+	) throws IOException {
 		PinnedTrustManager trust = new PinnedTrustManager(null);
 		Pairing unpaired = Pairing.builder().name(name).address(address).fingerprint("").token("").build();
 		ObjectMapper mapper = WireMapper.create();
@@ -191,7 +196,8 @@ public final class WorkbenchConnection implements AutoCloseable {
 				}
 				case Refused refused -> throw new IOException(refused.getReason());
 				case Paired ignored -> throw new IOException("Workbench '" + pairing.getName() + "' answered a connection with a pairing");
-				case Uploaded ignored -> throw new IOException("Workbench '" + pairing.getName() + "' answered a connection with an upload");
+				case Uploaded ignored ->
+						throw new IOException("Workbench '" + pairing.getName() + "' answered a connection with an upload");
 			}
 			return socket;
 		} catch (IOException | RuntimeException failure) {
@@ -209,7 +215,11 @@ public final class WorkbenchConnection implements AutoCloseable {
 	 * @return the workbench's answer
 	 * @throws IOException when the workbench closed the connection instead
 	 */
-	static @NotNull ConnectionAnswer answer(@NotNull ObjectMapper mapper, @NotNull Socket socket, @NotNull String purpose) throws IOException {
+	static @NotNull ConnectionAnswer answer(
+			@NotNull ObjectMapper mapper,
+			@NotNull Socket socket,
+			@NotNull String purpose
+	) throws IOException {
 		ConnectionAnswer answer = WireLines.read(mapper, socket.getInputStream(), ConnectionAnswer.class);
 		if (answer == null) throw new IOException("The workbench closed " + purpose);
 		return answer;
@@ -255,7 +265,10 @@ public final class WorkbenchConnection implements AutoCloseable {
 
 	private static SSLSocket socket(Pairing pairing, SSLContext tls) throws IOException {
 		Socket plain = new Socket();
-		plain.connect(new InetSocketAddress(InetAddress.getByName(pairing.host()), pairing.port(WireProtocol.DEFAULT_PORT)), CONNECT_TIMEOUT_MILLIS);
+		plain.connect(
+				new InetSocketAddress(InetAddress.getByName(pairing.host()), pairing.port(WireProtocol.DEFAULT_PORT)),
+				CONNECT_TIMEOUT_MILLIS
+		);
 		plain.setTcpNoDelay(true);
 		SSLSocket socket = (SSLSocket) tls.getSocketFactory().createSocket(plain, pairing.host(), plain.getPort(), true);
 		socket.startHandshake();

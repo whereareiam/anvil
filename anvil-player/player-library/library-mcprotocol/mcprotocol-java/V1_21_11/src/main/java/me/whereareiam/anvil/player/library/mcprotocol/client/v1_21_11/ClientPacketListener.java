@@ -5,8 +5,8 @@ import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.edition.java.protocol.type.connection.ConnectionState;
 import me.whereareiam.anvil.player.library.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.player.library.mcprotocol.client.ClientListener;
-import me.whereareiam.anvil.player.library.mcprotocol.client.translation.PacketTable;
 import me.whereareiam.anvil.player.library.mcprotocol.client.model.ClientProfile;
+import me.whereareiam.anvil.player.library.mcprotocol.client.translation.PacketTable;
 import me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.ChunkBatchPacing;
 import me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.ValueTranslator;
 import me.whereareiam.anvil.player.library.mcprotocol.netty.ReceivedFrames;
@@ -26,7 +26,6 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.Clien
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundChunkBatchReceivedPacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundLoginDisconnectPacket;
 import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundLoginFinishedPacket;
-
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;

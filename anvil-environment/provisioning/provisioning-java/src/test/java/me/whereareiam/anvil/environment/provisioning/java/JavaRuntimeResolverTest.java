@@ -8,8 +8,8 @@ import me.whereareiam.anvil.api.model.java.JavaSource;
 import me.whereareiam.anvil.environment.cache.api.CacheEntry;
 import me.whereareiam.anvil.environment.cache.api.exception.CacheException;
 import me.whereareiam.anvil.environment.cache.filesystem.FileCache;
-import me.whereareiam.anvil.environment.provisioning.java.api.installatiion.JavaInstallationStorage;
 import me.whereareiam.anvil.environment.provisioning.java.api.JavaPackageSource;
+import me.whereareiam.anvil.environment.provisioning.java.api.installatiion.JavaInstallationStorage;
 import me.whereareiam.anvil.environment.provisioning.java.installation.JavaExecutables;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -21,7 +21,9 @@ import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JavaRuntimeResolverTest {
 	@TempDir
@@ -31,12 +33,17 @@ class JavaRuntimeResolverTest {
 	void validatesExactFeatureDistributionAndReleaseIndependentlyOfTheHostJvm() {
 		var java = resolver();
 		var selection = JavaRequirement.builder().featureVersion(21).distribution("temurin").release("21.0.7+6").build();
-		String actual = "java.version = 21.0.7\njava.runtime.version = 21.0.7+6\njava.vendor = Eclipse Adoptium\njava.vm.name = OpenJDK 64-Bit Server VM\n";
+		String actual = "java.version = 21.0.7\njava.runtime.version = 21.0.7+6\n"
+				+ "java.vendor = Eclipse Adoptium\njava.vm.name = OpenJDK 64-Bit Server VM\n";
 		java.validate(java.inspect(actual, Path.of("test-java")), selection);
-		assertThrows(ProvisioningException.class, () -> java.validate(java.inspect(actual, Path.of("test-java")), selection.toBuilder().featureVersion(17).build()));
-		assertThrows(ProvisioningException.class, () -> java.validate(java.inspect(actual, Path.of("test-java")), selection.toBuilder().featureVersion(25).build()));
-		assertThrows(ProvisioningException.class, () -> java.validate(java.inspect(actual, Path.of("test-java")), selection.toBuilder().distribution("graalvm-community").build()));
-		assertThrows(ProvisioningException.class, () -> java.validate(java.inspect(actual, Path.of("test-java")), selection.toBuilder().release("21.0.7+7").build()));
+		assertThrows(ProvisioningException.class, () -> java.validate(java.inspect(actual, Path.of("test-java")),
+				selection.toBuilder().featureVersion(17).build()));
+		assertThrows(ProvisioningException.class, () -> java.validate(java.inspect(actual, Path.of("test-java")),
+				selection.toBuilder().featureVersion(25).build()));
+		assertThrows(ProvisioningException.class, () -> java.validate(java.inspect(actual, Path.of("test-java")),
+				selection.toBuilder().distribution("graalvm-community").build()));
+		assertThrows(ProvisioningException.class, () -> java.validate(java.inspect(actual, Path.of("test-java")),
+				selection.toBuilder().release("21.0.7+7").build()));
 		java.validate(java.inspect(actual.replace("Eclipse Adoptium", "GraalVM Community"), Path.of("test-java")),
 				selection.toBuilder().distribution("graalvm-community").build());
 	}
@@ -44,7 +51,8 @@ class JavaRuntimeResolverTest {
 	@Test
 	void explainsAFeatureMismatchWithTheExecutableAndNoSourceSpecificRemedy() {
 		var java = resolver();
-		String actual = "java.version = 25.0.1\njava.runtime.version = 25.0.1+8\njava.vendor = Eclipse Adoptium\njava.vm.name = OpenJDK 64-Bit Server VM\n";
+		String actual = "java.version = 25.0.1\njava.runtime.version = 25.0.1+8\n"
+				+ "java.vendor = Eclipse Adoptium\njava.vm.name = OpenJDK 64-Bit Server VM\n";
 
 		var failure = assertThrows(JavaVersionMismatchException.class, () -> java.validate(java.inspect(actual, Path.of("jdk-25/bin/java")),
 				JavaRequirement.builder().featureVersion(21).build()));

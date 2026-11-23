@@ -97,7 +97,8 @@ class McProtocolWorkerContractTest {
 		ProtocolRelease release = release(version);
 		assertEquals(protocol, release.getProtocolNumber());
 
-		try (ProtocolWorkerProcess worker = new ProtocolWorkerProcess(release, GradleReleaseClosures.of(release), new LocalWorkerLauncher())) {
+		try (ProtocolWorkerProcess worker =
+				new ProtocolWorkerProcess(release, GradleReleaseClosures.of(release), new LocalWorkerLauncher())) {
 			assertTrue(worker.diagnosticTail().contains("mcprotocol-java=" + clientSegment), worker.diagnosticTail());
 
 			ProtocolPlayer player = worker.create(request(release, "Alice"), null);
@@ -172,7 +173,10 @@ class McProtocolWorkerContractTest {
 		Files.createDirectories(probe.resolve("META-INF/services"));
 		Files.writeString(probe.resolve("META-INF/anvil/segment.properties"), "library=mcprotocol\nowner=probe-mcprotocol\nsince=1.16.5\n");
 		Files.writeString(probe.resolve("META-INF/anvil/segment/linkage.txt"), linkage);
-		Files.writeString(probe.resolve("META-INF/services").resolve(ProbePackets.class.getName()), ProbePacketsAdapter.class.getName() + "\n");
+		Files.writeString(
+				probe.resolve("META-INF/services").resolve(ProbePackets.class.getName()),
+				ProbePacketsAdapter.class.getName() + "\n"
+		);
 
 		Thread thread = Thread.currentThread();
 		ClassLoader previous = thread.getContextClassLoader();

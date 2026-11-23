@@ -4,14 +4,15 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
-import java.io.PrintWriter;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.tooling.api.ToolingSession;
 import me.whereareiam.anvil.tooling.api.model.LogEvent;
 import me.whereareiam.anvil.tooling.api.model.SessionSnapshot;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.io.IOException;
+import java.io.PrintWriter;
 
 /**
  * Serializes typed frames atomically to one JSON-lines response stream.

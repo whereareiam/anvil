@@ -20,7 +20,8 @@ import java.util.function.Consumer;
  * channel.
  */
 @RequiredArgsConstructor
-final class AgentProcessCapabilityProviderAdapter<C extends ProcessCapability> implements CapabilityProvider<C, CapabilityContext<ProcessCapability>> {
+final class AgentProcessCapabilityProviderAdapter<C extends ProcessCapability>
+		implements CapabilityProvider<C, CapabilityContext<ProcessCapability>> {
 	private final @NotNull AgentProcessCapabilityProvider<C> provider;
 	private final @NotNull String processName;
 	private final @NotNull String platformId;

@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.agent.api.model.AgentOperation;
-import me.whereareiam.anvil.agent.server.api.operation.AgentOperationHandler;
 import me.whereareiam.anvil.agent.server.api.PlatformAgent;
+import me.whereareiam.anvil.agent.server.api.operation.AgentOperationHandler;
 import org.jetbrains.annotations.NotNull;
 
 /**

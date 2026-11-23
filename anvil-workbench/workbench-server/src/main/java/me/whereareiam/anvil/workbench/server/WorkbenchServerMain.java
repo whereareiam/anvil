@@ -56,7 +56,8 @@ public final class WorkbenchServerMain {
 
 		System.out.println("Anvil workbench '" + settings.getName() + "' listens on port " + server.port()
 				+ " with certificate " + server.fingerprint());
-		System.out.println("It runs processes with " + String.join(", ", settings.getExecutions()) + "; data in " + settings.getDataDirectory());
+		System.out.println("It runs processes with " + String.join(", ", settings.getExecutions())
+				+ "; data in " + settings.getDataDirectory());
 		if (!server.paired()) printPairing(settings, server.newPairingCode(), server.port());
 		server.serve();
 	}

@@ -40,14 +40,20 @@ import java.net.Socket;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class RemoteWorkbenchIntegrationTest {
@@ -158,8 +164,8 @@ class RemoteWorkbenchIntegrationTest {
 			files.write("config/server.properties", "motd=Anvil\n");
 
 			assertEquals("motd=Anvil\n", files.read("config/server.properties"));
-			assertEquals(java.util.List.of("config"), files.list(""));
-			assertThrows(java.nio.file.NoSuchFileException.class, () -> files.read("missing.txt"));
+			assertEquals(List.of("config"), files.list(""));
+			assertThrows(NoSuchFileException.class, () -> files.read("missing.txt"));
 			assertTrue(files.delete("config"));
 			assertTrue(files.location().contains("bench"));
 		}
@@ -179,8 +185,14 @@ class RemoteWorkbenchIntegrationTest {
 			input.write("ping\n".getBytes(StandardCharsets.UTF_8));
 			input.flush();
 
-			assertEquals("echo:ping:first", new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8)).readLine());
-			assertEquals("error:ping", new BufferedReader(new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8)).readLine());
+			assertEquals(
+					"echo:ping:first",
+					new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8)).readLine()
+			);
+			assertEquals(
+					"error:ping",
+					new BufferedReader(new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8)).readLine()
+			);
 			assertEquals(3, process.waitFor());
 			assertFalse(process.isAlive());
 		}
@@ -190,7 +202,9 @@ class RemoteWorkbenchIntegrationTest {
 	void runsAProcessThroughAnExecutionSessionAndMirrorsItsPort() throws Exception {
 		// The engine and the workbench share this machine, so the mirror takes another loopback address than the
 		// process: 127.0.0.2 where the loopback has it, else the IPv6 loopback.
-		InetAddress mirror = bindable(InetAddress.getByName("127.0.0.2")) ? InetAddress.getByName("127.0.0.2") : InetAddress.getByName("::1");
+		InetAddress mirror = bindable(InetAddress.getByName("127.0.0.2"))
+				? InetAddress.getByName("127.0.0.2")
+				: InetAddress.getByName("::1");
 		assumeTrue(bindable(mirror), "This machine's loopback offers no second address to mirror ports at");
 
 		try (RemoteWorkbench workbench = RemoteWorkbench.connect(pairing, mirror);
@@ -214,7 +228,10 @@ class RemoteWorkbenchIntegrationTest {
 			String first = output.readLine();
 			assertEquals("READY", first, () -> first + "\n" + output.lines().limit(5).toList());
 			try (Socket client = new Socket(mirror, target.address().getPort())) {
-				assertEquals("hello", new BufferedReader(new InputStreamReader(client.getInputStream(), StandardCharsets.UTF_8)).readLine());
+				assertEquals(
+						"hello",
+						new BufferedReader(new InputStreamReader(client.getInputStream(), StandardCharsets.UTF_8)).readLine()
+				);
 			}
 			assertTrue(execution.await(Duration.ofSeconds(10)));
 			execution.onExit().get();

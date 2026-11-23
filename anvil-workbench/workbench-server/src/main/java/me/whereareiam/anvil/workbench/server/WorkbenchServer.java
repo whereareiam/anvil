@@ -23,8 +23,6 @@ import me.whereareiam.anvil.workbench.protocol.model.connection.Upload;
 import me.whereareiam.anvil.workbench.protocol.model.connection.Uploaded;
 import org.jetbrains.annotations.NotNull;
 
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -36,6 +34,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLSocket;
 
 /**
  * A workbench on its own machine, serving the engines paired with it over TLS. Every connection begins with a

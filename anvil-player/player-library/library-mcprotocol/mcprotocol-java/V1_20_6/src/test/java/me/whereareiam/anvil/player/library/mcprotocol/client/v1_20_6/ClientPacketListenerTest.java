@@ -96,9 +96,11 @@ class ClientPacketListenerTest {
 	void flattensDisconnectReasonsToPlainTextWithTranslationArguments() {
 		receive(new ClientboundDisconnectPacket(Component.translatable("multiplayer.disconnect.kicked", Component.text("Alice"))
 				.append(Component.text(" by Anvil"))));
-		receive(new ClientboundLoginDisconnectPacket(Component.text("Outdated: ").append(Component.translatable("version", Component.text("1.20.6")))));
+		receive(new ClientboundLoginDisconnectPacket(Component.text("Outdated: ")
+				.append(Component.translatable("version", Component.text("1.20.6")))));
 
-		assertEquals(List.of("disconnected SERVER multiplayer.disconnect.kicked Alice by Anvil", "disconnected SERVER Outdated: version 1.20.6"), events);
+		assertEquals(List.of("disconnected SERVER multiplayer.disconnect.kicked Alice by Anvil",
+				"disconnected SERVER Outdated: version 1.20.6"), events);
 	}
 
 	@Test
@@ -109,7 +111,8 @@ class ClientPacketListenerTest {
 				.settings(LOGIN.getSettings())
 				.connection(ClientConnection.builder().host("127.0.0.1").port(25577).virtualHost("lobby.example.test").build())
 				.build();
-		PacketSendingEvent handshake = new PacketSendingEvent(session, new ClientIntentionPacket(1, "127.0.0.1", 25577, HandshakeIntent.LOGIN));
+		PacketSendingEvent handshake = new PacketSendingEvent(session,
+				new ClientIntentionPacket(1, "127.0.0.1", 25577, HandshakeIntent.LOGIN));
 
 		new ClientPacketListener(virtual, new TestClientListener<>(events),
 				TcpClientSessions::granted, new TextTranslator())

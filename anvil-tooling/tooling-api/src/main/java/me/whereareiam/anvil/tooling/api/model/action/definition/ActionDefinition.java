@@ -1,12 +1,13 @@
 package me.whereareiam.anvil.tooling.api.model.action.definition;
 
-import java.util.List;
 import lombok.Builder;
-import lombok.Value;
 import lombok.Singular;
+import lombok.Value;
 import lombok.extern.jackson.Jacksonized;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 /**
  * Description shared by every target exposing the same action.

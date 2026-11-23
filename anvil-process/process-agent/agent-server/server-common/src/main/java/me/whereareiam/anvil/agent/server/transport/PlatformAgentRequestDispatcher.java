@@ -12,8 +12,8 @@ import me.whereareiam.anvil.agent.server.api.operation.AgentOperationProvider;
 import me.whereareiam.anvil.agent.server.api.operation.AgentOperationRegistry;
 import me.whereareiam.anvil.agent.server.event.PlatformEventLog;
 import me.whereareiam.anvil.agent.server.operation.CommandHandler;
-import me.whereareiam.anvil.agent.server.operation.PlayerEventsHandler;
 import me.whereareiam.anvil.agent.server.operation.PingHandler;
+import me.whereareiam.anvil.agent.server.operation.PlayerEventsHandler;
 import me.whereareiam.anvil.agent.server.operation.TypedAgentOperation;
 import org.jetbrains.annotations.NotNull;
 

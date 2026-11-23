@@ -10,13 +10,15 @@ import java.nio.file.Path;
 import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class EngineDefaultsTest {
 	@Test
 	void resolvesOnlyOmittedEnvironmentValuesAndPreservesExplicitOptions() {
-		EngineOptions requested = EngineOptions.builder().processTimeouts(ProcessTimeouts.builder().shutdown(Duration.ofSeconds(7)).build()).build();
+		EngineOptions requested = EngineOptions.builder()
+				.processTimeouts(ProcessTimeouts.builder().shutdown(Duration.ofSeconds(7)).build())
+				.build();
 		EngineOptions effective = EngineDefaults.resolve(requested);
 
 		assertNull(requested.getCacheDirectory());

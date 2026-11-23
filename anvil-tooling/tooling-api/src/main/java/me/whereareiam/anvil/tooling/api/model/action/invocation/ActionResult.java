@@ -1,12 +1,13 @@
 package me.whereareiam.anvil.tooling.api.model.action.invocation;
 
-import java.util.List;
 import lombok.Builder;
-import lombok.Value;
 import lombok.Singular;
+import lombok.Value;
 import lombok.extern.jackson.Jacksonized;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 /**
  * Portable action outcome displayed as a message and optional table.

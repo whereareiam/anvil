@@ -17,8 +17,10 @@ import java.util.Optional;
 public final class EventWorkerExtension implements WorkerExtension<Object> {
 	public static final String ID = "test.events";
 	public static final EventDescriptor<MessageText> CHANGED = new EventDescriptor<>("test.events.changed", MessageText.class);
-	public static final OperationDescriptor<MessageText, Void> EMIT = new OperationDescriptor<>("test.events.emit", MessageText.class, Void.class);
-	public static final OperationDescriptor<MessageText, MessageText> ECHO = new OperationDescriptor<>("test.events.echo", MessageText.class, MessageText.class);
+	public static final OperationDescriptor<MessageText, Void> EMIT =
+			new OperationDescriptor<>("test.events.emit", MessageText.class, Void.class);
+	public static final OperationDescriptor<MessageText, MessageText> ECHO =
+			new OperationDescriptor<>("test.events.echo", MessageText.class, MessageText.class);
 
 	public @NotNull String id() { return ID; }
 	public @NotNull Optional<String> libraryId() { return Optional.of("mcprotocol"); }

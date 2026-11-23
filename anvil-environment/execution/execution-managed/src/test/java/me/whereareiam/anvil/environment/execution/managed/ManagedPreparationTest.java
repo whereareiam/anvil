@@ -3,8 +3,8 @@ package me.whereareiam.anvil.environment.execution.managed;
 import me.whereareiam.anvil.api.process.ProcessGroup;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.process.type.RunningContainer;
-import me.whereareiam.anvil.environment.execution.api.model.ImageLaunch;
 import me.whereareiam.anvil.api.type.ProcessState;
+import me.whereareiam.anvil.environment.execution.api.model.ImageLaunch;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
@@ -19,7 +19,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ManagedPreparationTest {
 	@TempDir
@@ -43,7 +51,8 @@ class ManagedPreparationTest {
 			assertTrue(group.all().isEmpty());
 			assertThrows(IllegalStateException.class, () -> group.get("lobby"));
 			assertEquals(Set.of("proxy", "lobby", "game"), fixture.preparation.observedPeers.get("proxy").keySet());
-			assertTrue(fixture.calls.stream().noneMatch(call -> call.startsWith("configure:") || call.startsWith("start:") || call.startsWith("attach:")));
+			assertTrue(fixture.calls.stream()
+					.noneMatch(call -> call.startsWith("configure:") || call.startsWith("start:") || call.startsWith("attach:")));
 			group.stop("proxy");
 			RunningProcess first = group.start("proxy");
 			assertSame(first, group.start("proxy"));
@@ -75,7 +84,10 @@ class ManagedPreparationTest {
 		try (group) {
 			var lobbyAddresses = fixture.preparation.observedAddresses.get("lobby");
 			assertEquals("127.0.0.1:25570", lobbyAddresses.resolve("${anvil.process.proxy.host}:${anvil.process.proxy.listener.link}"));
-			assertEquals(30000 + fixture.targets.get("proxy").index, Integer.parseInt(lobbyAddresses.resolve("${anvil.process.proxy.port}")));
+			assertEquals(
+					30000 + fixture.targets.get("proxy").index,
+					Integer.parseInt(lobbyAddresses.resolve("${anvil.process.proxy.port}"))
+			);
 
 			group.startAll();
 			assertEquals(fixture.targets.get("proxy").listeners().get("link"), group.get("proxy").listener("link"));
@@ -216,7 +228,11 @@ class ManagedPreparationTest {
 	@Test
 	void failureDuringShutdownPreventsSuccessfulProcessAndScenarioFinalization() {
 		ExecutionFixture fixture = new ExecutionFixture(directory);
-		var group = fixture.service().prepare(fixture.plan(fixture.spec("first", false), fixture.spec("second", false)), fixture.preparation, null);
+		var group = fixture.service().prepare(
+				fixture.plan(fixture.spec("first", false), fixture.spec("second", false)),
+				fixture.preparation,
+				null
+		);
 		group.startAll();
 		fixture.beforeDetach = () -> fixture.targets.get("second").current.terminate(true);
 		group.finish(true);

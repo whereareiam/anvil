@@ -1,9 +1,7 @@
 package me.whereareiam.anvil.environment.cache.filesystem;
 
 import lombok.AccessLevel;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.experimental.Accessors;
 import me.whereareiam.anvil.environment.cache.api.CacheWrite;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,8 +26,6 @@ import java.util.UUID;
  */
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 final class StagedWrite implements CacheWrite {
-	@Getter
-	@Accessors(fluent = true)
 	private final @NotNull Path path;
 	private final @NotNull Path target;
 	private final @NotNull Publication publication;
@@ -45,6 +41,11 @@ final class StagedWrite implements CacheWrite {
 
 	static @NotNull StagedWrite replacement(@NotNull Path path, @NotNull Path target) {
 		return new StagedWrite(path, target, Publication.PATH);
+	}
+
+	@Override
+	public @NotNull Path path() {
+		return path;
 	}
 
 	@Override

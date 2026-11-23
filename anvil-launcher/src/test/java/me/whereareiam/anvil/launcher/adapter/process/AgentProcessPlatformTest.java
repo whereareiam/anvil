@@ -1,7 +1,7 @@
 package me.whereareiam.anvil.launcher.adapter.process;
 
-import me.whereareiam.anvil.agent.api.model.AgentPlayerEvent;
 import me.whereareiam.anvil.agent.api.model.AgentOperations;
+import me.whereareiam.anvil.agent.api.model.AgentPlayerEvent;
 import me.whereareiam.anvil.agent.api.model.AgentProfile;
 import me.whereareiam.anvil.agent.api.model.transport.command.AgentCommandRequest;
 import me.whereareiam.anvil.agent.api.model.transport.command.AgentCommandResponse;

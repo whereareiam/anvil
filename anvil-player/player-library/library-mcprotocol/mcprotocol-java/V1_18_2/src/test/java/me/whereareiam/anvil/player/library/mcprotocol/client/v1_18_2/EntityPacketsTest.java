@@ -165,7 +165,8 @@ class EntityPacketsTest {
 		add(7, EntityType.ITEM);
 		add(8, EntityType.ITEM);
 
-		assertEquals(new ClientboundRemoveEntities(List.of(new EntityId(7))), packets.decode(new ClientboundRemoveEntitiesPacket(new int[]{7})));
+		assertEquals(new ClientboundRemoveEntities(List.of(new EntityId(7))),
+				packets.decode(new ClientboundRemoveEntitiesPacket(new int[]{7})));
 		assertEquals(List.of(), decodeData(data(7, new ObjectEntityMetadata<>(8, MetadataType.ITEM, null))));
 		assertEquals(List.of(new ShownItem(null)), decodeData(data(8, new ObjectEntityMetadata<>(8, MetadataType.ITEM, null))));
 

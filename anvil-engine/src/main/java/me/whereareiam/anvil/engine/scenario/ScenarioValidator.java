@@ -11,9 +11,9 @@ import me.whereareiam.anvil.api.type.ProcessLifetime;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.time.Duration;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -58,7 +58,10 @@ public final class ScenarioValidator {
 		try {
 			if (InetAddress.getByName(scenario.getNetworkPolicy().getBindAddress()).isLoopbackAddress()) return;
 		} catch (UnknownHostException failure) {
-			throw new ScenarioValidationException("Invalid scenario bind address: " + scenario.getNetworkPolicy().getBindAddress(), failure);
+			throw new ScenarioValidationException(
+					"Invalid scenario bind address: " + scenario.getNetworkPolicy().getBindAddress(),
+					failure
+			);
 		}
 		if (!scenario.isManual() || !scenario.getNetworkPolicy().isAllowLanBinding())
 			throw new ScenarioValidationException("Non-loopback binding requires a manual scenario and allowLanBinding=true");

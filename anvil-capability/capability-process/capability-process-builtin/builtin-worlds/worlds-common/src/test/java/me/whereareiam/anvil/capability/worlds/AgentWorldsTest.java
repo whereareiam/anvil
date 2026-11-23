@@ -308,7 +308,11 @@ class AgentWorldsTest {
 
 	private static AgentWorldOutcome created(String key) {
 		return AgentWorldOutcome.builder()
-				.world(AgentWorld.builder().key("minecraft:" + key).kind("OVERWORLD").spawn(location("minecraft:" + key, 0.5, 64, 0.5)).build())
+				.world(AgentWorld.builder()
+						.key("minecraft:" + key)
+						.kind("OVERWORLD")
+						.spawn(location("minecraft:" + key, 0.5, 64, 0.5))
+						.build())
 				.build();
 	}
 

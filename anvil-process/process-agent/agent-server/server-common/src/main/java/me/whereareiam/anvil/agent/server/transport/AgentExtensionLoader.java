@@ -25,7 +25,9 @@ final class AgentExtensionLoader implements AutoCloseable {
 			if (Files.isDirectory(directory))
 				try (var paths = Files.list(directory)) {
 					for (Path path : paths.filter(Files::isRegularFile)
-							.filter(path -> path.getFileName().toString().endsWith(".jar")).sorted().collect(Collectors.toUnmodifiableList()))
+							.filter(path -> path.getFileName().toString().endsWith(".jar"))
+							.sorted()
+							.collect(Collectors.toUnmodifiableList()))
 						artifacts.add(path.toUri().toURL());
 				}
 			loader = new URLClassLoader(artifacts.toArray(URL[]::new), parent);

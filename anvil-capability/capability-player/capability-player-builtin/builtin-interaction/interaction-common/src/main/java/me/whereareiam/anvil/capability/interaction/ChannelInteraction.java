@@ -2,13 +2,13 @@ package me.whereareiam.anvil.capability.interaction;
 
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.anvil.capability.interaction.channel.InteractionChannel;
-import me.whereareiam.anvil.capability.world.model.block.BlockPosition;
 import me.whereareiam.anvil.capability.interaction.model.BlockUse;
 import me.whereareiam.anvil.capability.interaction.model.EntityUse;
 import me.whereareiam.anvil.capability.interaction.model.ItemUse;
 import me.whereareiam.anvil.capability.interaction.type.BlockFace;
 import me.whereareiam.anvil.capability.interaction.type.EntityInteraction;
 import me.whereareiam.anvil.capability.interaction.type.Hand;
+import me.whereareiam.anvil.capability.world.model.block.BlockPosition;
 import me.whereareiam.anvil.player.api.channel.ProtocolChannel;
 import org.jetbrains.annotations.NotNull;
 

@@ -1,9 +1,9 @@
 package me.whereareiam.anvil.agent.client.transport.connection;
 
-import me.whereareiam.anvil.agent.client.api.AgentClient;
-import me.whereareiam.anvil.agent.client.api.connection.AgentConnectionProvider;
 import me.whereareiam.anvil.agent.api.exception.AgentException;
 import me.whereareiam.anvil.agent.api.model.AgentOperations;
+import me.whereareiam.anvil.agent.client.api.AgentClient;
+import me.whereareiam.anvil.agent.client.api.connection.AgentConnectionProvider;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;

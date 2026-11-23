@@ -51,7 +51,8 @@ final class VelocityConfiguration {
 
 		ObjectNode servers = config.putObject("servers");
 		for (String server : proxy.getServers()) {
-			servers.put(server, context.getProcessAddresses().get(server).getHostString() + ":" + context.getProcessAddresses().get(server).getPort());
+			servers.put(server, context.getProcessAddresses().get(server).getHostString() + ":"
+					+ context.getProcessAddresses().get(server).getPort());
 		}
 
 		servers.putArray("try").add(proxy.getDefaultServer());

@@ -37,7 +37,16 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ProcessCapabilityRuntimeTest {
 	@Test
@@ -162,7 +171,9 @@ class ProcessCapabilityRuntimeTest {
 			return context::processName;
 		}, Set.of());
 		var composition = composition(List.of("first", "second"), List.of(provider));
-		ProcessGroup processes = composition.bind(group(composition, List.of("first", "second"), successful -> events.add("processes:" + successful)));
+		ProcessGroup processes = composition.bind(
+				group(composition, List.of("first", "second"), successful -> events.add("processes:" + successful))
+		);
 
 		assertSame(failure, assertThrows(AssertionError.class, processes::startAll));
 		assertEquals(List.of("second"), events);
@@ -330,12 +341,17 @@ class ProcessCapabilityRuntimeTest {
 		List<String> events = new ArrayList<>();
 		var provider = provider("identity", OwnerIdentity.class, context -> {
 			context.on(ScenarioFinished.class, finished -> events.add("first-action:" + context.processName() + ":" + finished.isPassed()));
-			context.on(ScenarioFinished.class, finished -> events.add("second-action:" + context.processName() + ":" + finished.isPassed()));
+			context.on(
+					ScenarioFinished.class,
+					finished -> events.add("second-action:" + context.processName() + ":" + finished.isPassed())
+			);
 			context.on(Closed.class, closed -> events.add("close:" + context.processName()));
 			return context::processName;
 		}, Set.of());
 		var composition = composition(List.of("first", "second"), List.of(provider));
-		var processes = composition.bind(group(composition, List.of("first", "second"), successful -> events.add("processes:" + successful)));
+		var processes = composition.bind(
+				group(composition, List.of("first", "second"), successful -> events.add("processes:" + successful))
+		);
 		processes.startAll();
 
 		processes.finish(true);
@@ -394,7 +410,9 @@ class ProcessCapabilityRuntimeTest {
 			return context::processName;
 		}, Set.of());
 		var composition = composition(List.of("first", "second"), List.of(provider));
-		var processes = composition.bind(group(composition, List.of("first", "second"), successful -> events.add("processes:" + successful)));
+		var processes = composition.bind(
+				group(composition, List.of("first", "second"), successful -> events.add("processes:" + successful))
+		);
 		processes.startAll();
 
 		assertSame(first, assertThrows(IllegalStateException.class, () -> processes.finish(true)));

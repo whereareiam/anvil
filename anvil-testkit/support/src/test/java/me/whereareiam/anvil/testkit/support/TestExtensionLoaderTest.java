@@ -13,7 +13,9 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TestExtensionLoaderTest {
 	private static final String PROTOCOL_SERVICE = "META-INF/services/me.whereareiam.anvil.player.api.library.ProtocolLibraryProvider";
@@ -73,7 +75,10 @@ class TestExtensionLoaderTest {
 			assertSame(parent, Thread.currentThread().getContextClassLoader());
 
 			try (var ignored = new TestExtensionLoader(FixtureArtifacts.extension(), true)) {
-				assertEquals(List.of("installed.Provider", "external.fixture.protocol.FixtureLibraryProvider"), descriptors(PROTOCOL_SERVICE));
+				assertEquals(
+						List.of("installed.Provider", "external.fixture.protocol.FixtureLibraryProvider"),
+						descriptors(PROTOCOL_SERVICE)
+				);
 			}
 		} finally {
 			Thread.currentThread().setContextClassLoader(previous);

@@ -5,16 +5,6 @@ import me.whereareiam.anvil.agent.client.ScenarioAgentDirectory;
 import me.whereareiam.anvil.agent.client.api.AgentClient;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.process.ContainerProcess;
-import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
-import me.whereareiam.anvil.environment.execution.api.ExecutionServices;
-import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
-import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
-import me.whereareiam.anvil.environment.execution.api.model.ImageLaunch;
-import me.whereareiam.anvil.environment.execution.api.model.ProcessLaunch;
-import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
-import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
-import me.whereareiam.anvil.environment.execution.api.process.ProcessTarget;
-import me.whereareiam.anvil.environment.execution.local.process.LocalProcess;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftProcess;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
@@ -25,7 +15,17 @@ import me.whereareiam.anvil.api.model.workspace.WorkspaceAsset;
 import me.whereareiam.anvil.api.model.workspace.WorkspacePlan;
 import me.whereareiam.anvil.api.type.ProcessState;
 import me.whereareiam.anvil.engine.config.EngineDefaults;
+import me.whereareiam.anvil.environment.execution.api.ExecutionProvider;
+import me.whereareiam.anvil.environment.execution.api.ExecutionServices;
+import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
+import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
+import me.whereareiam.anvil.environment.execution.api.model.ImageLaunch;
+import me.whereareiam.anvil.environment.execution.api.model.ProcessLaunch;
+import me.whereareiam.anvil.environment.execution.api.model.process.ProcessRequest;
+import me.whereareiam.anvil.environment.execution.api.process.ProcessExecution;
+import me.whereareiam.anvil.environment.execution.api.process.ProcessTarget;
 import me.whereareiam.anvil.environment.execution.local.LocalExecutionProvider;
+import me.whereareiam.anvil.environment.execution.local.process.LocalProcess;
 import me.whereareiam.anvil.environment.execution.managed.ManagedProcessService;
 import me.whereareiam.anvil.environment.execution.managed.process.PortSelection;
 import me.whereareiam.anvil.launcher.adapter.execution.ExecutionPlanMapper;
@@ -58,7 +58,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ProcessLauncherIntegrationTest {
 	@TempDir Path directory;
@@ -76,7 +81,10 @@ class ProcessLauncherIntegrationTest {
 		var scenario = AnvilScenario.builder().name("test").entrypoint("server").server(declaration)
 				.processTimeouts(ProcessTimeouts.builder().startup(Duration.ofSeconds(5)).build()).build();
 		var options = EngineDefaults.resolve(EngineOptions.builder().workDirectory(directory.resolve("work"))
-				.cacheDirectory(directory.resolve("cache")).eulaAccepted(true).processTimeouts(ProcessTimeouts.builder().shutdown(Duration.ofSeconds(2)).build()).build());
+				.cacheDirectory(directory.resolve("cache"))
+				.eulaAccepted(true)
+				.processTimeouts(ProcessTimeouts.builder().shutdown(Duration.ofSeconds(2)).build())
+				.build());
 		List<String> calls = new ArrayList<>();
 		List<String> tokens = new ArrayList<>();
 		List<Integer> ports = new ArrayList<>();
@@ -89,7 +97,10 @@ class ProcessLauncherIntegrationTest {
 			@Override
 			public @NotNull Class<? extends MinecraftProcess> configurationType() { return MinecraftServer.class; }
 			@Override
-			public @NotNull ResolvedDistribution resolve(@NotNull MinecraftProcess process, @NotNull PlatformContext context) throws IOException {
+			public @NotNull ResolvedDistribution resolve(
+					@NotNull MinecraftProcess process,
+					@NotNull PlatformContext context
+			) throws IOException {
 				assertEquals("first", Files.readString(context.getWorkDirectory().resolve("installed.txt")));
 				preparation.add("resolve");
 				resolutions.incrementAndGet();
@@ -107,7 +118,9 @@ class ProcessLauncherIntegrationTest {
 				return ProcessLauncherIntegrationTest.class.getResource("/me/whereareiam/anvil/launcher/assembly/fixture-versions.toml");
 			}
 			@Override
-			public PlatformAgentDescriptor platformAgent() { return PlatformAgentDescriptor.builder().entrypointClassName("fixture").build(); }
+			public PlatformAgentDescriptor platformAgent() {
+				return PlatformAgentDescriptor.builder().entrypointClassName("fixture").build();
+			}
 		};
 		try (var workbench = new LocalWorkbench(options, Map.of("local", new LocalExecutionProvider()))) {
 			var platforms = new DefaultPlatformPlanner(options, Map.of(provider.id(), provider),
@@ -307,7 +320,9 @@ class ProcessLauncherIntegrationTest {
 							environment = ((ImageLaunch) launch).getEnvironment();
 							started.incrementAndGet();
 							try {
-								return new LocalProcess(new ProcessBuilder("sh", "-c", "echo READY; exec sleep 60").redirectErrorStream(true).start());
+								return new LocalProcess(new ProcessBuilder("sh", "-c", "echo READY; exec sleep 60")
+										.redirectErrorStream(true)
+										.start());
 							} catch (IOException failure) {
 								throw new UncheckedIOException(failure);
 							}

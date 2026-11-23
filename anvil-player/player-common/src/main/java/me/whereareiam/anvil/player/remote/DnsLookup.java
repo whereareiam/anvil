@@ -3,13 +3,13 @@ package me.whereareiam.anvil.player.remote;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Hashtable;
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.Hashtable;
 
 /**
  * The system's name lookups, configured as the vanilla client configures them: SRV records through the JDK's JNDI

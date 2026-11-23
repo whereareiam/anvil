@@ -134,7 +134,10 @@ class PlayerCapabilityRuntimeTest {
 			throw new AssertionError("A dependent of an unavailable capability must not be created");
 		});
 		StubPlayer stub = new StubPlayer();
-		stub.channel = new TestProtocolChannel(Set.of("installed"), Map.of("linked", "NoSuchMethodError: 'void example.Packet.<init>(int)'"));
+		stub.channel = new TestProtocolChannel(
+				Set.of("installed"),
+				Map.of("linked", "NoSuchMethodError: 'void example.Packet.<init>(int)'")
+		);
 		var output = new ByteArrayOutputStream();
 		var previous = System.err;
 
@@ -176,7 +179,8 @@ class PlayerCapabilityRuntimeTest {
 		SimulatedPlayer player;
 		System.setErr(new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8));
 		try {
-			player = new PlayerCapabilityRuntime(List.of(), List.of(unknown)).compose(stub, null, PlayerConnection.to("proxy"), ignored -> { });
+			player = new PlayerCapabilityRuntime(List.of(), List.of(unknown))
+					.compose(stub, null, PlayerConnection.to("proxy"), ignored -> { });
 		} finally {
 			System.setErr(previous);
 		}
@@ -193,7 +197,8 @@ class PlayerCapabilityRuntimeTest {
 				context -> () -> context.requireService(String.class));
 		StubPlayer stub = new StubPlayer();
 
-		SimulatedPlayer player = new PlayerCapabilityRuntime(List.of(), List.of(serviceBacked)).compose(stub, null, PlayerConnection.to("proxy"), ignored -> { });
+		SimulatedPlayer player = new PlayerCapabilityRuntime(List.of(), List.of(serviceBacked))
+				.compose(stub, null, PlayerConnection.to("proxy"), ignored -> { });
 
 		assertTrue(player.hasCapability(DependentCapability.class));
 		assertEquals("service", player.capability(DependentCapability.class).value());
@@ -406,7 +411,9 @@ class PlayerCapabilityRuntimeTest {
 					return () -> "independent";
 				});
 		for (var providers : List.of(List.of(base, dependent), List.of(dependent, base)))
-			new PlayerCapabilityRuntime(List.of(), providers).compose(new StubPlayer(), null, PlayerConnection.to("proxy"), ignored -> { }).destroy();
+			new PlayerCapabilityRuntime(List.of(), providers)
+					.compose(new StubPlayer(), null, PlayerConnection.to("proxy"), ignored -> { })
+					.destroy();
 	}
 
 	@Test

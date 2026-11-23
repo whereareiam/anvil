@@ -45,7 +45,10 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Verifies external protocol-library selection and capability validation without launching Minecraft.
@@ -67,8 +70,13 @@ class ExternalProviderDiscoveryIntegrationTest {
 	void explicitPlayerScenarioAndEngineChoicesSelectALibraryWhileAnUndeclaredTieIsRefused() throws Exception {
 		try (var ignored = new TestExtensionLoader(FixtureArtifacts.extension(), true)) {
 			List<String> composed = new ArrayList<>();
-			try (var players = new DefaultPlayerService(ProtocolLibraryRegistry.discover(), options(), options().getCacheDirectory(), artifacts(),
-					launch -> { throw new AssertionError("No worker starts before a player connects"); })) {
+			try (var players = new DefaultPlayerService(
+					ProtocolLibraryRegistry.discover(),
+					options(),
+					options().getCacheDirectory(),
+					artifacts(),
+					launch -> { throw new AssertionError("No worker starts before a player connects"); }
+			)) {
 				AnvilScenario scenario = scenario();
 				players.prepare(scenario);
 				PlayerManager manager = players.open(scenario, new Processes(), composer(composed), true);
@@ -103,7 +111,10 @@ class ExternalProviderDiscoveryIntegrationTest {
 	void reportsMissingCapabilitiesBeforeCreatingTheLibrary() throws Exception {
 		try (var ignored = new TestExtensionLoader(FixtureArtifacts.brokenExtension(), false);
 		     var engine = AnvilLauncher.create(options().toBuilder().eulaAccepted(true).build())) {
-			var failure = assertThrows(CapabilityException.class, () -> engine.start(scenario().toBuilder().name("missing-capability").build()));
+			var failure = assertThrows(
+					CapabilityException.class,
+					() -> engine.start(scenario().toBuilder().name("missing-capability").build())
+			);
 			assertTrue(failure.getMessage().contains("missing capabilities"));
 			assertFalse(Files.exists(temporary.resolve("cache/fixture-broken.lifecycle")));
 		}

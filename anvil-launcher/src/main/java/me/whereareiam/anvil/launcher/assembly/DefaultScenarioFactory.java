@@ -47,7 +47,9 @@ public final class DefaultScenarioFactory implements ScenarioFactory {
 		Stream.concat(scenario.getServers().stream(), scenario.getProxies().stream())
 				.map(MinecraftProcess::getSessionServer)
 				.filter(server -> server != null && server.getHost() != null && server.getPort() > 0)
-				.filter(server -> server.getHost().equals("localhost") || server.getHost().startsWith("127.") || server.getHost().equals("[::1]"))
+				.filter(server -> server.getHost().equals("localhost")
+						|| server.getHost().startsWith("127.")
+						|| server.getHost().equals("[::1]"))
 				.forEach(server -> {
 					try {
 						workbench.expose(server.getPort());

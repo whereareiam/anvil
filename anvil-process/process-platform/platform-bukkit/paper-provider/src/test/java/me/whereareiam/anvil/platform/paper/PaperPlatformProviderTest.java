@@ -32,7 +32,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PaperPlatformProviderTest {
 	@TempDir
@@ -45,7 +48,8 @@ class PaperPlatformProviderTest {
 		Path work = Files.createDirectory(run.resolve("server"));
 		Files.writeString(work.resolve("server.properties"), "server-port=1\noverlay-value=present\n");
 		Files.createDirectories(work.resolve("config"));
-		Files.writeString(work.resolve("config/paper-global.yml"), "proxies:\n  proxy-protocol: false\n  velocity:\n    enabled: false\nother: retained\n");
+		Files.writeString(work.resolve("config/paper-global.yml"),
+				"proxies:\n  proxy-protocol: false\n  velocity:\n    enabled: false\nother: retained\n");
 		Files.writeString(work.resolve("spigot.yml"), "settings:\n  sample: retained\n  bungeecord: true\n");
 		MinecraftServer server = MinecraftServer.builder()
 				.name("server")
@@ -93,7 +97,7 @@ class PaperPlatformProviderTest {
 		assertEquals("test-secret", configured.at("/proxies/velocity/secret").asText());
 		provider.configure(server, context.toBuilder().forwarding(ForwardingConfiguration.builder().build()).build());
 		configured = yaml.readTree(work.resolve("config/paper-global.yml").toFile());
-        assertFalse(configured.at("/proxies/velocity/enabled").asBoolean());
+		assertFalse(configured.at("/proxies/velocity/enabled").asBoolean());
 		assertTrue(configured.at("/proxies/velocity/secret").isMissingNode());
 		assertEquals("retained", yaml.readTree(work.resolve("spigot.yml").toFile()).at("/settings/sample").asText());
 		assertFalse(Files.exists(work.resolve("paper.yml")), "Paper 1.19+ reads forwarding from paper-global.yml only");
@@ -103,7 +107,8 @@ class PaperPlatformProviderTest {
 	@CsvSource({"1.16.5", "1.17.1", "1.18.2"})
 	void writesVelocitySupportToPaperYmlBeforeOneNineteen(String version) throws Exception {
 		Path work = Files.createDirectories(temporary.resolve("legacy-" + version));
-		Files.writeString(work.resolve("paper.yml"), "config-version: 20\nsettings:\n  velocity-support:\n    enabled: false\n  retained: true\n");
+		Files.writeString(work.resolve("paper.yml"),
+				"config-version: 20\nsettings:\n  velocity-support:\n    enabled: false\n  retained: true\n");
 		MinecraftServer server = MinecraftServer.builder().name("server").platform(Platforms.PAPER)
 				.distribution(Distribution.remote(version, "1")).build();
 		AnvilScenario scenario = AnvilScenario.builder().name("legacy").entrypoint("server").server(server).build();
@@ -181,7 +186,8 @@ class PaperPlatformProviderTest {
 				.files(new WorkspaceProcessFiles(work, new WorkspaceFiles()))
 				.bindAddress("127.0.0.1")
 				.port(25566)
-				.processAddresses(ports.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> new InetSocketAddress("127.0.0.1", entry.getValue()))))
+				.processAddresses(ports.entrySet().stream()
+						.collect(Collectors.toMap(Map.Entry::getKey, entry -> new InetSocketAddress("127.0.0.1", entry.getValue()))))
 				.eulaAccepted(true)
 				.artifactSource(artifactSource())
 				.forwarding(ForwardingConfiguration.builder().mode(ForwardingMode.MODERN)

@@ -27,7 +27,8 @@ class PlatformEventLogTest {
 		AgentPlayerEventsResponse later = log.after(1);
 
 		assertEquals(List.of(2L, 3L), later.getEvents().stream().map(AgentPlayerEvent::getPosition).toList());
-		assertEquals(List.of(AgentPlayerEventType.LEFT, AgentPlayerEventType.JOINED), later.getEvents().stream().map(AgentPlayerEvent::getType).toList());
+		assertEquals(List.of(AgentPlayerEventType.LEFT, AgentPlayerEventType.JOINED),
+				later.getEvents().stream().map(AgentPlayerEvent::getType).toList());
 		assertEquals(List.of("auth", "lobby"), later.getEvents().stream().map(AgentPlayerEvent::getServer).toList());
 		assertFalse(later.isTruncated());
 		assertEquals(later.getGeneration(), log.after(0).getGeneration());

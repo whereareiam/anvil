@@ -5,5 +5,7 @@ package me.whereareiam.anvil.player.api.model.text.content;
  * selector, a score, NBT, a sprite or a player head. A component of each kind is drawn as the game draws it; see
  * {@link me.whereareiam.anvil.player.api.model.text.Text#spans()} for the text each kind contributes.
  */
-public sealed interface TextContent permits LiteralContent, TranslatedContent, KeybindContent, SelectorContent, ScoreContent, NbtContent, SpriteContent, PlayerHeadContent {
+public sealed interface TextContent
+		permits LiteralContent, TranslatedContent, KeybindContent, SelectorContent, ScoreContent, NbtContent, SpriteContent,
+		PlayerHeadContent {
 }

@@ -2,11 +2,11 @@ package me.whereareiam.anvil.tooling.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.experimental.UtilityClass;
-import me.whereareiam.anvil.tooling.api.model.process.console.ConsoleCommandResult;
-import me.whereareiam.anvil.tooling.api.model.process.console.ConsoleCommandRequest;
-import me.whereareiam.anvil.tooling.api.model.process.ProcessControlRequest;
 import me.whereareiam.anvil.tooling.api.model.SessionSnapshot;
 import me.whereareiam.anvil.tooling.api.model.ToolingOperation;
+import me.whereareiam.anvil.tooling.api.model.process.ProcessControlRequest;
+import me.whereareiam.anvil.tooling.api.model.process.console.ConsoleCommandRequest;
+import me.whereareiam.anvil.tooling.api.model.process.console.ConsoleCommandResult;
 import org.jetbrains.annotations.NotNull;
 
 /**

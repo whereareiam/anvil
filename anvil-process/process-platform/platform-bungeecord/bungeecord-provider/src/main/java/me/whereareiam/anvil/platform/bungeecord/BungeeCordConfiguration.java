@@ -46,7 +46,8 @@ final class BungeeCordConfiguration {
 		config.putArray("listeners").add(listener(proxy, context));
 		ObjectNode servers = config.putObject("servers");
 		for (String server : proxy.getServers())
-			servers.putObject(server).put("address", context.getProcessAddresses().get(server).getHostString() + ":" + context.getProcessAddresses().get(server).getPort())
+			servers.putObject(server).put("address", context.getProcessAddresses().get(server).getHostString() + ":"
+					+ context.getProcessAddresses().get(server).getPort())
 					.put("motd", "Anvil server " + server).put("restricted", false);
 
 		files.write(CONFIGURATION, yaml.writeValueAsString(config));

@@ -26,7 +26,7 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.time.Duration;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class WireMapperTest {
 	private final ObjectMapper mapper = WireMapper.create();
@@ -42,7 +42,10 @@ class WireMapperTest {
 						.distribution(Distribution.remote("1.21.11", "132"))
 						.javaSelection(JavaSelection.builder()
 								.requirement(JavaRequirement.builder().featureVersion(21).build())
-								.source(JavaArchive.builder().uri(URI.create("https://example.com/jdk.tar.gz")).sha256("a".repeat(64)).build())
+								.source(JavaArchive.builder()
+										.uri(URI.create("https://example.com/jdk.tar.gz"))
+										.sha256("a".repeat(64))
+										.build())
 								.build())
 						.workspace(WorkspacePlan.builder()
 								.asset(WorkspaceAsset.builder()

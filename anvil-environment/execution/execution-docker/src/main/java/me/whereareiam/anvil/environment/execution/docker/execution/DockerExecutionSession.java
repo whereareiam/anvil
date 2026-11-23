@@ -75,7 +75,9 @@ final class DockerExecutionSession implements ExecutionSession {
 		if (request.getJavaSelection() == null)
 			throw new ProvisioningException("Process '" + request.getName() + "' names neither Java nor an image");
 		if (request.getJavaSelection().getSource() != null)
-			throw new ProvisioningException("Docker execution does not support explicit host Java sources; configure a Docker image instead");
+			throw new ProvisioningException(
+					"Docker execution does not support explicit host Java sources; configure a Docker image instead"
+			);
 
 		String image = images.resolve(request);
 		String alias = alias(request);

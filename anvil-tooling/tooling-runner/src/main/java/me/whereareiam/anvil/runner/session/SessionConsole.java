@@ -1,12 +1,13 @@
 package me.whereareiam.anvil.runner.session;
 
 import me.whereareiam.anvil.api.model.PresentationMetadata;
-import me.whereareiam.anvil.runner.scenario.DisplayNameResolver;
 import me.whereareiam.anvil.api.model.process.console.ConsoleOutput;
 import me.whereareiam.anvil.api.process.ConsoleWatch;
 import me.whereareiam.anvil.api.process.RunningProcess;
+import me.whereareiam.anvil.runner.scenario.DisplayNameResolver;
 import me.whereareiam.anvil.tooling.api.model.LogEvent;
 import me.whereareiam.anvil.tooling.api.model.process.ProcessSnapshot;
+import me.whereareiam.anvil.tooling.api.type.ProcessState;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -60,7 +61,9 @@ public final class SessionConsole {
 				RunningProcess process = cursor.process;
 				return ProcessSnapshot.builder().name(process.name()).executionId(process.executionId())
 						.displayName(DisplayNameResolver.resolve(process.name(), metadata.get(process.name())))
-						.state(me.whereareiam.anvil.tooling.api.type.ProcessState.fromWireValue(process.state().name())).host(process.address().getHostString()).port(process.address().getPort())
+						.state(ProcessState.fromWireValue(process.state().name()))
+						.host(process.address().getHostString())
+						.port(process.address().getPort())
 						.workDirectory(process.files().location()).build();
 			}).toList();
 		}
@@ -83,7 +86,8 @@ public final class SessionConsole {
 		pendingLogs.clear();
 		Stream.concat(retiredConsoles.stream(), consoles.values().stream()).forEach(cursor -> {
 			ConsoleOutput output = cursor.output.read(2000);
-			if (output.isTruncated()) events.add(cursor.event(cursor.sequence, "[Anvil] Earlier console output was evicted from bounded history."));
+			if (output.isTruncated())
+				events.add(cursor.event(cursor.sequence, "[Anvil] Earlier console output was evicted from bounded history."));
 			output.getLines().forEach(line -> events.add(cursor.event(line.getSequence(), line.getText())));
 			if (!output.getLines().isEmpty()) cursor.sequence = output.getLines().getLast().getSequence();
 			cursor.drained = output.isClosed() && output.getLines().size() < 2000;

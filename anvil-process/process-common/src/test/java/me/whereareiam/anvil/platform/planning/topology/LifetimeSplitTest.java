@@ -53,7 +53,8 @@ class LifetimeSplitTest {
 		PlatformPlan own = later.own(running.retained());
 
 		assertEquals(Set.of("proxy", "fresh"), own.getProcesses().keySet());
-		assertEquals("first", own.getProcesses().get("proxy").getForwarding().getSecret(), "The proxy adopts the secret its servers run with");
+		assertEquals("first",
+				own.getProcesses().get("proxy").getForwarding().getSecret(), "The proxy adopts the secret its servers run with");
 		assertEquals("first", own.getProcesses().get("fresh").getForwarding().getSecret(), "So does a server of the same forwarding group");
 		assertEquals("second", own.getScenario().getName());
 	}

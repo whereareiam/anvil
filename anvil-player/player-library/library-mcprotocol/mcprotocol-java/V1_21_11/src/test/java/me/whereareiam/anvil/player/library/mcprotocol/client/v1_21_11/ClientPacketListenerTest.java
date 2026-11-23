@@ -38,8 +38,8 @@ class ClientPacketListenerTest {
 	private final List<String> events = new ArrayList<>();
 	private final List<Packet> sent = new ArrayList<>();
 	private final ClientSession session = session();
-	private final ClientPacketListener listener = new ClientPacketListener(session, new TestClientListener<>(events), McProtocolClientAdapter.packets(PacketDemand.EVERY),
-			new TextTranslator());
+	private final ClientPacketListener listener = new ClientPacketListener(session, new TestClientListener<>(events),
+			McProtocolClientAdapter.packets(PacketDemand.EVERY), new TextTranslator());
 
 	@Test
 	void reportsTheLoginWithTheGrantedProfile() {
@@ -82,9 +82,11 @@ class ClientPacketListenerTest {
 	void flattensDisconnectReasonsToPlainTextWithTranslationArguments() {
 		receive(new ClientboundDisconnectPacket(Component.translatable("multiplayer.disconnect.kicked", Component.text("Alice"))
 				.append(Component.text(" by Anvil"))));
-		receive(new ClientboundLoginDisconnectPacket(Component.text("Outdated: ").append(Component.translatable("version", Component.text("1.21.11")))));
+		receive(new ClientboundLoginDisconnectPacket(Component.text("Outdated: ")
+				.append(Component.translatable("version", Component.text("1.21.11")))));
 
-		assertEquals(List.of("disconnected SERVER multiplayer.disconnect.kicked Alice by Anvil", "disconnected SERVER Outdated: version 1.21.11"), events);
+		assertEquals(List.of("disconnected SERVER multiplayer.disconnect.kicked Alice by Anvil",
+				"disconnected SERVER Outdated: version 1.21.11"), events);
 	}
 
 	@Test

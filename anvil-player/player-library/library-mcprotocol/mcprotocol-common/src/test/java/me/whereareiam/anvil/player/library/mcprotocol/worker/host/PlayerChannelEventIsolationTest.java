@@ -25,7 +25,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class PlayerChannelEventIsolationTest {
 	@ParameterizedTest
@@ -51,9 +56,14 @@ class PlayerChannelEventIsolationTest {
 					}
 				});
 				if (badSchema)
-					aliceChannel.subscribe(new EventDescriptor<>(EventWorkerExtension.CHANGED.getId(), SlotSelection.class), ignored -> fail("schema must reject this event"));
+					aliceChannel.subscribe(
+							new EventDescriptor<>(EventWorkerExtension.CHANGED.getId(), SlotSelection.class),
+							ignored -> fail("schema must reject this event")
+					);
 				else
-					aliceChannel.subscribe(EventWorkerExtension.CHANGED, ignored -> { throw new IllegalArgumentException("custom listener failed"); });
+					aliceChannel.subscribe(EventWorkerExtension.CHANGED, ignored -> {
+						throw new IllegalArgumentException("custom listener failed");
+					});
 
 				bobChannel.request(EventWorkerExtension.EMIT, new MessageText("nested reply"));
 				assertTrue(entered.await(3, TimeUnit.SECONDS));

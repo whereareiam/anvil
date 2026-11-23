@@ -9,9 +9,9 @@ import me.whereareiam.anvil.api.model.java.local.LocalJavaHome;
 import me.whereareiam.anvil.api.type.ProcessPriority;
 import me.whereareiam.anvil.api.type.network.NetworkExposure;
 import me.whereareiam.anvil.api.type.network.NetworkServerAccess;
+import me.whereareiam.anvil.environment.execution.api.ExecutionServices;
 import me.whereareiam.anvil.environment.execution.api.ExecutionSession;
 import me.whereareiam.anvil.environment.execution.api.PortReservations;
-import me.whereareiam.anvil.environment.execution.api.ExecutionServices;
 import me.whereareiam.anvil.environment.execution.api.model.ExecutionContext;
 import me.whereareiam.anvil.environment.execution.api.model.JavaCommand;
 import me.whereareiam.anvil.environment.execution.api.model.process.ContainerImage;
@@ -31,7 +31,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LocalExecutionSessionTest {
 	@TempDir
@@ -61,7 +64,10 @@ class LocalExecutionSessionTest {
 	@Test
 	void releasesTheReservedPortsOfItsProcessesWhenItCloses() {
 		List<Integer> reserved = new ArrayList<>();
-		try (ExecutionSession session = new LocalExecutionProvider().open(ExecutionContext.builder().build(), services((request, source) -> Path.of("java")))) {
+		try (ExecutionSession session = new LocalExecutionProvider().open(
+				ExecutionContext.builder().build(),
+				services((request, source) -> Path.of("java"))
+		)) {
 			var target = session.prepare(request("server", JavaRequirement.builder().featureVersion(21).build(), null));
 			reserved.add(target.address().getPort());
 			reserved.add(target.agentAddress().getPort());
@@ -74,7 +80,10 @@ class LocalExecutionSessionTest {
 	@Test
 	void reservesAPortForEachListenerThatPeersReachAtTheSameAddress() {
 		List<Integer> reserved = new ArrayList<>();
-		try (ExecutionSession session = new LocalExecutionProvider().open(ExecutionContext.builder().build(), services((request, source) -> Path.of("java")))) {
+		try (ExecutionSession session = new LocalExecutionProvider().open(
+				ExecutionContext.builder().build(),
+				services((request, source) -> Path.of("java"))
+		)) {
 			var target = session.prepare(request("proxy", JavaRequirement.builder().featureVersion(21).build(), null)
 					.toBuilder().listener("link").build());
 			InetSocketAddress link = target.listeners().get("link");
@@ -90,7 +99,10 @@ class LocalExecutionSessionTest {
 
 	@Test
 	void refusesAContainerImageWithTheProviderToUseInstead() {
-		try (ExecutionSession session = new LocalExecutionProvider().open(ExecutionContext.builder().build(), services((request, source) -> Path.of("java")))) {
+		try (ExecutionSession session = new LocalExecutionProvider().open(
+				ExecutionContext.builder().build(),
+				services((request, source) -> Path.of("java"))
+		)) {
 			var image = ProcessRequest.builder().name("redis").workspace(directory.resolve("redis"))
 					.image(ContainerImage.builder().image("redis:7.2-alpine").port(6379).build()).build();
 
@@ -109,7 +121,10 @@ class LocalExecutionSessionTest {
 		Path fallback = directory.resolve("provider-jdk");
 		JavaSource explicit = JavaSource.executable(directory.resolve("explicit/bin/java"));
 		var provider = new LocalExecutionProvider(LocalExecutionSettings.builder().javaHome("default:21", fallback).build(), runtime);
-		try (ExecutionSession session = provider.open(ExecutionContext.builder().build(), services((request, source) -> { throw new AssertionError("Override must win"); }))) {
+		try (ExecutionSession session = provider.open(
+				ExecutionContext.builder().build(),
+				services((request, source) -> { throw new AssertionError("Override must win"); })
+		)) {
 			JavaRequirement requirement = JavaRequirement.builder().featureVersion(21).build();
 			session.prepare(request("explicit", requirement, explicit));
 			session.prepare(request("fallback", requirement, null));
@@ -124,7 +139,10 @@ class LocalExecutionSessionTest {
 						.backendNetworkExposure(NetworkExposure.PRIVATE).build()).build();
 		try (ExecutionSession session = new LocalExecutionProvider().open(context,
 				services((request, source) -> { throw new AssertionError("Must reject first"); }))) {
-			assertThrows(ProvisioningException.class, () -> session.prepare(request("server", JavaRequirement.builder().featureVersion(21).build(), null)));
+			assertThrows(
+					ProvisioningException.class,
+					() -> session.prepare(request("server", JavaRequirement.builder().featureVersion(21).build(), null))
+			);
 		}
 	}
 
@@ -174,7 +192,11 @@ class LocalExecutionSessionTest {
 	}
 
 	private ProcessRequest request(String name, JavaRequirement requirement, JavaSource source) {
-		return ProcessRequest.builder().name(name).workspace(directory.resolve(name)).javaSelection(JavaSelection.builder().requirement(requirement).source(source).build()).build();
+		return ProcessRequest.builder()
+				.name(name)
+				.workspace(directory.resolve(name))
+				.javaSelection(JavaSelection.builder().requirement(requirement).source(source).build())
+				.build();
 	}
 
 	/**

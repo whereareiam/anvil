@@ -8,10 +8,10 @@ import org.gradle.api.tasks.Input;
 import org.gradle.process.CommandLineArgumentProvider;
 import org.jetbrains.annotations.NotNull;
 
-import javax.inject.Inject;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import javax.inject.Inject;
 
 /**
  * Binds a produced artifact to JVM properties while retaining its Gradle file dependencies.

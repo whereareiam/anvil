@@ -83,7 +83,8 @@ class McProtocolClientPoolTest {
 			assertEquals("stopped before launch", stopped.getMessage());
 			Path directory = temporary.resolve("cache/protocol/mcprotocol/9.9.9-test");
 			assertEquals(List.of(
-					"https://repository.example/demo/protocol-9.9.9-test.jar -> " + directory.resolve("protocol-9.9.9-test.jar") + " " + PINNED
+					"https://repository.example/demo/protocol-9.9.9-test.jar -> " + directory.resolve("protocol-9.9.9-test.jar")
+							+ " " + PINNED
 			), resolved);
 		}
 	}

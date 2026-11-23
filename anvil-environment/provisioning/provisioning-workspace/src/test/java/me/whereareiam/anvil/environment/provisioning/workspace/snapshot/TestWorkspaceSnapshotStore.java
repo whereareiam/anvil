@@ -18,7 +18,11 @@ public final class TestWorkspaceSnapshotStore implements WorkspaceSnapshotStore 
 	private final Cache cache;
 
 	@Override
-	public boolean restore(@NotNull Path snapshot, @NotNull Path destination, @NotNull WorkspaceSnapshotTransfer transfer) throws IOException {
+	public boolean restore(
+			@NotNull Path snapshot,
+			@NotNull Path destination,
+			@NotNull WorkspaceSnapshotTransfer transfer
+	) throws IOException {
 		return transfer(snapshot, destination, transfer);
 	}
 

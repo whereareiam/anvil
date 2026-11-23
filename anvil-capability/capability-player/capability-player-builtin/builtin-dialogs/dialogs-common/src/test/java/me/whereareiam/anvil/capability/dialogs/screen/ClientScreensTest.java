@@ -43,7 +43,10 @@ class ClientScreensTest {
 	void clearsOnlyDialogsAndResetsEveryScreen() {
 		ClientScreens screens = screens(START);
 		screens.show(FIRST, null);
-		WaitingScreen waiting = assertInstanceOf(WaitingScreen.class, screens.after((DialogScreen) screens.screen(), DialogAfterAction.WAIT_FOR_RESPONSE));
+		WaitingScreen waiting = assertInstanceOf(
+				WaitingScreen.class,
+				screens.after((DialogScreen) screens.screen(), DialogAfterAction.WAIT_FOR_RESPONSE)
+		);
 		screens.set(waiting);
 
 		screens.clear();

@@ -1,11 +1,11 @@
 package me.whereareiam.anvil.runner.command;
 
 import lombok.RequiredArgsConstructor;
-import me.whereareiam.anvil.tooling.api.model.scenario.ScenarioDescriptor;
 import me.whereareiam.anvil.runner.type.RunnerCommandType;
-import me.whereareiam.anvil.tooling.api.model.process.ProcessSnapshot;
 import me.whereareiam.anvil.tooling.api.model.SessionSnapshot;
 import me.whereareiam.anvil.tooling.api.model.action.invocation.ActionResult;
+import me.whereareiam.anvil.tooling.api.model.process.ProcessSnapshot;
+import me.whereareiam.anvil.tooling.api.model.scenario.ScenarioDescriptor;
 import me.whereareiam.anvil.tooling.api.type.SessionState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -54,13 +54,16 @@ public final class RunnerTerminal {
 		if (snapshot.getActions().isEmpty()) output.println("No actions are available in this environment.");
 		for (var action : snapshot.getActions()) {
 			output.println(action.getDefinition().getId() + " " + action.getTarget().getType().name().toLowerCase()
-					+ " " + action.getTarget().getName() + (action.getAvailability().isEnabled() ? "" : " — " + action.getAvailability().getReason()));
+					+ " " + action.getTarget().getName()
+					+ (action.getAvailability().isEnabled() ? "" : " — " + action.getAvailability().getReason()));
 			for (var input : action.getDefinition().getInputs())
-				output.println("  " + input.getName() + ": " + input.getType().name().toLowerCase() + (input.isRequired() ? " (required)" : ""));
+				output.println("  " + input.getName() + ": " + input.getType().name().toLowerCase()
+						+ (input.isRequired() ? " (required)" : ""));
 		}
 		for (var observation : snapshot.getObservations())
 			output.println(observation.getTarget().getName() + " · " + (observation.getDefinition().getDisplayName() == null
-					? observation.getDefinition().getId() : observation.getDefinition().getDisplayName()) + ": " + observation.getValue().getText());
+					? observation.getDefinition().getId() : observation.getDefinition().getDisplayName())
+					+ ": " + observation.getValue().getText());
 		output.flush();
 	}
 

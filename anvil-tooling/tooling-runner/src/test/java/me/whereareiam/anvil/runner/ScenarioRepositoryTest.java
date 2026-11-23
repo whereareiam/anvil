@@ -8,11 +8,11 @@ import me.whereareiam.anvil.tooling.api.model.scenario.ScenarioDescriptor;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -53,7 +53,9 @@ class ScenarioRepositoryTest {
 
 	@Test
 	void reportsAmbiguousScenarioNamesWithDefinitionIdentities() throws Exception {
-		ScenarioRepository repository = ScenarioRepository.load(List.of(RegistrationScenario.class.getName(), DuplicateRegistrationScenario.class.getName()));
+		ScenarioRepository repository = ScenarioRepository.load(
+				List.of(RegistrationScenario.class.getName(), DuplicateRegistrationScenario.class.getName())
+		);
 
 		assertThrows(IllegalArgumentException.class, () -> repository.require("registration"));
 	}

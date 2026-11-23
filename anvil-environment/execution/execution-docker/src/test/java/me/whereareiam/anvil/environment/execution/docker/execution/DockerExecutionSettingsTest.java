@@ -18,7 +18,10 @@ class DockerExecutionSettingsTest {
 	@Test
 	void mapsTheExactPlannedFeatureVersionPerDistribution() {
 		assertEquals("eclipse-temurin:11-jdk", settings.image(JavaRequirement.builder().featureVersion(11).build()));
-		assertEquals("eclipse-temurin:17-jdk", settings.image(JavaRequirement.builder().featureVersion(17).distribution("temurin").build()));
+		assertEquals(
+				"eclipse-temurin:17-jdk",
+				settings.image(JavaRequirement.builder().featureVersion(17).distribution("temurin").build())
+		);
 		assertEquals("ghcr.io/graalvm/jdk-community:21",
 				settings.image(JavaRequirement.builder().featureVersion(21).distribution("graalvm-community").build()));
 	}

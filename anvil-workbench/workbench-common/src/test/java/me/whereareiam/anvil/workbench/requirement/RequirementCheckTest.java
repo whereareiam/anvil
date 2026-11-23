@@ -15,7 +15,9 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Path;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class RequirementCheckTest {
 	private final WorkbenchFacts facts = WorkbenchFacts.builder()
@@ -114,6 +116,10 @@ class RequirementCheckTest {
 		return AnvilScenario.builder()
 				.name("scenario")
 				.entrypoint("server")
-				.server(MinecraftServer.builder().name("server").platform("paper").distribution(Distribution.remote("1.21.11", "132")).build());
+				.server(MinecraftServer.builder()
+						.name("server")
+						.platform("paper")
+						.distribution(Distribution.remote("1.21.11", "132"))
+						.build());
 	}
 }

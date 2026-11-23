@@ -86,7 +86,11 @@ class CommandVerifierTest {
 		nodes.get(execute).child(add(nodes, literal("run").redirect(0)));
 		return new CommandTree(nodes.stream().map(CommandTreeNode.CommandTreeNodeBuilder::build).toList(), 0);
 	}
-	private static int command(List<CommandTreeNode.CommandTreeNodeBuilder> nodes, String name, CommandTreeNode.CommandTreeNodeBuilder argument) {
+	private static int command(
+			List<CommandTreeNode.CommandTreeNodeBuilder> nodes,
+			String name,
+			CommandTreeNode.CommandTreeNodeBuilder argument
+	) {
 		int literal = add(nodes, literal(name));
 		nodes.getFirst().child(literal);
 		nodes.get(literal).child(add(nodes, argument));

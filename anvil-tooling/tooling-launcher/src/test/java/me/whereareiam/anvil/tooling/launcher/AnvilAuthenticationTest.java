@@ -26,7 +26,10 @@ class AnvilAuthenticationTest {
 		Library online = new Library("online", true);
 		Library other = new Library("other", true);
 
-		assertSame(online.authentication, AnvilAuthentication.authentication(registry(online, new Library("offline", false)), null, ACCOUNTS));
+		assertSame(
+				online.authentication,
+				AnvilAuthentication.authentication(registry(online, new Library("offline", false)), null, ACCOUNTS)
+		);
 		assertSame(other.authentication, AnvilAuthentication.authentication(registry(online, other), "other", ACCOUNTS));
 	}
 

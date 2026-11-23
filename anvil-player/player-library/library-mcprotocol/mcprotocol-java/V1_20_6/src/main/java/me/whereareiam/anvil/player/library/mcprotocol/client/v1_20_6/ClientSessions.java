@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6;
 
 import me.whereareiam.anvil.player.library.mcprotocol.client.ClientListener;
-import me.whereareiam.anvil.player.library.mcprotocol.client.translation.PacketTable;
 import me.whereareiam.anvil.player.library.mcprotocol.client.model.ClientLogin;
+import me.whereareiam.anvil.player.library.mcprotocol.client.translation.PacketTable;
 import org.geysermc.mcprotocollib.network.Session;
 import org.geysermc.mcprotocollib.network.packet.Packet;
 import org.jetbrains.annotations.NotNull;

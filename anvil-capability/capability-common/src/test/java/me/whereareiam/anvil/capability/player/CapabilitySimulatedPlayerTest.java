@@ -104,7 +104,9 @@ class CapabilitySimulatedPlayerTest {
 					.javaVersion(21)
 					.build();
 		}
-		public @NotNull PlayerProfile requestedProfile() { return new PlayerProfile("Alice", UUID.nameUUIDFromBytes("Alice".getBytes(StandardCharsets.UTF_8))); }
+		public @NotNull PlayerProfile requestedProfile() {
+			return new PlayerProfile("Alice", UUID.nameUUIDFromBytes("Alice".getBytes(StandardCharsets.UTF_8)));
+		}
 		public @Nullable PlayerProfile grantedProfile() { return null; }
 		public @NotNull <T> Optional<T> findService(@NotNull Class<T> type) { return Optional.empty(); }
 		public @NotNull Optional<ProtocolChannel> channel() { return Optional.ofNullable(protocolChannel); }

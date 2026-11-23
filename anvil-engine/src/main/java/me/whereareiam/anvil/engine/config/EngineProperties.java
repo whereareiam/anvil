@@ -231,7 +231,11 @@ public final class EngineProperties {
 				.eulaAccepted(booleanValue(properties, EULA_ACCEPTED_PROPERTY, defaults.isEulaAccepted()))
 				.processScheduling(ProcessScheduling.builder()
 						.parallelism(positive(properties, PARALLELISM_PROPERTY, defaults.getProcessScheduling().getParallelism()))
-						.startupMemoryMegabytes(positive(properties, STARTUP_MEMORY_PROPERTY, defaults.getProcessScheduling().getStartupMemoryMegabytes()))
+						.startupMemoryMegabytes(positive(
+								properties,
+								STARTUP_MEMORY_PROPERTY,
+								defaults.getProcessScheduling().getStartupMemoryMegabytes()
+						))
 						.processors(optionalPositive(properties, PROCESSORS_PROPERTY))
 						.priority(processPriority(properties, defaults.getProcessScheduling().getPriority()))
 						.build())

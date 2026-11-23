@@ -229,7 +229,13 @@ class RunningPlayerManagerTest {
 				.distribution(Distribution.remote("26.1-snapshot-1", "1"))
 				.build();
 		AnvilScenario scenario = AnvilScenario.builder().name("snapshot").entrypoint("server").server(server).build();
-		RunningPlayerManager snapshot = manager(scenario, library, new StubScenarioProcesses("server", temporary), composer(), ignored -> { });
+		RunningPlayerManager snapshot = manager(
+				scenario,
+				library,
+				new StubScenarioProcesses("server", temporary),
+				composer(),
+				ignored -> { }
+		);
 
 		var serverVersion = assertThrows(ScenarioValidationException.class, () -> snapshot.create("Alice"));
 		assertTrue(serverVersion.getMessage().startsWith("Server 'server' declares an invalid native Minecraft version"),
@@ -260,7 +266,13 @@ class RunningPlayerManagerTest {
 		IllegalStateException failure = new IllegalStateException("composition failed");
 		library.destructionFailure = new IllegalStateException("destruction failed");
 		ProtocolPlayerComposer composer = (player, connection, metadata, onDestroyed) -> { throw failure; };
-		RunningPlayerManager manager = manager(scenario(), library, new StubScenarioProcesses("server", temporary), composer, ignored -> { });
+		RunningPlayerManager manager = manager(
+				scenario(),
+				library,
+				new StubScenarioProcesses("server", temporary),
+				composer,
+				ignored -> { }
+		);
 
 		assertSame(failure, assertThrows(IllegalStateException.class, () -> manager.create("Alice")));
 		assertEquals(1, failure.getSuppressed().length);

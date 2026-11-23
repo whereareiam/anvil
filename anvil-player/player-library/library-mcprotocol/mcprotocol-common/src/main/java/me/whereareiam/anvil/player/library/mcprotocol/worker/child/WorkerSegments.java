@@ -57,7 +57,11 @@ final class WorkerSegments {
 	 * @return verified segments
 	 * @throws IllegalStateException when two segments share an owner
 	 */
-	static @NotNull WorkerSegments verify(@NotNull ClassLoader loader, @NotNull MinecraftVersion version, @NotNull Consumer<String> warnings) {
+	static @NotNull WorkerSegments verify(
+			@NotNull ClassLoader loader,
+			@NotNull MinecraftVersion version,
+			@NotNull Consumer<String> warnings
+	) {
 		WorkerSegments verified = new WorkerSegments(loader, version);
 		Map<String, MinecraftVersion> owners = new LinkedHashMap<>();
 		for (String root : roots(loader, SegmentDescriptor.PROPERTIES)) {
@@ -134,14 +138,16 @@ final class WorkerSegments {
 		Declaration declaration = declarations.getFirst();
 		Segment segment = segments.get(declaration.root());
 		if (segment == null)
-			return new Unavailable("the adapter " + declaration.provider() + " for " + port.getName() + " is declared outside a segment, by "
+			return new Unavailable("the adapter " + declaration.provider() + " for " + port.getName()
+					+ " is declared outside a segment, by "
 					+ declaration.root());
 		if (segment.linkageFailure() != null) return new Unavailable(unlinked(segment));
 
 		try {
 			Class<?> type = Class.forName(declaration.provider(), true, loader);
 			if (!port.isAssignableFrom(type))
-				return new Unavailable("the adapter " + declaration.provider() + " of " + describe(segment) + " does not implement " + port.getName());
+				return new Unavailable("the adapter " + declaration.provider() + " of " + describe(segment)
+						+ " does not implement " + port.getName());
 
 			return type.getConstructor().newInstance();
 		} catch (ReflectiveOperationException | LinkageError | RuntimeException failure) {

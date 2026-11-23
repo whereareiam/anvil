@@ -1,8 +1,7 @@
 package me.whereareiam.anvil.runner;
-import me.whereareiam.anvil.runner.protocol.ToolingProtocol;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import me.whereareiam.anvil.runner.protocol.ToolingProtocol;
 import me.whereareiam.anvil.tooling.api.ToolingSession;
 import me.whereareiam.anvil.tooling.api.model.SessionSnapshot;
 import me.whereareiam.anvil.tooling.api.type.SessionState;
@@ -24,7 +23,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ToolingProtocolTest {
 	@Test
@@ -130,7 +133,10 @@ class ToolingProtocolTest {
 			case "invoke" -> {
 				entered.countDown();
 				try { new CountDownLatch(1).await(); }
-				catch (InterruptedException failure) { interrupted.countDown(); throw new IllegalStateException("Action cancelled", failure); }
+				catch (InterruptedException failure) {
+					interrupted.countDown();
+					throw new IllegalStateException("Action cancelled", failure);
+				}
 				yield null;
 			}
 			default -> null;

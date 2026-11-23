@@ -1,28 +1,28 @@
 package me.whereareiam.anvil.runner;
 
 import me.whereareiam.anvil.api.model.PresentationMetadata;
-import me.whereareiam.anvil.api.process.ProcessFiles;
-import me.whereareiam.anvil.tooling.api.model.action.invocation.ActionRequest;
-import me.whereareiam.anvil.tooling.api.model.action.binding.ActionTarget;
-import me.whereareiam.anvil.tooling.api.type.action.ActionTargetType;
 import me.whereareiam.anvil.api.model.player.PlayerState;
-import me.whereareiam.anvil.api.model.process.console.ConsoleLine;
-import me.whereareiam.anvil.api.model.process.console.ConsoleOutput;
 import me.whereareiam.anvil.api.model.process.Distribution;
 import me.whereareiam.anvil.api.model.process.MinecraftServer;
+import me.whereareiam.anvil.api.model.process.console.ConsoleLine;
+import me.whereareiam.anvil.api.model.process.console.ConsoleOutput;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.PlayerManager;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
 import me.whereareiam.anvil.api.process.ConsoleWatch;
 import me.whereareiam.anvil.api.process.ProcessConsole;
+import me.whereareiam.anvil.api.process.ProcessFiles;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.process.ScenarioProcesses;
 import me.whereareiam.anvil.api.scenario.ScenarioContext;
 import me.whereareiam.anvil.api.scenario.ScenarioEngine;
 import me.whereareiam.anvil.api.scenario.ScenarioObserver;
-import me.whereareiam.anvil.runner.scenario.ScenarioRepository;
 import me.whereareiam.anvil.api.type.ProcessState;
+import me.whereareiam.anvil.runner.scenario.ScenarioRepository;
 import me.whereareiam.anvil.tooling.api.model.LogEvent;
+import me.whereareiam.anvil.tooling.api.model.action.binding.ActionTarget;
+import me.whereareiam.anvil.tooling.api.model.action.invocation.ActionRequest;
+import me.whereareiam.anvil.tooling.api.type.action.ActionTargetType;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationHandler;
@@ -37,7 +37,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RunnerSessionTest {
 	private ActionRequest request(RunnerSession session, String action, String text) {
@@ -251,7 +257,10 @@ class RunnerSessionTest {
 			assertFalse(session.snapshot().isSetupComplete());
 			assertEquals(me.whereareiam.anvil.tooling.api.type.ProcessState.READY, session.snapshot().getProcesses().getFirst().getState());
 			session.stopProcess("server");
-			assertEquals(me.whereareiam.anvil.tooling.api.type.ProcessState.STOPPED, session.snapshot().getProcesses().getFirst().getState());
+			assertEquals(
+					me.whereareiam.anvil.tooling.api.type.ProcessState.STOPPED,
+					session.snapshot().getProcesses().getFirst().getState()
+			);
 			session.startProcess("server");
 			assertEquals(me.whereareiam.anvil.tooling.api.type.ProcessState.READY, session.snapshot().getProcesses().getFirst().getState());
 			session.startAll();

@@ -11,16 +11,16 @@ import org.jetbrains.annotations.NotNull;
 @Value
 @Builder
 public class AgentInfo {
-    /**
-     * Stable Anvil platform identifier.
-     */
-    @NotNull String platform;
-    /**
-     * Platform-reported version.
-     */
-    @NotNull String version;
-    /**
-     * Kind of process hosting the agent.
-     */
-    @NotNull AgentRole role;
+	/**
+	 * Stable Anvil platform identifier.
+	 */
+	@NotNull String platform;
+	/**
+	 * Platform-reported version.
+	 */
+	@NotNull String version;
+	/**
+	 * Kind of process hosting the agent.
+	 */
+	@NotNull AgentRole role;
 }

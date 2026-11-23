@@ -1,20 +1,21 @@
 package me.whereareiam.anvil.runner.protocol;
 
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.tooling.api.EnvironmentOperations;
+import me.whereareiam.anvil.tooling.api.ProcessOperations;
+import me.whereareiam.anvil.tooling.api.ScenarioOperations;
+import me.whereareiam.anvil.tooling.api.ToolingSession;
+import me.whereareiam.anvil.tooling.api.model.ToolingOperation;
+import me.whereareiam.anvil.tooling.api.model.process.console.ConsoleCommandResult;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
-import lombok.RequiredArgsConstructor;
-import lombok.AccessLevel;
-import me.whereareiam.anvil.tooling.api.ToolingSession;
-import me.whereareiam.anvil.tooling.api.model.ToolingOperation;
-import me.whereareiam.anvil.tooling.api.model.process.console.ConsoleCommandResult;
-import me.whereareiam.anvil.tooling.api.EnvironmentOperations;
-import me.whereareiam.anvil.tooling.api.ProcessOperations;
-import me.whereareiam.anvil.tooling.api.ScenarioOperations;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Binds shared operation schemas to session behavior and runner-owned cancellation policy.

@@ -47,7 +47,11 @@ public final class WireLines {
 	 * @return the message, or null when the connection ended before a line began
 	 * @throws IOException when the connection fails, ends inside a line, or carries no such message
 	 */
-	public static <T> @Nullable T read(@NotNull ObjectMapper mapper, @NotNull InputStream input, @NotNull Class<T> type) throws IOException {
+	public static <T> @Nullable T read(
+			@NotNull ObjectMapper mapper,
+			@NotNull InputStream input,
+			@NotNull Class<T> type
+	) throws IOException {
 		ByteArrayOutputStream line = new ByteArrayOutputStream();
 		int next;
 		while ((next = input.read()) != '\n') {

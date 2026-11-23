@@ -48,7 +48,10 @@ public final class AnvilEngine implements ScenarioEngine {
 
 			new ScenarioValidator().validate(scenario, options.isEulaAccepted());
 			ScenarioObserver observed = observers.wrap(observer);
-			ScenarioContext context = Objects.requireNonNull(scenarioFactory.create(scenario, observed), "Scenario factory returned no prepared context");
+			ScenarioContext context = Objects.requireNonNull(
+					scenarioFactory.create(scenario, observed),
+					"Scenario factory returned no prepared context"
+			);
 			ScenarioSession session = ScenarioSession.prepare(context, extensions, sessions::remove, this::startPrepared, observers);
 			sessions.add(session);
 

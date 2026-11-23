@@ -1,9 +1,9 @@
 package me.whereareiam.anvil.environment.execution.api.model;
 
 import lombok.Builder;
+import lombok.Singular;
 import lombok.Value;
 import org.jetbrains.annotations.NotNull;
-import lombok.Singular;
 
 import java.nio.file.Path;
 import java.util.List;

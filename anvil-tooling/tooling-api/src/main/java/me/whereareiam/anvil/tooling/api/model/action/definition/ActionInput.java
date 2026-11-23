@@ -1,15 +1,16 @@
 package me.whereareiam.anvil.tooling.api.model.action.definition;
 
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Locale;
 import lombok.Builder;
-import lombok.Value;
 import lombok.Singular;
+import lombok.Value;
 import lombok.extern.jackson.Jacksonized;
 import me.whereareiam.anvil.tooling.api.type.action.ActionInputType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * Declared scalar input; labels and defaults are optional.

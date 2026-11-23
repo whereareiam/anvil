@@ -112,10 +112,12 @@ class DefaultWorkspaceProvisionerTest {
 			Files.writeString(plugin, "rebuilt");
 			Files.writeString(workspace.resolve("world.dat"), "played");
 			prepared.refresh(WorkspaceRefresh.builder().build());
-			assertEquals("built", Files.readString(workspace.resolve("plugins/plugin.jar")), "The first generation uses the prepared assets");
+			assertEquals("built", Files.readString(workspace.resolve("plugins/plugin.jar")),
+					"The first generation uses the prepared assets");
 
 			prepared.refresh(WorkspaceRefresh.builder().build());
-			assertEquals("rebuilt", Files.readString(workspace.resolve("plugins/plugin.jar")), "An asset not listed keeps its planned source");
+			assertEquals("rebuilt", Files.readString(workspace.resolve("plugins/plugin.jar")),
+					"An asset not listed keeps its planned source");
 			assertEquals("played", Files.readString(workspace.resolve("world.dat")));
 
 			prepared.finish(true);

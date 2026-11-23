@@ -1,14 +1,17 @@
 package me.whereareiam.anvil.runner.protocol;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import java.lang.reflect.Proxy;
-import java.util.List;
-import java.util.Locale;
 import me.whereareiam.anvil.tooling.api.ToolingSession;
 import me.whereareiam.anvil.tooling.api.model.ToolingOperation;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.lang.reflect.Proxy;
+import java.util.List;
+import java.util.Locale;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ToolingOperationRegistryTest {
 	private final ToolingRequestReader reader = new ToolingRequestReader();

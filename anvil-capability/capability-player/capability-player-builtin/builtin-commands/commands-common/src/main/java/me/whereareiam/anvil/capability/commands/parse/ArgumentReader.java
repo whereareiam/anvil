@@ -148,7 +148,8 @@ final class ArgumentReader {
 				continue;
 			}
 			if (character == '[' || character == '{' || character == '(') depth++;
-			if ((character == ']' || character == '}' || character == ')') && --depth < 0) throw new IllegalArgumentException("Unbalanced brackets");
+			if ((character == ']' || character == '}' || character == ')') && --depth < 0)
+				throw new IllegalArgumentException("Unbalanced brackets");
 			cursor++;
 		}
 		if (depth != 0) throw new IllegalArgumentException("Unbalanced brackets");

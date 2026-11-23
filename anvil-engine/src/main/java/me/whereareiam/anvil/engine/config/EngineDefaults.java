@@ -1,8 +1,8 @@
 package me.whereareiam.anvil.engine.config;
 
-import me.whereareiam.anvil.api.model.process.lifecycle.ProcessScheduling;
 import com.sun.management.OperatingSystemMXBean;
 import me.whereareiam.anvil.api.model.EngineOptions;
+import me.whereareiam.anvil.api.model.process.lifecycle.ProcessScheduling;
 import me.whereareiam.anvil.api.type.ProcessPriority;
 import org.jetbrains.annotations.NotNull;
 

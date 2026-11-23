@@ -5,8 +5,6 @@ import me.whereareiam.anvil.workbench.protocol.CertificateFingerprint;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -22,9 +20,11 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HexFormat;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.Locale;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
 
 /**
  * What makes a workbench itself: the certificate engines pin, the tokens of the engines it paired with, and the

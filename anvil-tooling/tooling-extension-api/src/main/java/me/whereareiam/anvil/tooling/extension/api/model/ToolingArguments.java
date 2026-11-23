@@ -1,10 +1,11 @@
 package me.whereareiam.anvil.tooling.extension.api.model;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.math.BigDecimal;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Immutable validated scalar inputs supplied to a tooling handler.

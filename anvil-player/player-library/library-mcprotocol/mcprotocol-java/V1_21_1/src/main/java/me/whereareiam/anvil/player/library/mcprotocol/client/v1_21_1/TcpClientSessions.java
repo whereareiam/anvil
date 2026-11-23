@@ -2,11 +2,11 @@ package me.whereareiam.anvil.player.library.mcprotocol.client.v1_21_1;
 
 import me.whereareiam.anvil.player.library.mcprotocol.adventure.ComponentTranslator;
 import me.whereareiam.anvil.player.library.mcprotocol.client.ClientListener;
-import me.whereareiam.anvil.player.library.mcprotocol.client.translation.PacketTable;
 import me.whereareiam.anvil.player.library.mcprotocol.client.model.ClientConnection;
 import me.whereareiam.anvil.player.library.mcprotocol.client.model.ClientCredentials;
 import me.whereareiam.anvil.player.library.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.player.library.mcprotocol.client.model.ClientProfile;
+import me.whereareiam.anvil.player.library.mcprotocol.client.translation.PacketTable;
 import me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.ClientPacketListener;
 import me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.ClientSessions;
 import org.geysermc.mcprotocollib.auth.GameProfile;

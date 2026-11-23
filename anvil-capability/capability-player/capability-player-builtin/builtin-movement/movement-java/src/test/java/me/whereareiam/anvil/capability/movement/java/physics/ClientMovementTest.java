@@ -7,6 +7,7 @@ import me.whereareiam.anvil.capability.movement.model.MovementInput;
 import me.whereareiam.anvil.capability.movement.model.Position;
 import me.whereareiam.anvil.edition.java.protocol.model.entity.EntityId;
 import me.whereareiam.anvil.edition.java.protocol.model.world.Vec3d;
+import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundLogin;
 import me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundRespawn;
 import me.whereareiam.anvil.edition.java.protocol.packet.entity.move.ClientboundSetEntityMotion;
 import me.whereareiam.anvil.edition.java.protocol.packet.health.ClientboundSetHealth;
@@ -227,7 +228,7 @@ class ClientMovementTest {
 	void runsThePhysicsOfAPlayerWhoseEntityIdIsNegative() {
 		TestClient client = bind(new TestClient("1.21.11").load(0, 0));
 		client.player.connect();
-		client.player.deliver(me.whereareiam.anvil.edition.java.protocol.packet.connection.ClientboundLogin.builder()
+		client.player.deliver(ClientboundLogin.builder()
 				.entityId(new EntityId(-39858984)).level("minecraft:overworld").dimension("minecraft:overworld")
 				.dimensionType(client.dimension).build());
 		client.send();

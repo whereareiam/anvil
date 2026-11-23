@@ -100,7 +100,14 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DefaultScenarioFactoryIntegrationTest {
 	@TempDir
@@ -805,7 +812,12 @@ class DefaultScenarioFactoryIntegrationTest {
 		}
 	}
 
-	private ScenarioSession start(boolean keepFailed, PlatformProvider provider, AnvilScenario scenario, Supplier<ProtocolLibrary> library) {
+	private ScenarioSession start(
+			boolean keepFailed,
+			PlatformProvider provider,
+			AnvilScenario scenario,
+			Supplier<ProtocolLibrary> library
+	) {
 		return start(keepFailed, provider, scenario, library, (port, token, timeout) -> {
 			throw new AssertionError("No agent is declared");
 		});
@@ -886,7 +898,8 @@ class DefaultScenarioFactoryIntegrationTest {
 		var players = new DefaultPlayerService(new ProtocolLibraryRegistry(libraries), options, workbench.cacheDirectory(),
 				new WorkbenchProtocolArtifacts(workbench), new WorkbenchWorkerLauncher(workbench));
 		var retained = new RetainedProcesses<RetainedProcessSet>();
-		var engine = new AnvilEngineBuilder(new DefaultScenarioFactory(workbench, options.getExecutionProviderId(), platforms, processes, players, retained)).options(options).extension(registration -> {
+		var factory = new DefaultScenarioFactory(workbench, options.getExecutionProviderId(), platforms, processes, players, retained);
+		var engine = new AnvilEngineBuilder(factory).options(options).extension(registration -> {
 			registration.own(workbench);
 			registration.own(players);
 			registration.own(retained);
