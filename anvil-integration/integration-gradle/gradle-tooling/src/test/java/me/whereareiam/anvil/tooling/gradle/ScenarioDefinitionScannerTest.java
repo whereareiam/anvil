@@ -48,14 +48,31 @@ class ScenarioDefinitionScannerTest {
 	}
 
 	@Test
-	void mergesIndexedDefinitionsFromResources() throws IOException {
+	void mergesDefinitionsRegisteredInTheResourcesServiceFile() throws IOException {
+		Path classes = compile(Map.of(
+				"example/Direct.java", "package example; public final class Direct implements "
+						+ "me.whereareiam.anvil.api.scenario.AnvilScenarioDefinition { " + SCENARIO + " }"
+		));
 		Path resources = directory.resolve("resources");
-		Files.createDirectories(resources.resolve("META-INF/anvil"));
-		Files.writeString(resources.resolve("META-INF/anvil/scenarios"), "# generated\nexample.Generated\n");
+		Path file = resources.resolve(ScenarioDefinitionScanner.SERVICE_FILE);
+		Files.createDirectories(file.getParent());
+		Files.writeString(file, "# registered by hand\nexample.Registered # kept\n\nexample.Direct\n");
 
-		List<String> definitions = ScenarioDefinitionScanner.scan(List.of(), List.of(resources.toFile()));
+		List<String> definitions = ScenarioDefinitionScanner.scan(List.of(classes.toFile()), List.of(resources.toFile()));
 
-		assertEquals(List.of("example.Generated"), definitions);
+		assertEquals(List.of("example.Direct", "example.Registered"), definitions);
+	}
+
+	@Test
+	void writesTheDefinitionsAsTheirStandardServiceFile() throws IOException {
+		Path output = directory.resolve("index");
+
+		ScenarioDefinitionScanner.writeServiceFile(output, List.of("example.Direct", "example.Inherited"));
+		ScenarioDefinitionScanner.writeServiceFile(output, List.of("example.Direct"));
+
+		assertEquals("META-INF/services/me.whereareiam.anvil.api.scenario.AnvilScenarioDefinition",
+				ScenarioDefinitionScanner.SERVICE_FILE);
+		assertEquals("example.Direct\n", Files.readString(output.resolve(ScenarioDefinitionScanner.SERVICE_FILE)));
 	}
 
 	@Test

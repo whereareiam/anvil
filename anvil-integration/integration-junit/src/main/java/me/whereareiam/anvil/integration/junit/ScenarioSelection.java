@@ -6,6 +6,7 @@ import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.extension.ExtensionConfigurationException;
+import org.junit.platform.commons.support.ReflectionSupport;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -62,10 +63,11 @@ final class ScenarioSelection {
 
 	private static <T> T instantiate(Class<T> type) {
 		try {
-			return type.getDeclaredConstructor().newInstance();
-		} catch (ReflectiveOperationException exception) {
+			return ReflectionSupport.newInstance(type);
+		} catch (Exception failure) {
+			// ReflectionSupport rethrows a missing constructor's checked exception unchecked.
 			throw new ExtensionConfigurationException("Could not instantiate " + type.getName()
-					+ "; it needs an accessible no-argument constructor", exception);
+					+ "; it needs a no-argument constructor that completes", failure);
 		}
 	}
 }

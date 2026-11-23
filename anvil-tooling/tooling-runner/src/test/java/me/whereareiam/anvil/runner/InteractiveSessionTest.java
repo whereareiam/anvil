@@ -60,7 +60,7 @@ class InteractiveSessionTest {
 		assertTrue(output.toString().contains("fixture result"));
 	}
 
-	private static ScenarioRepository repository() throws Exception {
+	private static ScenarioRepository repository() {
 		return ScenarioRepository.load(List.of(FirstScenario.class.getName(), SecondScenario.class.getName()));
 	}
 

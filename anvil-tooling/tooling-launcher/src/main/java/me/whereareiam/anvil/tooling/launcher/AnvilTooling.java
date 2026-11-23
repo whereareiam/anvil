@@ -21,8 +21,8 @@ import java.util.Properties;
 public final class AnvilTooling {
 	/**
 	 * Evaluates direct scenario definitions from the supplied class names and serves requests until
-	 * input closes. When no names are supplied, the generated index and Java service descriptor are
-	 * discovered from the project runtime classpath.
+	 * input closes. When no names are supplied, every definition registered on the project runtime
+	 * classpath is evaluated.
 	 *
 	 * @param definitions configured definition class names
 	 * @throws Exception when configuration or definition evaluation fails

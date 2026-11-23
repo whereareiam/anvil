@@ -42,7 +42,7 @@ public final class AnvilRunner {
 
 	/**
 	 * Runs the scenario CLI using the supplied engine factory and borrowed terminal streams.
-	 * Definitions are read from the generated index unless a direct definition class is selected.
+	 * Every registered definition is evaluated unless a direct definition class is selected.
 	 *
 	 * @param arguments command-line arguments
 	 * @throws Exception when definition loading or scenario execution fails

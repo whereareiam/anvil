@@ -11,8 +11,8 @@ import me.whereareiam.anvil.player.library.mcprotocol.catalog.McProtocolReleaseC
 import me.whereareiam.anvil.player.library.mcprotocol.worker.fixture.EventWorkerExtension;
 import me.whereareiam.anvil.player.library.mcprotocol.worker.fixture.GradleReleaseClosures;
 import me.whereareiam.anvil.player.library.mcprotocol.worker.fixture.ProbePackets;
-import me.whereareiam.anvil.player.library.mcprotocol.worker.fixture.ProbePacketsAdapter;
 import me.whereareiam.anvil.player.library.mcprotocol.worker.fixture.ProbeWorkerExtension;
+import me.whereareiam.anvil.player.library.mcprotocol.worker.fixture.TestSegment;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestReporter;
 import org.junit.jupiter.api.io.TempDir;
@@ -24,7 +24,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +53,10 @@ class McProtocolWorkerContractTest {
 	 * unavailable.
 	 */
 	private static final Set<String> BUILT_IN = Set.of(SESSION, MOVEMENT, MESSAGES, INVENTORY, INTERACTION);
+	/**
+	 * The probe adapter a probe segment carries, compiled into the segment and absent from the test class path.
+	 */
+	private static final String PROBE_ADAPTER = "probe.segment.ProbeAdapter";
 
 	@TempDir
 	Path temporary;
@@ -132,7 +135,7 @@ class McProtocolWorkerContractTest {
 	@Test
 	void installsTheCapabilityOfAProbeSegmentThroughItsAdapter() throws Exception {
 		ProtocolRelease release = release("1.21.11");
-		try (ProtocolWorkerProcess worker = workerWithProbe(release, "class " + ProbePacketsAdapter.class.getName() + " public class\n")) {
+		try (ProtocolWorkerProcess worker = workerWithProbe(release, "class " + PROBE_ADAPTER + " public class\n")) {
 			ProtocolPlayer player = worker.create(request(release, "Alice"), null);
 			try {
 				ProtocolChannel channel = player.channel().orElseThrow();
@@ -147,7 +150,7 @@ class McProtocolWorkerContractTest {
 	@Test
 	void makesTheCapabilityOfASegmentThatDoesNotLinkUnavailableWithTheFailingMember() throws Exception {
 		ProtocolRelease release = release("1.21.11");
-		String linkage = "class " + ProbePacketsAdapter.class.getName() + " public interface\nclass example.AbsentFromRelease public\n";
+		String linkage = "class " + PROBE_ADAPTER + " public interface\nclass example.AbsentFromRelease public\n";
 		try (ProtocolWorkerProcess worker = workerWithProbe(release, linkage)) {
 			assertTrue(worker.diagnosticTail().contains("probe-mcprotocol=1.16.5"), worker.diagnosticTail());
 			ProtocolPlayer player = worker.create(request(release, "Alice"), null);
@@ -155,7 +158,7 @@ class McProtocolWorkerContractTest {
 				ProtocolChannel channel = player.channel().orElseThrow();
 				assertFalse(channel.installedCapabilities().contains(ProbeWorkerExtension.ID));
 				assertEquals("segment probe-mcprotocol 1.16.5 does not link against the MCProtocolLib release for Minecraft 1.21.11: "
-						+ ProbePacketsAdapter.class.getName() + " is a class, linked as an interface",
+						+ PROBE_ADAPTER + " is a class, linked as an interface",
 						channel.unavailableCapabilities().get(ProbeWorkerExtension.ID));
 				assertTrue(channel.installedCapabilities().contains(EventWorkerExtension.ID));
 			} finally {
@@ -168,15 +171,9 @@ class McProtocolWorkerContractTest {
 	 * Starts a worker whose host class path also holds a probe segment of the probe capability with the given linkage.
 	 */
 	private ProtocolWorkerProcess workerWithProbe(ProtocolRelease release, String linkage) throws Exception {
-		Path probe = temporary.resolve("probe-segment");
-		Files.createDirectories(probe.resolve("META-INF/anvil/segment"));
-		Files.createDirectories(probe.resolve("META-INF/services"));
-		Files.writeString(probe.resolve("META-INF/anvil/segment.properties"), "library=mcprotocol\nowner=probe-mcprotocol\nsince=1.16.5\n");
-		Files.writeString(probe.resolve("META-INF/anvil/segment/linkage.txt"), linkage);
-		Files.writeString(
-				probe.resolve("META-INF/services").resolve(ProbePackets.class.getName()),
-				ProbePacketsAdapter.class.getName() + "\n"
-		);
+		Path probe = TestSegment.create(temporary.resolve("probe-segment"), "mcprotocol", "probe-mcprotocol", "1.16.5", linkage)
+				.probe(PROBE_ADAPTER)
+				.root();
 
 		Thread thread = Thread.currentThread();
 		ClassLoader previous = thread.getContextClassLoader();

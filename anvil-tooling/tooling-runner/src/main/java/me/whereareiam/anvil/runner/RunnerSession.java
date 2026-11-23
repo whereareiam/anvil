@@ -56,12 +56,12 @@ public final class RunnerSession implements ToolingSession {
 	 * Retains a lazy engine factory and definitions previously evaluated on the consumer classpath.
 	 *
 	 * @param engineFactory creates the engine at the first start; this owner closes the result
-	 * @param definitions fully qualified definition class names; an empty list discovers the index
+	 * @param definitions binary names of registered definition classes; an empty list selects every registered one
 	 */
 	public RunnerSession(
 			@NotNull Supplier<ScenarioEngine> engineFactory,
 			@NotNull List<String> definitions
-	) throws ReflectiveOperationException {
+	) {
 		this(engineFactory, ScenarioRepository.load(definitions), ToolingExtensionRegistry.discover());
 	}
 

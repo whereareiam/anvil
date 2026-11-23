@@ -11,8 +11,8 @@ loading scenarios prepares the runtime and evaluates each definition in the isol
 ## Use the standard Anvil source set
 
 The standard Anvil plugin configures project tooling for `src/anvil`. Every compiled
-`AnvilScenarioDefinition` in that source set is indexed automatically; there is no definition list
-to maintain in `build.gradle.kts`. Sync the project after changing scenario sources, then refresh
+`AnvilScenarioDefinition` in that source set is registered as a Java service provider automatically;
+there is no definition list to maintain in `build.gradle.kts`. Sync the project after changing scenario sources, then refresh
 the scenarios in the IDE. Applying the standard plugin declares the IDE target; a class that merely
 implements `AnvilScenarioDefinition` without the plugin remains an ordinary class.
 

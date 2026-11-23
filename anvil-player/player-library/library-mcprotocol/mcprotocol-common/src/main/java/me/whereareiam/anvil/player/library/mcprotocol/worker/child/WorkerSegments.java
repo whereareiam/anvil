@@ -13,13 +13,14 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -29,15 +30,14 @@ import java.util.function.Consumer;
  * the adapters they provide.
  *
  * <p>The host selects one segment per owner before launch. The worker verifies each selected segment's linkage
- * manifest with its own class loader, then hands out adapters on request: the adapter of a port is the one
- * implementation that a selected segment declares in {@code META-INF/services/<port>}. A port that no segment
- * provides, a providing segment that does not link, or more than one declared implementation makes the adapter
- * unavailable with that reason. The client segment's {@link McProtocolClient} is obtained the same way and must be
- * available, or the worker cannot start.</p>
+ * manifest with its own class loader, then hands out adapters on request: the adapter of a port is its one service
+ * provider that {@link ServiceLoader} finds, which must come from the class path root of a selected segment. The
+ * provider is created only once its segment is known to link. A port without a provider, a provider outside a
+ * segment or in a segment that does not link, more than one provider, or a provider that cannot be loaded or
+ * created makes the adapter unavailable with that reason. The client segment's {@link McProtocolClient} is obtained
+ * the same way and must be available, or the worker cannot start.</p>
  */
 final class WorkerSegments {
-	private static final String SERVICES = "META-INF/services/";
-
 	private final ClassLoader loader;
 	private final MinecraftVersion version;
 	private final Map<String, Segment> segments = new LinkedHashMap<>();
@@ -121,38 +121,35 @@ final class WorkerSegments {
 		return Map.copyOf(versions);
 	}
 
-	private Object create(Class<?> port) {
-		List<Declaration> declarations = new ArrayList<>();
-		String resource = SERVICES + port.getName();
-		for (String root : roots(loader, resource))
-			for (String provider : read(root + resource, (input, location) -> providerNames(input)))
-				declarations.add(new Declaration(root, provider));
+	private <P> Object create(Class<P> port) {
+		List<Provided<P>> provided = new ArrayList<>();
+		try {
+			ServiceLoader.load(port, loader).stream().forEach(provider -> provided.add(new Provided<>(root(provider.type()), provider)));
+		} catch (ServiceConfigurationError | LinkageError failure) {
+			return new Unavailable("could not load the adapters for " + port.getName() + ": " + failure.getClass().getSimpleName()
+					+ ": " + failure.getMessage());
+		}
 
-		if (declarations.isEmpty())
+		if (provided.isEmpty())
 			return new Unavailable("no " + McProtocolClient.LIBRARY_ID + " segment selected for Minecraft " + version
 					+ " provides an adapter for " + port.getName());
-		if (declarations.size() > 1)
+		if (provided.size() > 1)
 			return new Unavailable("more than one adapter for " + port.getName() + " is on the worker class path: "
-					+ declarations.stream().map(this::describe).toList());
+					+ provided.stream().map(this::describe).toList());
 
-		Declaration declaration = declarations.getFirst();
-		Segment segment = segments.get(declaration.root());
+		Provided<P> adapter = provided.getFirst();
+		Segment segment = segments.get(adapter.root());
 		if (segment == null)
-			return new Unavailable("the adapter " + declaration.provider() + " for " + port.getName()
-					+ " is declared outside a segment, by "
-					+ declaration.root());
+			return new Unavailable("the adapter " + adapter.name() + " for " + port.getName() + " is declared outside a segment, by "
+					+ adapter.origin());
 		if (segment.linkageFailure() != null) return new Unavailable(unlinked(segment));
 
 		try {
-			Class<?> type = Class.forName(declaration.provider(), true, loader);
-			if (!port.isAssignableFrom(type))
-				return new Unavailable("the adapter " + declaration.provider() + " of " + describe(segment)
-						+ " does not implement " + port.getName());
-
-			return type.getConstructor().newInstance();
-		} catch (ReflectiveOperationException | LinkageError | RuntimeException failure) {
-			return new Unavailable("could not create the adapter " + declaration.provider() + " of " + describe(segment) + ": "
-					+ failure.getClass().getSimpleName() + ": " + failure.getMessage());
+			return adapter.provider().get();
+		} catch (ServiceConfigurationError | LinkageError | RuntimeException failure) {
+			Throwable cause = failure instanceof ServiceConfigurationError && failure.getCause() != null ? failure.getCause() : failure;
+			return new Unavailable("could not create the adapter " + adapter.name() + " of " + describe(segment) + ": "
+					+ cause.getClass().getSimpleName() + ": " + cause.getMessage());
 		}
 	}
 
@@ -161,9 +158,9 @@ final class WorkerSegments {
 				+ segment.linkageFailure();
 	}
 
-	private String describe(Declaration declaration) {
-		Segment segment = segments.get(declaration.root());
-		return declaration.provider() + " in " + (segment == null ? declaration.root() : describe(segment));
+	private String describe(Provided<?> adapter) {
+		Segment segment = segments.get(adapter.root());
+		return adapter.name() + " in " + (segment == null ? adapter.origin() : describe(segment));
 	}
 
 	private static String describe(Segment segment) {
@@ -183,17 +180,17 @@ final class WorkerSegments {
 		}
 	}
 
-	private static List<String> providerNames(InputStream input) {
-		try {
-			List<String> names = new ArrayList<>();
-			for (String line : new String(input.readAllBytes(), StandardCharsets.UTF_8).lines().toList()) {
-				String name = line.split("#", 2)[0].trim();
-				if (!name.isEmpty()) names.add(name);
-			}
-			return names;
-		} catch (IOException exception) {
-			throw new UncheckedIOException("Could not read a service declaration", exception);
-		}
+	/**
+	 * Names the class path root a class was loaded from, in the form {@link #roots} names segment roots, or
+	 * {@code null} when its loader has no class file for it.
+	 */
+	private static @Nullable String root(Class<?> type) {
+		String resource = type.getName().replace('.', '/') + ".class";
+		URL location = type.getClassLoader().getResource(resource);
+		if (location == null) return null;
+
+		String found = location.toString();
+		return found.substring(0, found.length() - resource.length());
 	}
 
 	private static <T> T read(String location, BiFunction<InputStream, String, T> reader) {
@@ -211,9 +208,16 @@ final class WorkerSegments {
 	}
 
 	/**
-	 * One provider name declared for a port, and the class-path root declaring it.
+	 * One service provider found for a port, and the class path root its class was loaded from.
 	 */
-	private record Declaration(String root, String provider) {
+	private record Provided<P>(@Nullable String root, ServiceLoader.Provider<P> provider) {
+		String name() {
+			return provider.type().getName();
+		}
+
+		String origin() {
+			return root == null ? "a class loader without its class file" : root;
+		}
 	}
 
 	/**

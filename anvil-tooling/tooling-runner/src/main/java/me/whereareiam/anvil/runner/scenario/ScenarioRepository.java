@@ -5,33 +5,31 @@ import me.whereareiam.anvil.api.scenario.AnvilScenarioDefinition;
 import me.whereareiam.anvil.tooling.api.model.scenario.ScenarioDescriptor;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
-import java.util.Set;
+import java.util.ServiceLoader.Provider;
+import java.util.TreeMap;
 
 /**
  * Discovers one-definition-per-class scenarios from a prepared project runtime.
  *
- * <p>Build integrations generate {@link AnvilScenarioDefinition#INDEX_RESOURCE} after compiling
- * a project's scenario source set. The index contains class names only, so Gradle import never
- * evaluates user code. A standard Java service descriptor is accepted as a fallback for non-Gradle
- * hosts and embedded applications. Definitions are instantiated exactly once by this repository;
- * the evaluated scenario and its presentation metadata are then reused by the runner.</p>
+ * <p>Definitions are the {@link AnvilScenarioDefinition} service providers of the project runtime,
+ * which {@link ServiceLoader} finds in
+ * {@code META-INF/services/me.whereareiam.anvil.api.scenario.AnvilScenarioDefinition}. Build
+ * integrations write that file after compiling a project's scenario source set; it names classes
+ * only, so Gradle import never evaluates user code. A definition's identity is its class's binary
+ * name. Only the selected definitions are created, each exactly once by this repository; the
+ * evaluated scenario and its presentation metadata are then reused by the runner.</p>
  */
 public final class ScenarioRepository {
+	private static final String SERVICE_FILE = "META-INF/services/" + AnvilScenarioDefinition.class.getName();
+
 	private final Map<String, Entry> byDefinition;
 	private final Map<String, List<Entry>> byName;
 
@@ -69,30 +67,37 @@ public final class ScenarioRepository {
 	}
 
 	/**
-	 * Discovers definitions from the current thread context class loader.
+	 * Discovers and evaluates every definition registered with the current thread context class loader.
 	 *
-	 * @return repository containing all indexed or service-loaded definitions
-	 * @throws ReflectiveOperationException when a definition cannot be constructed
+	 * @return repository containing all registered definitions
+	 * @throws IllegalStateException when a registered definition cannot be loaded or created
 	 */
-	public static @NotNull ScenarioRepository discover() throws ReflectiveOperationException {
+	public static @NotNull ScenarioRepository discover() {
 		return load(List.of());
 	}
 
 	/**
-	 * Loads the supplied definition classes. An empty list reads the generated index and then the
-	 * Java service descriptor fallback.
+	 * Evaluates the selected registered definitions. An empty list selects every registered definition.
 	 *
-	 * @param definitionNames fully qualified definition class names; empty to discover them
+	 * @param definitionNames binary names of definition classes; empty to select all
 	 * @return evaluated repository
-	 * @throws ReflectiveOperationException when a class is missing or has no usable constructor
+	 * @throws IllegalArgumentException when a selected class is not a registered definition
+	 * @throws IllegalStateException when a registered definition cannot be loaded or created
 	 */
-	public static @NotNull ScenarioRepository load(@NotNull List<String> definitionNames)
-			throws ReflectiveOperationException {
+	public static @NotNull ScenarioRepository load(@NotNull List<String> definitionNames) {
 		ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
 		ClassLoader loader = contextLoader == null ? ScenarioRepository.class.getClassLoader() : contextLoader;
-		List<String> names = definitionNames.isEmpty() ? discoverNames(loader) : normalize(definitionNames);
+		Map<String, Provider<AnvilScenarioDefinition>> registered = registered(loader);
+		List<String> names = definitionNames.isEmpty() ? List.copyOf(registered.keySet()) : normalize(definitionNames);
 		List<Entry> entries = new ArrayList<>(names.size());
-		for (String name : names) entries.add(evaluate(name, loader));
+		for (String name : names) {
+			Provider<AnvilScenarioDefinition> provider = registered.get(name);
+			if (provider == null)
+				throw new IllegalArgumentException("Scenario definition " + name + " is not registered in " + SERVICE_FILE
+						+ ". Registered: " + registered.keySet());
+
+			entries.add(evaluate(name, provider));
+		}
 
 		return new ScenarioRepository(entries);
 	}
@@ -139,11 +144,14 @@ public final class ScenarioRepository {
 		return List.copyOf(byDefinition.values());
 	}
 
-	private static @NotNull Entry evaluate(@NotNull String name, @NotNull ClassLoader loader)
-			throws ReflectiveOperationException {
-		Class<?> raw = Class.forName(name, false, loader);
-		Class<? extends AnvilScenarioDefinition> definitionClass = raw.asSubclass(AnvilScenarioDefinition.class);
-		AnvilScenarioDefinition definition = definitionClass.getDeclaredConstructor().newInstance();
+	private static @NotNull Entry evaluate(@NotNull String name, @NotNull Provider<AnvilScenarioDefinition> provider) {
+		AnvilScenarioDefinition definition;
+		try {
+			definition = provider.get();
+		} catch (ServiceConfigurationError failure) {
+			throw new IllegalStateException("Could not create scenario definition " + name, failure);
+		}
+
 		AnvilScenario scenario = definition.define();
 		if (scenario.getName().isBlank())
 			throw new IllegalArgumentException("Scenario name must not be blank: " + name);
@@ -151,37 +159,16 @@ public final class ScenarioRepository {
 		return new Entry(name, scenario);
 	}
 
-	private static @NotNull List<String> discoverNames(@NotNull ClassLoader loader) {
-		Set<String> names = new LinkedHashSet<>();
-		try {
-			Enumeration<URL> resources = loader.getResources(AnvilScenarioDefinition.INDEX_RESOURCE);
-			while (resources.hasMoreElements()) readIndex(resources.nextElement(), names);
-		} catch (IOException failure) {
-			throw new UncheckedIOException("Could not read scenario definition index", failure);
-		}
-
+	private static @NotNull Map<String, Provider<AnvilScenarioDefinition>> registered(@NotNull ClassLoader loader) {
+		Map<String, Provider<AnvilScenarioDefinition>> providers = new TreeMap<>();
 		try {
 			ServiceLoader.load(AnvilScenarioDefinition.class, loader).stream()
-					.map(ServiceLoader.Provider::type)
-					.map(Class::getName)
-					.forEach(names::add);
-		} catch (ServiceConfigurationError failure) {
-			throw new IllegalStateException("Could not read scenario definition service descriptor", failure);
+					.forEach(provider -> providers.put(provider.type().getName(), provider));
+		} catch (ServiceConfigurationError | LinkageError failure) {
+			throw new IllegalStateException("Could not load the scenario definitions registered in " + SERVICE_FILE, failure);
 		}
 
-		return names.stream().sorted().toList();
-	}
-
-	private static void readIndex(@NotNull URL resource, @NotNull Set<String> names) {
-		try (InputStream input = resource.openStream()) {
-			String content = new String(input.readAllBytes(), StandardCharsets.UTF_8);
-			for (String line : content.lines().toList()) {
-				String name = line.strip();
-				if (!name.isEmpty() && !name.startsWith("#")) names.add(name);
-			}
-		} catch (IOException failure) {
-			throw new UncheckedIOException("Could not read scenario definition index " + resource, failure);
-		}
+		return providers;
 	}
 
 	private static @NotNull List<String> normalize(@NotNull List<String> names) {

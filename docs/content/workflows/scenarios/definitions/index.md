@@ -38,10 +38,14 @@ public final class LocalPaperScenario implements AnvilScenarioDefinition {
 }
 ```
 
-The Gradle integration indexes compiled `AnvilScenarioDefinition` classes automatically. IntelliJ
-and the foreground runner load definitions after preparation in a separate JVM; adding a definition
-does not require a separate registration step. A module may contain as many definitions as it needs.
-The module is their namespace, and a definition class is the stable source identity.
+A definition is a public, concrete class with a public no-argument constructor; a public class
+without explicit constructors qualifies. Tooling creates definitions as Java service providers of
+`AnvilScenarioDefinition`. The Gradle integration finds every compiled definition class and registers
+it for you in `META-INF/services/me.whereareiam.anvil.api.scenario.AnvilScenarioDefinition`, together
+with any definitions your own resources already register there. IntelliJ and the foreground runner
+load definitions after preparation in a separate JVM; adding a definition does not require a
+separate registration step. A module may contain as many definitions as it needs. The module is
+their namespace, and a definition class's binary name is the stable source identity.
 
 `PresentationMetadata` belongs to the returned scenario. Use it for a display name, description,
 category, and tags. Server and proxy declarations accept the same metadata for their role labels.
@@ -62,5 +66,6 @@ Starting a named process is a partial operation and leaves the other processes s
 JUnit can select the same definition directly with `@AnvilTest`. The definition is evaluated once
 for the selected workflow, and each test method receives a fresh scenario execution.
 
-For generated compatibility matrices, create one definition class per matrix entry or generate the
-definition index during the build. Keep matrix generation out of the normal scenario discovery API.
+For generated compatibility matrices, create one definition class per matrix entry, or generate the
+classes and register them in `META-INF/services/me.whereareiam.anvil.api.scenario.AnvilScenarioDefinition`
+of the `anvil` resources during the build. Keep matrix generation out of the normal scenario discovery API.

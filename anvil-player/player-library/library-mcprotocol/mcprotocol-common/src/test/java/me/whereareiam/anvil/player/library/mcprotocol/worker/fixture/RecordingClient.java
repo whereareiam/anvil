@@ -20,9 +20,10 @@ import java.util.Set;
 
 /**
  * In-memory client whose sessions are plain objects; tests drive the listener callbacks a release would send. Like a
- * release without disguised chat or chat commands, it carries only system chat, player chat and chat messages.
+ * release without disguised chat or chat commands, it carries only system chat, player chat and chat messages. A
+ * test's client segment provides a subclass of it compiled into the segment.
  */
-public final class RecordingClient implements McProtocolClient<Object> {
+public class RecordingClient implements McProtocolClient<Object> {
 	private static final Set<Class<? extends JavaPacket>> SUPPORTED =
 			Set.of(ClientboundSystemChat.class, ClientboundPlayerChat.class, ServerboundChat.class);
 

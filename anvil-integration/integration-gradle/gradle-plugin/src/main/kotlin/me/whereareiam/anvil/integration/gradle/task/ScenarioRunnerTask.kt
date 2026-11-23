@@ -35,7 +35,7 @@ abstract class ScenarioRunnerTask : DefaultTask() {
     @get:Classpath
     abstract val scenarioClasses: ConfigurableFileCollection
 
-    /** Project-owned resources containing optional generated definition entries. */
+    /** Project-owned resources that may already register scenario definitions in their service file. */
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val scenarioResources: ConfigurableFileCollection
@@ -68,7 +68,7 @@ abstract class ScenarioRunnerTask : DefaultTask() {
         val index = temporaryDir.toPath().resolve("scenario-index")
         val definitions = ScenarioDefinitionScanner.scan(scenarioClasses, scenarioResources)
 
-        ScenarioDefinitionScanner.writeIndex(index, definitions)
+        ScenarioDefinitionScanner.writeServiceFile(index, definitions)
         processes.javaexec {
             executable = javaLauncher.get().executablePath.asFile.absolutePath
             classpath(runtimeClasspath)

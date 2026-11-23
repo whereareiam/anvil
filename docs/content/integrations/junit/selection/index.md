@@ -4,8 +4,8 @@ description: Choose an environment for a test method or class and receive its ru
 ---
 
 Use `@AnvilTest(YourScenario.class)` alongside JUnit's `@Test`. The scenario class implements
-`AnvilScenarioDefinition` and has an accessible no-argument constructor. A public class with no
-explicit constructors meets that requirement.
+`AnvilScenarioDefinition` and, so that tooling can create it as well, is public with a public
+no-argument constructor. A public class with no explicit constructors meets that requirement.
 
 ## Select one environment for a class
 
