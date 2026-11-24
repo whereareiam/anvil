@@ -9,4 +9,6 @@ description = "Agent channel of the built-in ticks capability: the operations an
 // server API. The platform agent that loads the channel's JAR already holds both, and Anvil installs only that JAR.
 dependencies {
 	api(projects.anvilProcess.processAgent.agentServer.serverApi)
+
+	testImplementation(libs.jackson.databind)
 }

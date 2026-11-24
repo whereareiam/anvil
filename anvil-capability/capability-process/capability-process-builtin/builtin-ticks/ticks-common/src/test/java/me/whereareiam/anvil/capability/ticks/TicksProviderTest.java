@@ -14,8 +14,8 @@ class TicksProviderTest {
 
 	@Test
 	void describesTheTicksCapabilityWithoutDependencies() {
-		assertEquals("anvil.ticks", provider.descriptor().getId());
-		assertTrue(provider.descriptor().getRequiredCapabilities().isEmpty());
+		assertEquals("anvil.ticks", provider.descriptor().id());
+		assertTrue(provider.descriptor().requiredCapabilities().isEmpty());
 		assertEquals(Ticks.class, provider.capability());
 	}
 

@@ -60,8 +60,8 @@ class AgentTicksTest {
 		List<Long> seen = new ArrayList<>();
 
 		long held = ticks.until(Condition.of("the server has run three ticks", () -> {
-			seen.add(server.clock.count().getTick());
-			return server.clock.count().getTick();
+			seen.add(server.clock.count().tick());
+			return server.clock.count().tick();
 		}, tick -> tick >= 3), LONG);
 
 		assertEquals(3, held);

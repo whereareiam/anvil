@@ -29,8 +29,8 @@ final class NeoForgeTicks implements ServerTicks {
 	@Override
 	public void pace(@NotNull AgentTickPace pace) {
 		ServerTickRateManager manager = server.tickRateManager();
-		manager.setTickRate(pace.getRate());
-		if (pace.isSprinting()) manager.requestGameToSprint(Integer.MAX_VALUE);
+		manager.setTickRate(pace.rate());
+		if (pace.sprinting()) manager.requestGameToSprint(Integer.MAX_VALUE);
 		else manager.stopSprinting();
 	}
 

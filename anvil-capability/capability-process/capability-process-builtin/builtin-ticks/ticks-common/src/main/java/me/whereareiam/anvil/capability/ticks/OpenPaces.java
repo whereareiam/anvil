@@ -22,9 +22,9 @@ import java.util.Objects;
 @RequiredArgsConstructor
 final class OpenPaces {
 	private static final ChannelOperation<AgentTickPace, AgentTickPace> PACE = new ChannelOperation<>(
-			TicksOperations.PACE.getName(),
-			TicksOperations.PACE.getRequestType(),
-			TicksOperations.PACE.getResponseType()
+			TicksOperations.PACE.name(),
+			TicksOperations.PACE.requestType(),
+			TicksOperations.PACE.responseType()
 	);
 
 	private final @NotNull String process;
@@ -78,7 +78,7 @@ final class OpenPaces {
 		return switch (pace) {
 			case TickPace.Normal normal -> AgentTickPace.builder().rate(TickPace.NORMAL_RATE).sprinting(false).build();
 			case TickPace.Fastest fastest -> AgentTickPace.builder().rate(TickPace.NORMAL_RATE).sprinting(true).build();
-			case TickPace.Rate rate -> AgentTickPace.builder().rate(rate.getTicksPerSecond()).sprinting(false).build();
+			case TickPace.Rate rate -> AgentTickPace.builder().rate(rate.ticksPerSecond()).sprinting(false).build();
 		};
 	}
 

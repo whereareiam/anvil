@@ -19,8 +19,8 @@ class TickPaceTest {
 	@Test
 	void keepsTheRateOfARatePace() {
 		assertEquals(TickPace.rate(5), TickPace.rate(5));
-		assertEquals(5, ((TickPace.Rate) TickPace.rate(5)).getTicksPerSecond());
-		assertEquals(10_000, ((TickPace.Rate) TickPace.rate(TickPace.MAXIMUM_RATE)).getTicksPerSecond());
+		assertEquals(5, ((TickPace.Rate) TickPace.rate(5)).ticksPerSecond());
+		assertEquals(10_000, ((TickPace.Rate) TickPace.rate(TickPace.MAXIMUM_RATE)).ticksPerSecond());
 	}
 
 	@Test

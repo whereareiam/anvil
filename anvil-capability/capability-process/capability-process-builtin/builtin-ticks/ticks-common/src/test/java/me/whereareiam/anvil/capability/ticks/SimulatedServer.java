@@ -44,10 +44,10 @@ final class SimulatedServer implements RequestChannel {
 	public synchronized <Q, R> @Nullable R request(@NotNull ChannelOperation<Q, R> operation, @Nullable Q request) {
 		if (stopped) throw new ChannelUnavailableException("The server stopped", new IOException("Connection refused"));
 
-		String name = operation.getId();
-		if (name.equals(TicksOperations.COUNT.getName())) return (R) clock.count();
-		if (name.equals(TicksOperations.NEXT.getName())) return (R) next((AgentTickWait) request);
-		if (!name.equals(TicksOperations.PACE.getName())) throw new AssertionError("Unexpected operation " + name);
+		String name = operation.id();
+		if (name.equals(TicksOperations.COUNT.name())) return (R) clock.count();
+		if (name.equals(TicksOperations.NEXT.name())) return (R) next((AgentTickWait) request);
+		if (!name.equals(TicksOperations.PACE.name())) throw new AssertionError("Unexpected operation " + name);
 
 		AgentTickPace previous = pace;
 		pace = (AgentTickPace) request;
@@ -64,7 +64,7 @@ final class SimulatedServer implements RequestChannel {
 		}
 		if (frozen) return frozen(wait);
 
-		run(pace.isSprinting() ? 10 : 1);
+		run(pace.sprinting() ? 10 : 1);
 		try {
 			return clock.next(wait);
 		} catch (InterruptedException exception) {
@@ -74,7 +74,7 @@ final class SimulatedServer implements RequestChannel {
 
 	private @NotNull Object frozen(@NotNull AgentTickWait wait) {
 		try {
-			wait(Math.max(1, wait.getWaitMillis()));
+			wait(Math.max(1, wait.waitMillis()));
 		} catch (InterruptedException exception) {
 			throw new IllegalStateException(exception);
 		}

@@ -14,7 +14,7 @@ class ConditionTest {
 		AtomicInteger age = new AtomicInteger(3);
 		Condition<Integer> grown = Condition.of("the wheat is fully grown", age::get, value -> value == 7);
 
-		assertEquals("the wheat is fully grown", grown.getDescription());
+		assertEquals("the wheat is fully grown", grown.description());
 		Integer seen = grown.observe();
 		assertEquals(3, seen);
 		assertFalse(grown.holds(seen));

@@ -48,11 +48,11 @@ public final class TickClock {
 	 * @throws InterruptedException when the request thread is interrupted, as when the agent stops
 	 */
 	public synchronized @NotNull AgentTickCount next(@NotNull AgentTickWait wait) throws InterruptedException {
-		if (!run.equals(wait.getRun())) return count();
+		if (!run.equals(wait.run())) return count();
 
-		long limit = Math.max(0, Math.min(wait.getWaitMillis(), MAXIMUM_WAIT_MILLIS));
+		long limit = Math.max(0, Math.min(wait.waitMillis(), MAXIMUM_WAIT_MILLIS));
 		long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(limit);
-		while (tick <= wait.getAfter()) {
+		while (tick <= wait.after()) {
 			long remaining = deadline - System.nanoTime();
 			if (remaining <= 0) break;
 

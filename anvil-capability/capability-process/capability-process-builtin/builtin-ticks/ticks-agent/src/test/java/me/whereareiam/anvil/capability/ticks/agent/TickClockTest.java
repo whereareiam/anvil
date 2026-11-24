@@ -21,9 +21,9 @@ class TickClockTest {
 		clock.ticked();
 		clock.ticked();
 
-		assertEquals(2, clock.count().getTick());
-		assertEquals(clock.count().getRun(), clock.count().getRun());
-		assertNotEquals(clock.count().getRun(), new TickClock().count().getRun());
+		assertEquals(2, clock.count().tick());
+		assertEquals(clock.count().run(), clock.count().run());
+		assertNotEquals(clock.count().run(), new TickClock().count().run());
 	}
 
 	@Test
@@ -35,7 +35,7 @@ class TickClockTest {
 		assertThrows(TimeoutException.class, () -> next.get(100, TimeUnit.MILLISECONDS));
 		clock.ticked();
 
-		assertEquals(2, next.get(5, TimeUnit.SECONDS).getTick());
+		assertEquals(2, next.get(5, TimeUnit.SECONDS).tick());
 	}
 
 	@Test
@@ -43,7 +43,7 @@ class TickClockTest {
 		AgentTickCount seen = clock.count();
 		clock.ticked();
 
-		assertEquals(1, next(seen, 10_000).getTick());
+		assertEquals(1, next(seen, 10_000).tick());
 	}
 
 	@Test
@@ -51,7 +51,7 @@ class TickClockTest {
 		clock.ticked();
 		long started = System.nanoTime();
 
-		assertEquals(1, next(clock.count(), 50).getTick());
+		assertEquals(1, next(clock.count(), 50).tick());
 		assertTrue(System.nanoTime() - started >= TimeUnit.MILLISECONDS.toNanos(50));
 	}
 
@@ -65,7 +65,7 @@ class TickClockTest {
 
 	private AgentTickCount next(AgentTickCount seen, long waitMillis) {
 		try {
-			return clock.next(AgentTickWait.builder().run(seen.getRun()).after(seen.getTick()).waitMillis(waitMillis).build());
+			return clock.next(AgentTickWait.builder().run(seen.run()).after(seen.tick()).waitMillis(waitMillis).build());
 		} catch (InterruptedException exception) {
 			throw new IllegalStateException(exception);
 		}

@@ -35,7 +35,7 @@ final class AgentTicks implements Ticks {
 
 	@Override
 	public long tick() {
-		return count().getTick();
+		return count().tick();
 	}
 
 	@Override
@@ -55,7 +55,7 @@ final class AgentTicks implements Ticks {
 			if (condition.holds(seen)) return seen;
 			if (!progress.step())
 				throw new IllegalStateException("Gave up on '" + process + "' after " + progress + " waiting until "
-						+ condition.getDescription() + "; last seen: " + seen);
+						+ condition.description() + "; last seen: " + seen);
 		}
 	}
 
@@ -69,7 +69,7 @@ final class AgentTicks implements Ticks {
 	}
 
 	private static <Q, R> @NotNull ChannelOperation<Q, R> channel(@NotNull AgentOperation<Q, R> operation) {
-		return new ChannelOperation<>(operation.getName(), operation.getRequestType(), operation.getResponseType());
+		return new ChannelOperation<>(operation.name(), operation.requestType(), operation.responseType());
 	}
 
 	/**
@@ -108,11 +108,11 @@ final class AgentTicks implements Ticks {
 
 			long wait = Math.min(Duration.ofNanos(remaining).toMillis(), LONGEST_WAIT.toMillis());
 			AgentTickCount next = Objects.requireNonNull(channel.request(NEXT, AgentTickWait.builder()
-					.run(seen.getRun())
-					.after(seen.getTick())
+					.run(seen.run())
+					.after(seen.tick())
 					.waitMillis(wait)
 					.build()));
-			elapsed += next.getRun().equals(seen.getRun()) ? next.getTick() - seen.getTick() : next.getTick();
+			elapsed += next.run().equals(seen.run()) ? next.tick() - seen.tick() : next.tick();
 			seen = next;
 
 			return true;
