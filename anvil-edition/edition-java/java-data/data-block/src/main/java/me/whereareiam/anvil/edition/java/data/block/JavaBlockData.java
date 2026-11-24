@@ -18,11 +18,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * The block data Anvil ships for every Minecraft: Java Edition protocol it supports, by protocol number.
  *
  * <p>Every Minecraft version of one protocol has the same block registry, so the data is keyed by the protocol number
- * a player's release speaks, such as {@code 767} for 1.21 and 1.21.1. It is generated at build time from PrismarineJS
- * minecraft-data (MIT), pinned to one release of it, with the facts minecraft-data does not carry maintained by hand
- * from vanilla's code. A supported protocol the data source has no block data for is listed as missing and reported as
- * such, never served another protocol's data. Each registry is read on first use and kept; lookups are safe from any
- * thread.</p>
+ * a player's release speaks, such as {@code 767} for 1.21 and 1.21.1. It is read from each release's vanilla client by
+ * the physics harness's {@code generateVanillaData}, committed, and turned into these resources at build time; the
+ * build fails unless every protocol a protocol library release speaks has its data. Each registry is read on first use
+ * and kept; lookups are safe from any thread.</p>
  *
  * <pre>{@code
  * JavaBlockData data = JavaBlockData.shipped();

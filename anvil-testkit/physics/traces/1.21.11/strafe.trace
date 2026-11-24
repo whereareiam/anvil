@@ -1,0 +1,178 @@
+# vanilla client 1.21.11, course strafe; columns: tick x y z dx dy dz onGround horizontalCollision; then each packet the tick sent: '  > <packet> <field>=<value>...'
+0 0x1.0p-1 0x1.0p6 0x1.0p-1 0x0.0p0 -0x1.41205c28f5c29p-4 0x0.0p0 false false
+  > ServerboundMovePlayerPos x=0x1.0p-1 y=0x1.0p6 z=0x1.0p-1 onGround=false horizontalCollision=false
+  > ServerboundClientTickEnd
+1 0x1.0p-1 0x1.0p6 0x1.0p-1 0x0.0p0 -0x1.41205c28f5c29p-4 0x0.0p0 true false
+  > ServerboundMovePlayerStatusOnly onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+2 0x1.0p-1 0x1.0p6 0x1.0p-1 0x0.0p0 -0x1.41205c28f5c29p-4 0x0.0p0 true false
+  > ServerboundClientTickEnd
+3 0x1.0p-1 0x1.0p6 0x1.0p-1 0x0.0p0 -0x1.41205c28f5c29p-4 0x0.0p0 true false
+  > ServerboundClientTickEnd
+4 0x1.0p-1 0x1.0p6 0x1.0p-1 0x0.0p0 -0x1.41205c28f5c29p-4 0x0.0p0 true false
+  > ServerboundClientTickEnd
+5 0x1.2434306f73728p-1 0x1.0p6 0x1.2434306f73728p-1 0x1.3c46e906ddc09p-5 -0x1.41205c28f5c29p-4 0x1.3c46e906ddc09p-5 true false
+  > ServerboundPlayerInput forward=true backward=false left=true right=false jump=false shift=false sprint=false
+  > ServerboundMovePlayerPos x=0x1.2434306f73728p-1 y=0x1.0p6 z=0x1.2434306f73728p-1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+6 0x1.5c2ccf6f54c1p-1 0x1.0p6 0x1.5c2ccf6f54c1p-1 0x1.e8f6d930a34d2p-5 -0x1.41205c28f5c29p-4 0x1.e8f6d930a34d2p-5 true false
+  > ServerboundMovePlayerPos x=0x1.5c2ccf6f54c1p-1 y=0x1.0p6 z=0x1.5c2ccf6f54c1p-1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+7 0x1.9ef06d71d2685p-1 0x1.0p6 0x1.9ef06d71d2685p-1 0x1.23a031559bb56p-4 -0x1.41205c28f5c29p-4 0x1.23a031559bb56p-4 true false
+  > ServerboundMovePlayerPos x=0x1.9ef06d71d2685p-1 y=0x1.0p6 z=0x1.9ef06d71d2685p-1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+8 0x1.e798a40bf9518p-1 0x1.0p6 0x1.e798a40bf9518p-1 0x1.3d5dbdb7d333bp-4 -0x1.41205c28f5c29p-4 0x1.3d5dbdb7d333bp-4 true false
+  > ServerboundMovePlayerPos x=0x1.e798a40bf9518p-1 y=0x1.0p6 z=0x1.e798a40bf9518p-1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+9 0x1.19bc461933954p0 0x1.0p6 0x1.19bc461933954p0 0x1.4b6ba289dcf91p-4 -0x1.41205c28f5c29p-4 0x1.4b6ba289dcf91p-4 true false
+  > ServerboundMovePlayerPos x=0x1.19bc461933954p0 y=0x1.0p6 z=0x1.19bc461933954p0 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+10 0x1.408d18798b1e1p0 0x1.0p6 0x1.408d18798b1e1p0 0x1.531815ce0ec97p-4 -0x1.41205c28f5c29p-4 0x1.531815ce0ec97p-4 true false
+  > ServerboundMovePlayerPos x=0x1.408d18798b1e1p0 y=0x1.0p6 z=0x1.408d18798b1e1p0 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+11 0x1.67d8b20e25c3ep0 0x1.0p6 0x1.67d8b20e25c3ep0 0x1.5748acd614ac3p-4 -0x1.41205c28f5c29p-4 0x1.5748acd614ac3p-4 true false
+  > ServerboundMovePlayerPos x=0x1.67d8b20e25c3ep0 y=0x1.0p6 z=0x1.67d8b20e25c3ep0 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+12 0x1.8f67551340c7ep0 0x1.0p6 0x1.8f67551340c7ep0 0x1.59924f3053c72p-4 -0x1.41205c28f5c29p-4 0x1.59924f3053c72p-4 true false
+  > ServerboundMovePlayerPos x=0x1.8f67551340c7ep0 y=0x1.0p6 z=0x1.8f67551340c7ep0 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+13 0x1.b71a923dffbd9p0 0x1.0p6 0x1.b71a923dffbd9p0 0x1.5ad210cd82052p-4 -0x1.41205c28f5c29p-4 0x1.5ad210cd82052p-4 true false
+  > ServerboundMovePlayerPos x=0x1.b71a923dffbd9p0 y=0x1.0p6 z=0x1.b71a923dffbd9p0 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+14 0x1.dee1cb8291972p0 0x1.0p6 0x1.dee1cb8291972p0 0x1.5b80a710b0835p-4 -0x1.41205c28f5c29p-4 0x1.5b80a710b0835p-4 true false
+  > ServerboundMovePlayerPos x=0x1.dee1cb8291972p0 y=0x1.0p6 z=0x1.dee1cb8291972p0 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+15 0x1.0359f715ab2c5p1 0x1.0p6 0x1.0359f715ab2c5p1 0x1.5bdffa22a3ea1p-4 -0x1.41205c28f5c29p-4 0x1.5bdffa22a3ea1p-4 true false
+  > ServerboundMovePlayerPos x=0x1.0359f715ab2c5p1 y=0x1.0p6 z=0x1.0359f715ab2c5p1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+16 0x1.174603029d284p1 0x1.0p6 0x1.174603029d284p1 0x1.5c14063690ccp-4 -0x1.41205c28f5c29p-4 0x1.5c14063690ccp-4 true false
+  > ServerboundMovePlayerPos x=0x1.174603029d284p1 y=0x1.0p6 z=0x1.174603029d284p1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+17 0x1.2b33af502e8b4p1 0x1.0p6 0x1.2b33af502e8b4p1 0x1.5c30712915cd1p-4 -0x1.41205c28f5c29p-4 0x1.5c30712915cd1p-4 true false
+  > ServerboundMovePlayerPos x=0x1.2b33af502e8b4p1 y=0x1.0p6 z=0x1.2b33af502e8b4p1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+18 0x1.3f223ef554164p1 0x1.0p6 0x1.3f223ef554164p1 0x1.5c3ff5483e319p-4 -0x1.41205c28f5c29p-4 0x1.5c3ff5483e319p-4 true false
+  > ServerboundMovePlayerPos x=0x1.3f223ef554164p1 y=0x1.0p6 z=0x1.3f223ef554164p1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+19 0x1.53114abb72e47p1 0x1.0p6 0x1.53114abb72e47p1 0x1.5c486e0f9771fp-4 -0x1.41205c28f5c29p-4 0x1.5c486e0f9771fp-4 true false
+  > ServerboundMovePlayerPos x=0x1.53114abb72e47p1 y=0x1.0p6 z=0x1.53114abb72e47p1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+20 0x1.67009a47cc7cap1 0x1.0p6 0x1.67009a47cc7cap1 0x1.5c4d0e36d6d2ap-4 -0x1.41205c28f5c29p-4 0x1.5c4d0e36d6d2ap-4 true false
+  > ServerboundMovePlayerPos x=0x1.67009a47cc7cap1 y=0x1.0p6 z=0x1.67009a47cc7cap1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+21 0x1.7af00ed5600fdp1 0x1.0p6 0x1.7af00ed5600fdp1 0x1.5c4f94c31251p-4 -0x1.41205c28f5c29p-4 0x1.5c4f94c31251p-4 true false
+  > ServerboundMovePlayerPos x=0x1.7af00ed5600fdp1 y=0x1.0p6 z=0x1.7af00ed5600fdp1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+22 0x1.8edf9797557fp1 0x1.0p6 0x1.8edf9797557fp1 0x1.5c50f5c6f1e73p-4 -0x1.41205c28f5c29p-4 0x1.5c50f5c6f1e73p-4 true false
+  > ServerboundMovePlayerPos x=0x1.8edf9797557fp1 y=0x1.0p6 z=0x1.8edf9797557fp1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+23 0x1.a2cf2b6169eaep1 0x1.0p6 0x1.a2cf2b6169eaep1 0x1.5c51b685fe585p-4 -0x1.41205c28f5c29p-4 0x1.5c51b685fe585p-4 true false
+  > ServerboundMovePlayerPos x=0x1.a2cf2b6169eaep1 y=0x1.0p6 z=0x1.a2cf2b6169eaep1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+24 0x1.b6bec53176ba4p1 0x1.0p6 0x1.b6bec53176ba4p1 0x1.5c521fc34d1b6p-4 -0x1.41205c28f5c29p-4 0x1.5c521fc34d1b6p-4 true false
+  > ServerboundMovePlayerPos x=0x1.b6bec53176ba4p1 y=0x1.0p6 z=0x1.b6bec53176ba4p1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+25 0x1.caae624b6dffcp1 0x1.0p6 0x1.caae624b6dffcp1 0x1.5c52593941c3cp-4 -0x1.41205c28f5c29p-4 0x1.5c52593941c3cp-4 true false
+  > ServerboundMovePlayerPos x=0x1.caae624b6dffcp1 y=0x1.0p6 z=0x1.caae624b6dffcp1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+26 0x1.de9e013114ea8p1 0x1.0p6 0x1.de9e013114ea8p1 0x1.5c527898e4c54p-4 -0x1.41205c28f5c29p-4 0x1.5c527898e4c54p-4 true false
+  > ServerboundMovePlayerPos x=0x1.de9e013114ea8p1 y=0x1.0p6 z=0x1.de9e013114ea8p1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+27 0x1.f28da111b8ed5p1 0x1.0p6 0x1.f28da111b8ed5p1 0x1.5c5289ba2af54p-4 -0x1.41205c28f5c29p-4 0x1.5c5289ba2af54p-4 true false
+  > ServerboundMovePlayerPos x=0x1.f28da111b8ed5p1 y=0x1.0p6 z=0x1.f28da111b8ed5p1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+28 0x1.033ea0bdb390dp2 0x1.0p6 0x1.033ea0bdb390dp2 0x1.5c529314871c9p-4 -0x1.41205c28f5c29p-4 0x1.5c529314871c9p-4 true false
+  > ServerboundMovePlayerPos x=0x1.033ea0bdb390dp2 y=0x1.0p6 z=0x1.033ea0bdb390dp2 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+29 0x1.0d367117f41b9p2 0x1.0p6 0x1.0d367117f41b9p2 0x1.5c52982fd935dp-4 -0x1.41205c28f5c29p-4 0x1.5c52982fd935dp-4 true false
+  > ServerboundMovePlayerPos x=0x1.0d367117f41b9p2 y=0x1.0p6 z=0x1.0d367117f41b9p2 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+30 0x1.0e21356ac5121p2 0x1.0p6 0x1.0e21356ac5121p2 0x1.005d8f963c4c2p-7 -0x1.41205c28f5c29p-4 0x1.005d8f963c4c2p-7 true false
+  > ServerboundPlayerInput forward=false backward=true left=false right=true jump=false shift=false sprint=false
+  > ServerboundMovePlayerPos x=0x1.0e21356ac5121p2 y=0x1.0p6 z=0x1.0e21356ac5121p2 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+31 0x1.0a1ade24a1c1ep2 0x1.0p6 0x1.0a1ade24a1c1ep2 -0x1.1948796284921p-5 -0x1.41205c28f5c29p-4 -0x1.1948796284921p-5 true false
+  > ServerboundMovePlayerPos x=0x1.0a1ade24a1c1ep2 y=0x1.0p6 z=0x1.0a1ade24a1c1ep2 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+32 0x1.0361c723ee4a7p2 0x1.0p6 0x1.0361c723ee4a7p2 -0x1.d5db8aae16107p-5 -0x1.41205c28f5c29p-4 -0x1.d5db8aae16107p-5 true false
+  > ServerboundMovePlayerPos x=0x1.0361c723ee4a7p2 y=0x1.0p6 z=0x1.0361c723ee4a7p2 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+33 0x1.f65f1401476p1 0x1.0p6 0x1.f65f1401476p1 -0x1.1e68dda74a76cp-4 -0x1.41205c28f5c29p-4 -0x1.1e68dda74a76cp-4 true false
+  > ServerboundMovePlayerPos x=0x1.f65f1401476p1 y=0x1.0p6 z=0x1.f65f1401476p1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+34 0x1.e45ec0f8302fbp1 0x1.0p6 0x1.e45ec0f8302fbp1 -0x1.3a84a70bee05dp-4 -0x1.41205c28f5c29p-4 -0x1.3a84a70bee05dp-4 true false
+  > ServerboundMovePlayerPos x=0x1.e45ec0f8302fbp1 y=0x1.0p6 z=0x1.e45ec0f8302fbp1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+35 0x1.d17d8fa3f3e2ep1 0x1.0p6 0x1.d17d8fa3f3e2ep1 -0x1.49dd8d71ae9e6p-4 -0x1.41205c28f5c29p-4 -0x1.49dd8d71ae9e6p-4 true false
+  > ServerboundMovePlayerPos x=0x1.d17d8fa3f3e2ep1 y=0x1.0p6 z=0x1.d17d8fa3f3e2ep1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+36 0x1.be21971c89915p1 0x1.0p6 0x1.be21971c89915p1 -0x1.523ebb6ed0fd6p-4 -0x1.41205c28f5c29p-4 -0x1.523ebb6ed0fd6p-4 true false
+  > ServerboundMovePlayerPos x=0x1.be21971c89915p1 y=0x1.0p6 z=0x1.be21971c89915p1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+37 0x1.aa829525362ccp1 0x1.0p6 0x1.aa829525362ccp1 -0x1.56d20018fbcbbp-4 -0x1.41205c28f5c29p-4 -0x1.56d20018fbcbbp-4 true false
+  > ServerboundMovePlayerPos x=0x1.aa829525362ccp1 y=0x1.0p6 z=0x1.aa829525362ccp1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+38 0x1.96bef9089171cp1 0x1.0p6 0x1.96bef9089171cp1 -0x1.5951834db4fb3p-4 -0x1.41205c28f5c29p-4 -0x1.5951834db4fb3p-4 true false
+  > ServerboundMovePlayerPos x=0x1.96bef9089171cp1 y=0x1.0p6 z=0x1.96bef9089171cp1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+39 0x1.82e760d246ed4p1 0x1.0p6 0x1.82e760d246ed4p1 -0x1.5aaeafd0fdedp-4 -0x1.41205c28f5c29p-4 -0x1.5aaeafd0fdedp-4 true false
+  > ServerboundMovePlayerPos x=0x1.82e760d246ed4p1 y=0x1.0p6 z=0x1.82e760d246ed4p1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+40 0x1.6f04df37e2214p1 0x1.0p6 0x1.6f04df37e2214p1 -0x1.5b6d55f336755p-4 -0x1.41205c28f5c29p-4 -0x1.5b6d55f336755p-4 true false
+  > ServerboundMovePlayerPos x=0x1.6f04df37e2214p1 y=0x1.0p6 z=0x1.6f04df37e2214p1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+41 0x1.5b1c686c6b90fp1 0x1.0p6 0x1.5b1c686c6b90fp1 -0x1.5bd56e1a254bap-4 -0x1.41205c28f5c29p-4 -0x1.5bd56e1a254bap-4 true false
+  > ServerboundMovePlayerPos x=0x1.5b1c686c6b90fp1 y=0x1.0p6 z=0x1.5b1c686c6b90fp1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+42 0x1.4730b0dfbd89fp1 0x1.0p6 0x1.4730b0dfbd89fp1 -0x1.5c0e43feaf087p-4 -0x1.41205c28f5c29p-4 -0x1.5c0e43feaf087p-4 true false
+  > ServerboundMovePlayerPos x=0x1.4730b0dfbd89fp1 y=0x1.0p6 z=0x1.4730b0dfbd89fp1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+43 0x1.334332a3eb351p1 0x1.0p6 0x1.334332a3eb351p1 -0x1.5c2d4c3cb9c87p-4 -0x1.41205c28f5c29p-4 -0x1.5c2d4c3cb9c87p-4 true false
+  > ServerboundMovePlayerPos x=0x1.334332a3eb351p1 y=0x1.0p6 z=0x1.334332a3eb351p1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+44 0x1.1f54bc26288a3p1 0x1.0p6 0x1.1f54bc26288a3p1 -0x1.5c3e3dcb460bfp-4 -0x1.41205c28f5c29p-4 -0x1.5c3e3dcb460bfp-4 true false
+  > ServerboundMovePlayerPos x=0x1.1f54bc26288a3p1 y=0x1.0p6 z=0x1.1f54bc26288a3p1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+45 0x1.0b65be1bf17d3p1 0x1.0p6 0x1.0b65be1bf17d3p1 -0x1.5c477e19afec3p-4 -0x1.41205c28f5c29p-4 -0x1.5c477e19afec3p-4 true false
+  > ServerboundMovePlayerPos x=0x1.0b65be1bf17d3p1 y=0x1.0p6 z=0x1.0b65be1bf17d3p1 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+46 0x1.eeecec1e8e426p0 0x1.0p6 0x1.eeecec1e8e426p0 -0x1.5c4c8b321b829p-4 -0x1.41205c28f5c29p-4 -0x1.5c4c8b321b829p-4 true false
+  > ServerboundMovePlayerPos x=0x1.eeecec1e8e426p0 y=0x1.0p6 z=0x1.eeecec1e8e426p0 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+47 0x1.c70e0b33b2d1p0 0x1.0p6 0x1.c70e0b33b2d1p0 -0x1.5c4f4d39d4758p-4 -0x1.41205c28f5c29p-4 -0x1.5c4f4d39d4758p-4 true false
+  > ServerboundMovePlayerPos x=0x1.c70e0b33b2d1p0 y=0x1.0p6 z=0x1.c70e0b33b2d1p0 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+48 0x1.9f2efe285bd06p0 0x1.0p6 0x1.9f2efe285bd06p0 -0x1.5c50ceb7e9f19p-4 -0x1.41205c28f5c29p-4 -0x1.5c50ceb7e9f19p-4 true false
+  > ServerboundMovePlayerPos x=0x1.9f2efe285bd06p0 y=0x1.0p6 z=0x1.9f2efe285bd06p0 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+49 0x1.774fd9052378p0 0x1.0p6 0x1.774fd9052378p0 -0x1.5c51a132859ccp-4 -0x1.41205c28f5c29p-4 -0x1.5c51a132859ccp-4 true false
+  > ServerboundMovePlayerPos x=0x1.774fd9052378p0 y=0x1.0p6 z=0x1.774fd9052378p0 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+50 0x1.618abef1fb1e3p0 0x1.0p6 0x1.618abef1fb1e3p0 -0x1.7c5d3f35fe13ap-5 -0x1.41205c28f5c29p-4 -0x1.7c5d3f35fe13ap-5 true false
+  > ServerboundPlayerInput forward=false backward=false left=false right=false jump=false shift=false sprint=false
+  > ServerboundMovePlayerPos x=0x1.618abef1fb1e3p0 y=0x1.0p6 z=0x1.618abef1fb1e3p0 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+51 0x1.55a7d4f84b2d9p0 0x1.0p6 0x1.55a7d4f84b2d9p0 -0x1.9f5b991586e3ap-6 -0x1.41205c28f5c29p-4 -0x1.9f5b991586e3ap-6 true false
+  > ServerboundMovePlayerPos x=0x1.55a7d4f84b2d9p0 y=0x1.0p6 z=0x1.55a7d4f84b2d9p0 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+52 0x1.4f2a6693f512p0 0x1.0p6 0x1.4f2a6693f512p0 -0x1.c5921e551de64p-7 -0x1.41205c28f5c29p-4 -0x1.c5921e551de64p-7 true false
+  > ServerboundMovePlayerPos x=0x1.4f2a6693f512p0 y=0x1.0p6 z=0x1.4f2a6693f512p0 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+53 0x1.4b9f42574ad63p0 0x1.0p6 0x1.4b9f42574ad63p0 -0x1.ef4ca1d2462ebp-8 -0x1.41205c28f5c29p-4 -0x1.ef4ca1d2462ebp-8 true false
+  > ServerboundMovePlayerPos x=0x1.4b9f42574ad63p0 y=0x1.0p6 z=0x1.4b9f42574ad63p0 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+54 0x1.49aff5b5789p0 0x1.0p6 0x1.49aff5b5789p0 -0x1.0e6ef81beb917p-8 -0x1.41205c28f5c29p-4 -0x1.0e6ef81beb917p-8 true false
+  > ServerboundMovePlayerPos x=0x1.49aff5b5789p0 y=0x1.0p6 z=0x1.49aff5b5789p0 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+55 0x1.48a186bd5ca47p0 0x1.0p6 0x1.48a186bd5ca47p0 -0x1.27503a24a0953p-9 -0x1.41205c28f5c29p-4 -0x1.27503a24a0953p-9 true false
+  > ServerboundMovePlayerPos x=0x1.48a186bd5ca47p0 y=0x1.0p6 z=0x1.48a186bd5ca47p0 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+56 0x1.480ddea04a542p0 0x1.0p6 0x1.480ddea04a542p0 -0x1.427b7525a3cecp-10 -0x1.41205c28f5c29p-4 -0x1.427b7525a3cecp-10 true false
+  > ServerboundMovePlayerPos x=0x1.480ddea04a542p0 y=0x1.0p6 z=0x1.480ddea04a542p0 onGround=true horizontalCollision=false
+  > ServerboundClientTickEnd
+57 0x1.480ddea04a542p0 0x1.0p6 0x1.480ddea04a542p0 0x0.0p0 -0x1.41205c28f5c29p-4 0x0.0p0 true false
+  > ServerboundClientTickEnd
+58 0x1.480ddea04a542p0 0x1.0p6 0x1.480ddea04a542p0 0x0.0p0 -0x1.41205c28f5c29p-4 0x0.0p0 true false
+  > ServerboundClientTickEnd
+59 0x1.480ddea04a542p0 0x1.0p6 0x1.480ddea04a542p0 0x0.0p0 -0x1.41205c28f5c29p-4 0x0.0p0 true false
+  > ServerboundClientTickEnd

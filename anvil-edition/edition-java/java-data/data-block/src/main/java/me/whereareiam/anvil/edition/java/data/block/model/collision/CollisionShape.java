@@ -9,10 +9,11 @@ import java.util.List;
 /**
  * The collision shape of a block state: the boxes an entity cannot move into, in block-local coordinates.
  *
- * <p>The shape is the one the data records for the state alone. Where vanilla's shape also depends on the entity or
- * on the block's position, the block's {@link CollisionKind} is {@link CollisionKind#DYNAMIC} or
- * {@link CollisionKind#OFFSET} and the shape is the single one minecraft-data records, such as scaffolding's shape for
- * an entity standing on it, or bamboo's before its offset.</p>
+ * <p>The boxes are vanilla's, as {@code VoxelShape.toAabbs} gives them. Where vanilla's shape also depends on the
+ * player or on the block's position, the block's {@link CollisionKind} is {@link CollisionKind#DYNAMIC} or
+ * {@link CollisionKind#OFFSET}: a state's shape for each player case is
+ * {@link me.whereareiam.anvil.edition.java.data.block.model.BlockState#collision(CollisionCase)}, and an offset block's
+ * shape is the one before vanilla moves it.</p>
  */
 @Value
 public class CollisionShape {

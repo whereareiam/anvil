@@ -12,8 +12,8 @@ import java.util.Set;
 /**
  * How a block changes the movement of an entity on or in it, as vanilla's blocks declare it.
  *
- * <p>These are vanilla's values that Anvil maintains by hand, because minecraft-data does not carry them, and keep
- * vanilla's defaults for every block that does not change them.</p>
+ * <p>Each value is read from the release's vanilla client: the block's own getters, and what its methods do to a
+ * player.</p>
  */
 @Value
 @Builder

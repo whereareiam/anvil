@@ -2,7 +2,6 @@ package me.whereareiam.anvil.edition.java.physics.living;
 
 import me.whereareiam.anvil.edition.java.data.block.model.BlockState;
 import me.whereareiam.anvil.edition.java.data.block.type.BlockKind;
-import me.whereareiam.anvil.edition.java.data.block.type.MovementBehaviour;
 import me.whereareiam.anvil.edition.java.physics.geometry.Vector;
 import me.whereareiam.anvil.edition.java.physics.world.BlockReader;
 import org.jetbrains.annotations.NotNull;
@@ -36,7 +35,7 @@ public final class Climbing {
 	 */
 	public static boolean isClimbable(@NotNull BlockReader reader, int @NotNull [] at) {
 		BlockState state = reader.state(at[0], at[1], at[2]);
-		if (state.getBlock().getMovement().has(MovementBehaviour.CLIMBABLE)) return true;
+		if (state.getBlock().hasTag("minecraft:climbable")) return true;
 		if (state.getBlock().getKind() != BlockKind.TRAPDOOR || !"true".equals(state.property("open").orElse("false")))
 			return false;
 

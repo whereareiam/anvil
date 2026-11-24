@@ -63,9 +63,7 @@ public final class TestWorld {
 	 * Creates a disconnected player whose release carries only some packets.
 	 */
 	public TestWorld(@NotNull String version, @NotNull Predicate<Class<? extends JavaPacket>> carried) {
-		this(version, carried, MinecraftVersion.parse(version).isAtLeast(MinecraftVersion.parse("1.18"))
-				? DimensionType.known(OVERWORLD)
-				: DimensionType.withEffects(OVERWORLD, OVERWORLD, 0, 256));
+		this(version, carried, dimension(version));
 	}
 
 	/**
@@ -75,13 +73,29 @@ public final class TestWorld {
 		this(version, carried(version), dimension);
 	}
 
+	/**
+	 * Creates a disconnected player of a client version that speaks the given protocol, such as one Anvil ships no
+	 * block data of; a world of such a protocol is built with the block data of protocol 774.
+	 */
+	public TestWorld(@NotNull String version, int protocol) {
+		this(version, protocol, carried(version), dimension(version));
+	}
+
 	private TestWorld(
 			@NotNull String version,
 			@NotNull Predicate<Class<? extends JavaPacket>> carried,
 			@NotNull DimensionType dimension
 	) {
+		this(version, PROTOCOLS.get(version), carried, dimension);
+	}
+
+	private TestWorld(
+			@NotNull String version,
+			int protocol,
+			@NotNull Predicate<Class<? extends JavaPacket>> carried,
+			@NotNull DimensionType dimension
+	) {
 		this.version = MinecraftVersion.parse(version);
-		int protocol = PROTOCOLS.get(version);
 		this.player = new TestJavaPlayer("Alice", this.version, protocol, carried);
 		this.registry = JavaBlockData.shipped().find(protocol).orElse(JavaBlockData.shipped().require(774));
 		this.dimension = dimension;
@@ -100,6 +114,16 @@ public final class TestWorld {
 				.dimensionType(dimension)
 				.build());
 		return this;
+	}
+
+	/**
+	 * The overworld's dimension type as a client of a version knows it: by its key from 1.18, before that with the
+	 * heights it then had.
+	 */
+	private static @NotNull DimensionType dimension(@NotNull String version) {
+		return MinecraftVersion.parse(version).isAtLeast(MinecraftVersion.parse("1.18"))
+				? DimensionType.known(OVERWORLD)
+				: DimensionType.withEffects(OVERWORLD, OVERWORLD, 0, 256);
 	}
 
 	/**

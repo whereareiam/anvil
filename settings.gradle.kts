@@ -45,6 +45,9 @@ rootProject.name = "Anvil"
 // Consumer examples resolve the published plugin independently of the build that produces it.
 rootProject.children.removeAll { it.name == "examples" }
 project(":anvil-testkit").children.removeAll { it.name == "fixtures" }
+// The physics harness compiles against Mojang's clients, which only a maintainer's generateVanillaData downloads; it is
+// a standalone build run with -p anvil-testkit/physics/harness.
+project(":anvil-testkit").children.removeAll { it.name == "physics" }
 // The server suite applies the Anvil plugin at this build's own version, which a clean machine has not published
 // yet. A bootstrap build leaves the suite out, so that publishToMavenLocal can publish the plugin first.
 if (providers.gradleProperty("anvil.bootstrap").isPresent)
@@ -83,9 +86,10 @@ dependencyResolutionManagement {
                 includeGroup("com.github.steveice10")
             }
         }
-        // The PrismarineJS minecraft-data files data-block's block-data.toml pins, addressed by commit:
+        // The PrismarineJS minecraft-data files data-packet's packet-data.toml pins, addressed by commit:
         // PrismarineJS:minecraft-data:<commit> with the file's directory below data/pc as classifier, such as
-        // data/pc/1.20.5/blocks.json for the artifact blocks with classifier 1.20.5.
+        // data/pc/1.20.5/protocol.json for the artifact protocol with classifier 1.20.5. Block data is read from the
+        // vanilla clients instead (data-block's vanilla/<protocol>.blocks).
         exclusiveContent {
             forRepository {
                 ivy("https://raw.githubusercontent.com/") {

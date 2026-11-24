@@ -1,0 +1,26 @@
+description = "Walks diagonally forward and left, then backward and right, which combine two inputs into one direction"
+ticks = 60
+
+[start]
+x = 0.5
+y = 64.0
+z = 0.5
+yaw = 0.0
+pitch = 0.0
+
+[[blocks]]
+from = [-3, 63, -3]
+to = [30, 63, 30]
+state = "minecraft:stone"
+
+[[keys]]
+tick = 5
+held = ["forward", "left"]
+
+[[keys]]
+tick = 30
+held = ["backward", "right"]
+
+[[keys]]
+tick = 50
+held = []

@@ -1,7 +1,5 @@
-import me.whereareiam.anvil.buildlogic.minecraftdata.MinecraftDataKind
-
 plugins {
-	id("module-minecraft-data")
+	id("module-block-data")
 	id("module-edition")
 }
 
@@ -11,19 +9,10 @@ dependencies {
 	api(projects.anvilApi)
 }
 
-// block-data.toml pins the PrismarineJS minecraft-data files of each protocol and block-facts.toml holds what that
-// data does not carry.
-minecraftData.generate(
-	MinecraftDataKind(
-		subject = "block data",
-		stem = "BlockData",
-		pinsFile = "block-data.toml",
-		files = listOf(
-			MinecraftDataKind.File("blocks", "blocks"),
-			MinecraftDataKind.File("collision-shapes", "blockCollisionShapes"),
-		),
-	),
+// vanilla/<protocol>.blocks is the block data the physics harness's generateVanillaData read from each release's
+// vanilla client; ./gradlew -p anvil-testkit/physics/harness generateVanillaData writes it again.
+blockData.generate(
 	generator = "me.whereareiam.anvil.edition.java.data.block.BlockDataGenerator",
 	packagePath = "me/whereareiam/anvil/edition/java/data/block",
-	inputs = mapOf("facts" to layout.projectDirectory.file("block-facts.toml")),
+	vanilla = layout.projectDirectory.dir("vanilla"),
 )

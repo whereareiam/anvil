@@ -1,0 +1,30 @@
+description = "Sprints on ice, jumps once, then lets go and slides to a stop"
+ticks = 100
+
+[start]
+x = 0.5
+y = 64.0
+z = 0.5
+yaw = 0.0
+pitch = 0.0
+
+[[blocks]]
+from = [-3, 63, -3]
+to = [3, 63, 90]
+state = "minecraft:ice"
+
+[[keys]]
+tick = 5
+held = ["forward", "sprint"]
+
+[[keys]]
+tick = 20
+held = ["forward", "sprint", "jump"]
+
+[[keys]]
+tick = 21
+held = ["forward", "sprint"]
+
+[[keys]]
+tick = 40
+held = []

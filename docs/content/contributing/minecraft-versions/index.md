@@ -55,48 +55,54 @@ pin task as the remedy.
 
 ## Add the block data
 
-Simulated players read block facts, such as collision shapes and friction, from `data-block`, which
-generates them at build time from [PrismarineJS minecraft-data](https://github.com/PrismarineJS/minecraft-data)
-(MIT; the notice ships as `META-INF/LICENSE-minecraft-data.txt`). Its
-`anvil-edition/edition-java/java-data/data-block/block-data.toml` pins one minecraft-data release
-and, per `[[release]]` row, the `blocks.json` and `blockCollisionShapes.json` of one protocol, with their SHA-256.
-Every Minecraft version of a protocol has the same block registry, so the rows and the data are keyed by protocol
-number, and a new version of a protocol Anvil already speaks needs nothing here. Gradle resolves the pinned files
-through the `minecraft-data` repository the settings declare, so a build fetches them once into its cache and works
-offline after that. For a new protocol, add a row with its number and pin it:
+Simulated players read block data, such as collision shapes and friction, from `data-block`. The data is
+read from each release's own vanilla client: its registries, the blocks' classes, tags and methods. A maintainer who
+owns Minecraft runs the client headless with the standalone physics harness, which also writes the physics reference
+traces, and commits what it writes as
+`anvil-edition/edition-java/java-data/data-block/vanilla/<protocol>.blocks`. Nothing about blocks is
+maintained by hand, and CI never downloads the client. Every Minecraft version of a protocol has the same block
+registry, so the data is keyed by protocol number, and a new version of a protocol Anvil already speaks needs
+nothing here.
+
+For a new protocol, add the version's `[[release]]` row to `anvil-testkit/physics/harness/vanilla-clients.toml`,
+naming the harness family whose client code fits it, and give it a `[[paper]]` row of `live-matrix.toml`, then pin
+the client and read its data:
 
 ```toml
 [[release]]
-protocol = 777
+minecraft = "26.3"
+harness = "v26"
 ```
 
 ```shell
-./gradlew :anvil-edition:edition-java:java-data:data-block:pinBlockData
+./gradlew -p anvil-testkit/physics/harness pinVanillaClients
+./gradlew -p anvil-testkit/physics/harness generateVanillaData -Pminecraft=26.3
 ```
 
-The task resolves the commit of the file's minecraft-data `version` tag, finds each row's Minecraft versions in
-`data/pc/common/protocolVersions.json` there, looks them up in `data/dataPaths.json` and rewrites the commit and
-every row's pins. The versions of a protocol that dataPaths names must agree on their files; a version it does not
-name, such as a patch release, shares them through its protocol. To move to a newer minecraft-data release, change
-`version` first; while the commit stays the same, a pin never changes, and a file whose checksum differs fails the
-build.
+`pinVanillaClients` pins Mojang's version metadata, client JAR and mappings by SHA-1. `generateVanillaData`
+downloads them into `~/.anvil/vanilla-clients`, never into the repository, and writes the release's traces and its
+`<protocol>.blocks`. Where the new client names a member the family's code uses differently, give the family's
+releases their own sources in `src/<family>/release-<minecraft>/java`, compiled against that client alone; the
+harness never bridges releases through reflection. It reaches a member the client keeps private only once that member
+is widened: list it in the family's `src/<family>/accesstransformer.cfg`, or in the release's
+`src/<family>/release-<minecraft>/accesstransformer.cfg` when only that release has it, one class or member per line
+in NeoForge's access transformer format, such as
+`public net.minecraft.client.Minecraft options:Lnet/minecraft/client/Options;` for a field or
+`public net.minecraft.client.multiplayer.ClientChunkCache$Storage getIndex(II)I` for a method. The client
+preparation widens exactly those into `client-widened.jar` in the cache, the same bytes from the same lists, and
+fails when a list names something the client lacks. The harness fails rather than writing data that would not hold,
+such as states numbered out of property order or a shape that depends on its position in a way the data cannot
+record.
 
-The rows must match the protocol library's releases: `checkBlockDataReleases`, part of `check`, fails unless the
-protocol of each release of `mcprotocol-releases.toml` has a row, and every row a release. When minecraft-data has
-no block data for any version of a protocol, its row keeps no pins. The build still succeeds, and
-`JavaBlockData.require` reports the protocol as having no block data, naming the minecraft-data release; it never
-serves another protocol's data. Pin again once minecraft-data publishes the release.
+Each file holds, for every block in block ID order, its properties and states, its kind, collision kind and
+behaviours where vanilla's movement code asks by class, identity or tag, its offset, friction, speed and jump
+factors, bounce and stuck slowdown, and the movement tags it is in; for every state, its collision shape for a player
+standing on it and for each other player case that differs, its fluid, whether it stops fluid flow and its sturdy
+faces. Commit the file; the module's `generator` source set reads it strictly at build time.
 
-What minecraft-data does not carry is maintained by hand in `block-facts.toml` beside it: a block's `kind` where
-vanilla's movement code asks what it is (air, fences, walls, fence gates, trapdoors), its `collision` kind where its
-shape depends on the entity or the position, its fluid, its movement (friction, speed and jump factors, bounce,
-stuck slowdowns and `behaviours` such as climbable blocks) and the lowest value of integer properties that do not
-start at `0`. Each entry names the vanilla code its values come from; check new blocks of the release against
-vanilla's code and add them. The generator, Java in the module's own `generator` source set, binds the file to the
-same enums the data uses: it fails on a name no protocol has, on a field or constant it does not know, on a value an
-entry sets for a block another entry already set, and on an integer property whose listed values disagree with the
-file. Then run the data's tests, which check known facts,
-such as the state count and collision shapes, for every protocol:
+The files must match the protocol library's releases: `checkBlockDataReleases`, part of `check`, fails unless the
+protocol of each release of `mcprotocol-releases.toml` has a file, and every file a release. Then run the data's
+tests, which check known facts, such as the state count and collision shapes, for every protocol:
 
 ```shell
 ./gradlew :anvil-edition:edition-java:java-data:data-block:test
@@ -106,18 +112,19 @@ Add the new protocol to the state counts `BlockRegistryTest` expects and to the 
 
 ## Add the packet names
 
-The frames a player receives are named from `data-packet`, which generates, from the same minecraft-data
-release, the names of the packets a server sends in each connection state of each protocol: the packet mappings of
+The frames a player receives are named from `data-packet`, which generates, from a pinned
+[PrismarineJS minecraft-data](https://github.com/PrismarineJS/minecraft-data) release (MIT), the names of the packets a server sends in each connection state of each protocol: the packet mappings of
 its `protocol.json` (the notice ships as `META-INF/LICENSE-minecraft-data-packets.txt`). Its
-`anvil-edition/edition-java/java-data/data-packet/packet-data.toml` has the layout of
-`block-data.toml`, with one `packets` file per row. For a new protocol, add a row and pin it:
+`anvil-edition/edition-java/java-data/data-packet/packet-data.toml` pins one minecraft-data release
+and, per `[[release]]` row, the `protocol.json` of one protocol with its SHA-256, which Gradle resolves through the
+`minecraft-data` repository the settings declare. For a new protocol, add a row and pin it:
 
 ```shell
 ./gradlew :anvil-edition:edition-java:java-data:data-packet:pinPacketData
 ```
 
-`checkPacketDataReleases`, part of `check`, requires a row for the protocol of every release, as the block data's
-check does. A protocol minecraft-data has no `protocol.json` for keeps a row without pins; its frames have no name,
+`checkPacketDataReleases`, part of `check`, requires a row for the protocol of every release. A protocol
+minecraft-data has no `protocol.json` for keeps a row without pins; its frames have no name,
 and a tap refuses to select its packets by name. Add the new protocol to the protocols `JavaPacketDataTest` lists.
 
 ## Add the item data
@@ -125,7 +132,7 @@ and a tap refuses to select its packets by name. Add the new protocol to the pro
 Inventory items carry their type's registry key from `data-item`, which generates, from the same
 minecraft-data release, each protocol's item registry by item ID: its `items.json` (the notice ships as
 `META-INF/LICENSE-minecraft-data-items.txt`). Its
-`anvil-edition/edition-java/java-data/data-item/item-data.toml` has the layout of `block-data.toml`,
+`anvil-edition/edition-java/java-data/data-item/item-data.toml` has the layout of `packet-data.toml`,
 with one `items` file per row. For a new protocol, add a row and pin it:
 
 ```shell
@@ -136,7 +143,7 @@ with one `items` file per row. For a new protocol, add a row and pin it:
 has no `items.json` for keeps a row without pins; its items carry no type, and an inventory locator with a type
 refuses to act. Add the new protocol to the protocols `JavaItemDataTest` lists.
 
-All three data modules apply the `module-minecraft-data` convention of `build-logic`'s `minecraftdata` group, which owns
+Both minecraft-data modules apply the `module-minecraft-data` convention of `build-logic`'s `minecraftdata` group, which owns
 reading minecraft-data, the pins files, the pin and check tasks and the generators' arguments for every kind of data
 a module generates.
 

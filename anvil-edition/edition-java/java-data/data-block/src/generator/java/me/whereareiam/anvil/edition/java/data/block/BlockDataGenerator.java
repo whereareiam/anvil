@@ -1,15 +1,12 @@
 package me.whereareiam.anvil.edition.java.data.block;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import me.whereareiam.anvil.edition.java.data.block.generator.GenerationRequest;
-import me.whereareiam.anvil.edition.java.data.block.generator.RegistryAssembly;
-import me.whereareiam.anvil.edition.java.data.block.generator.facts.BlockFacts;
-import me.whereareiam.anvil.edition.java.data.block.generator.source.MinecraftDataBlock;
-import me.whereareiam.anvil.edition.java.data.block.generator.source.MinecraftDataShapes;
+import me.whereareiam.anvil.edition.java.data.block.generator.VanillaBlockReader;
 import me.whereareiam.anvil.edition.java.data.block.model.BlockDataSource;
+import me.whereareiam.anvil.edition.java.data.block.model.BlockState;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -17,22 +14,19 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 
 /**
- * Generates the block data this module ships, at build time: the registry of each pinned protocol, assembled from its
- * minecraft-data files and {@code block-facts.toml}, and the index of every supported protocol, written through
- * {@link BlockDataCodec} as {@link JavaBlockData} reads them. It lives in this package to construct registries and
- * the index as the runtime does.
+ * Generates the block data this module ships, at build time: the registry of each protocol, read from the block data
+ * the physics harness wrote from that release's vanilla client ({@code vanilla/<protocol>.blocks}), and the index of
+ * every protocol, written through {@link BlockDataCodec} as {@link JavaBlockData} reads them. It lives in this package
+ * to construct registries and the index as the runtime does.
  *
- * <p>The build runs it with one argument, the {@link GenerationRequest} as JSON. Every block {@code block-facts.toml}
- * names must exist in at least one protocol, so a misspelt name fails instead of being ignored.</p>
+ * <p>The build runs it with one argument, the {@link GenerationRequest} as JSON. A file must be named after the
+ * protocol it holds, and no protocol may come twice.</p>
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class BlockDataGenerator {
@@ -43,7 +37,7 @@ public final class BlockDataGenerator {
 	 *
 	 * @param arguments the request as JSON, alone
 	 * @throws IOException when a file cannot be read or written
-	 * @throws IllegalStateException when the data or the facts break a rule
+	 * @throws IllegalStateException when the data breaks a rule
 	 */
 	public static void main(String @NotNull [] arguments) throws IOException {
 		if (arguments.length != 1)
@@ -57,55 +51,38 @@ public final class BlockDataGenerator {
 	 *
 	 * @param request the request
 	 * @throws IOException when a file cannot be read or written
-	 * @throws IllegalStateException when the data or the facts break a rule
+	 * @throws IllegalStateException when the data breaks a rule
 	 */
 	public static void generate(@NotNull GenerationRequest request) throws IOException {
-		BlockFacts facts = BlockFacts.read(request.getFacts());
 		Path output = clean(request.getOutput());
-		Set<String> names = new HashSet<>();
 		Set<Integer> protocols = new TreeSet<>();
-		for (GenerationRequest.PinnedProtocol pinned : request.getProtocols()) {
-			BlockRegistry registry = registry(request.getRelease(), pinned, facts, names);
-			Path resource = output.resolve(JavaBlockData.registryResource(pinned.getProtocol()));
-			try (OutputStream file = Files.newOutputStream(resource)) {
-				BlockDataCodec.writeRegistry(registry, file);
+		for (Path file : request.getBlocks()) {
+			BlockRegistry registry = registry(VanillaBlockReader.read(file));
+			if (!file.getFileName().toString().equals(registry.protocol() + ".blocks"))
+				throw new IllegalStateException(file.getFileName() + " holds the block data of protocol " + registry.protocol());
+			if (!protocols.add(registry.protocol()))
+				throw new IllegalStateException("Protocol " + registry.protocol() + " has block data twice");
+
+			try (OutputStream stream = Files.newOutputStream(output.resolve(JavaBlockData.registryResource(registry.protocol())))) {
+				BlockDataCodec.writeRegistry(registry, stream);
 			}
-			protocols.add(pinned.getProtocol());
 		}
 
-		facts.names().stream().filter(name -> !names.contains(name)).sorted().findFirst().ifPresent(name -> {
-			throw new IllegalStateException("block-facts.toml names " + name + ", which no protocol of block-data.toml has");
-		});
-		Map<Integer, String> missing = new TreeMap<>();
-		GenerationRequest.Release release = request.getRelease();
-		for (int protocol : request.getMissing())
-			missing.put(protocol, release.getRepository() + " " + release.getVersion() + " has no block data for it");
-		try (OutputStream file = Files.newOutputStream(output.resolve(JavaBlockData.indexResource()))) {
-			BlockDataCodec.writeIndex(new JavaBlockData(protocols, missing), file);
+		try (OutputStream stream = Files.newOutputStream(output.resolve(JavaBlockData.indexResource()))) {
+			BlockDataCodec.writeIndex(new JavaBlockData(protocols, Map.of()), stream);
 		}
 	}
 
-	private static BlockRegistry registry(
-			GenerationRequest.Release release,
-			GenerationRequest.PinnedProtocol pinned,
-			BlockFacts facts,
-			Set<String> names
-	) throws IOException {
-		String context = "minecraft-data " + pinned.getFiles().getBlocks().getPath() + " for protocol " + pinned.getProtocol();
-		List<MinecraftDataBlock> blocks = JSON.readValue(pinned.getFiles().getBlocks().getFile().toFile(), new TypeReference<>() {
-		});
-		MinecraftDataShapes shapes = JSON.readValue(pinned.getFiles().getCollisionShapes().getFile().toFile(), MinecraftDataShapes.class);
-		RegistryAssembly.Assembled assembled = RegistryAssembly.assemble(context, blocks, shapes, facts);
-		names.addAll(assembled.names());
-
-		BlockDataSource source = BlockDataSource.builder()
-				.repository(release.getRepository())
-				.version(release.getVersion())
-				.commit(release.getCommit())
-				.blocks(pinned.getFiles().getBlocks().getPath())
-				.collisionShapes(pinned.getFiles().getCollisionShapes().getPath())
-				.build();
-		return new BlockRegistry(pinned.getProtocol(), source, assembled.blocks(), assembled.states());
+	/**
+	 * Builds the registry of the blocks a file holds.
+	 *
+	 * @param read the file's blocks and states
+	 * @return the registry
+	 * @throws IllegalArgumentException when the blocks or states are not numbered as chunk packets need
+	 */
+	static @NotNull BlockRegistry registry(@NotNull VanillaBlockReader.Read read) {
+		return new BlockRegistry(read.getProtocol(), new BlockDataSource(read.getMinecraft()), read.getBlocks(),
+				read.getStates().toArray(BlockState[]::new));
 	}
 
 	/**

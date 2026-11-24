@@ -1,0 +1,26 @@
+description = "Sprints forward, then holds jump while sprinting so the player jumps each time it lands, then lets go"
+ticks = 80
+
+[start]
+x = 0.5
+y = 64.0
+z = 0.5
+yaw = 0.0
+pitch = 0.0
+
+[[blocks]]
+from = [-3, 63, -3]
+to = [3, 63, 80]
+state = "minecraft:stone"
+
+[[keys]]
+tick = 5
+held = ["forward", "sprint"]
+
+[[keys]]
+tick = 15
+held = ["forward", "sprint", "jump"]
+
+[[keys]]
+tick = 60
+held = []

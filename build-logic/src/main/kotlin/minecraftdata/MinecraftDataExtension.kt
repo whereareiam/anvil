@@ -22,10 +22,9 @@ import javax.inject.Inject
  *
  * <pre>
  * minecraftData.generate(
- *     MinecraftDataKind("block data", "BlockData", "block-data.toml", listOf(MinecraftDataKind.File("blocks", "blocks"))),
- *     generator = "me.whereareiam.anvil.edition.java.data.block.BlockDataGenerator",
- *     packagePath = "me/whereareiam/anvil/edition/java/data/block",
- *     inputs = mapOf("facts" to layout.projectDirectory.file("block-facts.toml")),
+ *     MinecraftDataKind("packet data", "PacketData", "packet-data.toml", listOf(MinecraftDataKind.File("packets", "protocol"))),
+ *     generator = "me.whereareiam.anvil.edition.java.data.packet.PacketDataGenerator",
+ *     packagePath = "me/whereareiam/anvil/edition/java/data/packet",
  * )
  * </pre>
  */

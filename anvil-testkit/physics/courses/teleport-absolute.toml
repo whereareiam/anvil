@@ -1,0 +1,49 @@
+description = "Sprint-jumps on a stone floor and is teleported to an absolute position and view mid-jump, keeping its keys"
+ticks = 60
+
+[join]
+x = 0.5
+y = 64.0
+z = 0.5
+yaw = 0.0
+pitch = 0.0
+chunksAfterTicks = 0
+
+[[blocks]]
+from = [-3, 63, -3]
+to = [12, 63, 20]
+state = "minecraft:stone"
+
+[[keys]]
+tick = 5
+held = ["forward", "sprint", "jump"]
+
+[[keys]]
+tick = 45
+held = []
+
+# The server pings during the join's handshake, after the login and right before the first position packet, as an
+# anticheat pings before each teleport.
+[[server]]
+tick = -1
+ping = { id = -1 }
+
+# The server swings the player's main arm, as it plays the player's attack, which a client before Minecraft 26.3
+# swings back between its ticks.
+[[server]]
+tick = 10
+animate = { animation = "swing_main_hand" }
+
+# The server pings right before the teleport, as an anticheat does.
+[[server]]
+tick = 30
+ping = { id = -2 }
+
+# The server swings the player's off arm between the ping and the teleport, whose answers follow in that order.
+[[server]]
+tick = 30
+animate = { animation = "swing_off_hand" }
+
+[[server]]
+tick = 30
+teleport = { id = 2, x = 4.5, y = 64.0, z = 10.5, yaw = 90.0, pitch = 0.0, relatives = [] }

@@ -1,0 +1,29 @@
+description = "Joins above a stone floor holding forward while its chunks arrive only after twenty ticks, then falls and walks"
+ticks = 50
+
+[join]
+x = 0.5
+y = 65.5
+z = 0.5
+yaw = 0.0
+pitch = 0.0
+chunksAfterTicks = 20
+
+[[blocks]]
+from = [-3, 63, -3]
+to = [3, 63, 20]
+state = "minecraft:stone"
+
+[[keys]]
+tick = 5
+held = ["forward"]
+
+[[keys]]
+tick = 40
+held = []
+
+# The server pings during the join's handshake, after the login and right before the first position packet, as an
+# anticheat pings before each teleport.
+[[server]]
+tick = -1
+ping = { id = -1 }

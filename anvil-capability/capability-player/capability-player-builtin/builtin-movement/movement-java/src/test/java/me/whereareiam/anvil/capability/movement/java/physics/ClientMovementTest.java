@@ -126,11 +126,11 @@ class ClientMovementTest {
 
 	@Test
 	void tellsWhyAReleaseWithoutBlockDataCannotSimulateAndStaysOff() {
-		bind(new TestClient("26.2")).join();
+		bind(new TestClient("1.16.3", 753)).join();
 
 		String reason = operations.call(MovementChannel.PHYSICS, true).getRefusal();
 
-		assertTrue(reason != null && reason.contains("776"), reason);
+		assertTrue(reason != null && reason.contains("753"), reason);
 		assertFalse(state().isPhysics());
 		assertEquals(new PhysicsChange(null), operations.call(MovementChannel.PHYSICS, false));
 	}
