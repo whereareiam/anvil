@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.testkit.tests.server.platform;
 
+import me.whereareiam.anvil.api.model.Condition;
 import me.whereareiam.anvil.api.model.EngineOptions;
 import me.whereareiam.anvil.api.model.scenario.AnvilScenario;
 import me.whereareiam.anvil.api.player.SimulatedPlayer;
@@ -9,6 +10,7 @@ import me.whereareiam.anvil.capability.messages.Messages;
 import me.whereareiam.anvil.capability.players.PlayerWatch;
 import me.whereareiam.anvil.capability.players.Players;
 import me.whereareiam.anvil.capability.session.Session;
+import me.whereareiam.anvil.capability.ticks.Ticks;
 import me.whereareiam.anvil.capability.world.DimensionWatch;
 import me.whereareiam.anvil.capability.world.World;
 import me.whereareiam.anvil.capability.worlds.WorldChangeWatch;
@@ -39,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Logs a player in on every NeoForge release, which loads no fixture plugin, drives it with vanilla commands,
  * including a styled message that must arrive with its styles, and moves it to the nether through the release's own
- * part of the worlds capability.
+ * part of the worlds capability. It also has the server wait for its ticks and sprint through them.
  */
 class NeoForgeServerSystemTest {
 	@TestFactory
@@ -91,11 +93,37 @@ class NeoForgeServerSystemTest {
 			worlds.send(alice, "minecraft:overworld");
 			dimensions.entered("minecraft:overworld", Duration.ofSeconds(10));
 
+			verifyTicks(context.processes().server("server").capability(Ticks.class));
+
 			assertTrue(dispatch.execute("kick Alice anvil:kicked"));
 			assertEquals("anvil:kicked", session.kicked());
 			assertFalse(session.state().connected());
 			arrivals.left(alice, Duration.ofSeconds(10));
 			assertEquals(List.of(), players.online());
 		}
+	}
+
+	/**
+	 * Waits for the server's ticks, sprints a minute of game time, which takes far less than a minute, sprints until
+	 * a condition holds and gives up on one that never does, naming what it saw last.
+	 */
+	private void verifyTicks(Ticks ticks) {
+		long before = ticks.tick();
+		ticks.await(20, Duration.ofSeconds(10));
+		assertTrue(ticks.tick() >= before + 20);
+
+		long started = System.nanoTime();
+		ticks.sprint(1_200, Duration.ofSeconds(60));
+		assertTrue(Duration.ofNanos(System.nanoTime() - started).compareTo(Duration.ofSeconds(30)) < 0,
+				"a sprint of 1200 ticks took less than half of the minute they last");
+
+		long target = ticks.tick() + 600;
+		long reached = ticks.sprintUntil(Condition.of("the server ran 600 more ticks", ticks::tick, tick -> tick >= target),
+				6_000, Duration.ofSeconds(60));
+		assertTrue(reached >= target);
+		IllegalStateException never = assertThrows(IllegalStateException.class, () -> ticks.until(
+				Condition.of("the impossible happens", () -> "nothing yet", seen -> false), Duration.ofSeconds(1)));
+		assertTrue(never.getMessage().endsWith("waiting until the impossible happens; last seen: nothing yet"),
+				never.getMessage());
 	}
 }

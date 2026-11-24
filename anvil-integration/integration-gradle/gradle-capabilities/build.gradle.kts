@@ -121,6 +121,12 @@ gradlePlugin {
 			displayName = "Anvil Worlds Capability"
 			description = "Includes the built-in Worlds capability"
 		}
+		create("anvilCapabilityTicks") {
+			id = "me.whereareiam.anvil.capability.ticks"
+			implementationClass = "me.whereareiam.anvil.integration.gradle.capability.TicksPlugin"
+			displayName = "Anvil Ticks Capability"
+			description = "Includes the built-in Ticks capability"
+		}
 	}
 }
 

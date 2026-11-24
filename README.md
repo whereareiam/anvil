@@ -151,7 +151,8 @@ Players, servers and proxies get their abilities from capabilities, typed APIs y
 built-in set lets a player connect and reconnect, chat and run commands, move with the vanilla client's
 physics, use inventories, interact with blocks and entities, answer dialogs and cookies, and wait for
 titles, sounds, entities and blocks. Servers and proxies can run console commands and report which
-players they see and where a proxy sent them.
+players they see and where a proxy sent them, and a NeoForge server waits in its own ticks until a condition
+holds, as fast as it can run them when the test asks.
 
 Your own library can add more as an ordinary dependency, without forking Anvil:
 [Capabilities](https://anvil.whereareiam.me/docs/dev/building-blocks/players/capabilities) lists the

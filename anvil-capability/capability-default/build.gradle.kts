@@ -25,5 +25,6 @@ dependencies {
 	api(projects.anvilCapability.capabilityPlayer.capabilityPlayerBuiltin.builtinWorld)
 	api(projects.anvilCapability.capabilityProcess.capabilityProcessBuiltin.builtinDispatch)
 	api(projects.anvilCapability.capabilityProcess.capabilityProcessBuiltin.builtinPlayers)
+	api(projects.anvilCapability.capabilityProcess.capabilityProcessBuiltin.builtinTicks)
 	api(projects.anvilCapability.capabilityProcess.capabilityProcessBuiltin.builtinWorlds)
 }
