@@ -115,6 +115,12 @@ gradlePlugin {
 			displayName = "Anvil World Capability"
 			description = "Includes the built-in World capability"
 		}
+		create("anvilCapabilityNetwork") {
+			id = "me.whereareiam.anvil.capability.network"
+			implementationClass = "me.whereareiam.anvil.integration.gradle.capability.NetworkPlugin"
+			displayName = "Anvil Network Capability"
+			description = "Includes the built-in Network capability"
+		}
 		create("anvilCapabilityWorlds") {
 			id = "me.whereareiam.anvil.capability.worlds"
 			implementationClass = "me.whereareiam.anvil.integration.gradle.capability.WorldsPlugin"

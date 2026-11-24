@@ -1,7 +1,6 @@
 package me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6;
 
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
+import me.whereareiam.anvil.api.type.ClientLoader;
 import me.whereareiam.anvil.player.library.mcprotocol.client.ClientBrand;
 import me.whereareiam.anvil.player.library.mcprotocol.client.model.ClientSettings;
 import net.kyori.adventure.key.Key;
@@ -12,8 +11,8 @@ import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.Serverbound
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Starts the configuration as a vanilla client of Minecraft 1.20.2 and later does: once its login is acknowledged, it
- * sends its {@link ClientBrand} and then its client information, and it sends neither again, not when the server
+ * Starts the configuration as a client of Minecraft 1.20.2 and later does: once its login is acknowledged, it
+ * sends its {@link ClientBrand}, vanilla or that of its mod loader, and then its client information, and it sends neither again, not when the server
  * starts another configuration nor when the game starts.
  *
  * <p>The release's {@code ClientProtocol} adds this listener right after MCProtocolLib's own, which acknowledges the
@@ -21,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
  * the acknowledgement in that phase. Each release says which packet marks that moment, because MCProtocolLib changed
  * when it switches the phase, and builds the client information in its own shape.</p>
  */
-@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class ConfigurationStart extends SessionAdapter {
 	/**
 	 * Whether the client shows chat colors, as a vanilla client does by default.
@@ -39,6 +37,18 @@ public abstract class ConfigurationStart extends SessionAdapter {
 	private static final Key BRAND = Key.key(ClientBrand.CHANNEL);
 
 	private final @NotNull ClientSettings settings;
+	private final byte @NotNull [] brand;
+
+	/**
+	 * Creates the configuration start of a client.
+	 *
+	 * @param settings the player's settings, which the client information carries
+	 * @param loader the mod loader the client presents itself as, whose brand it announces
+	 */
+	protected ConfigurationStart(@NotNull ClientSettings settings, @NotNull ClientLoader loader) {
+		this.settings = settings;
+		this.brand = ClientBrand.payload(loader);
+	}
 
 	@Override
 	public final void packetSent(Session session, Packet packet) {
@@ -79,7 +89,7 @@ public abstract class ConfigurationStart extends SessionAdapter {
 	protected abstract @NotNull Packet information(@NotNull ClientSettings settings);
 
 	private void start(Session session) {
-		session.send(new ServerboundCustomPayloadPacket(BRAND, ClientBrand.payload()));
+		session.send(new ServerboundCustomPayloadPacket(BRAND, brand));
 		session.send(information(settings));
 	}
 }

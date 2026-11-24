@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6;
 
+import me.whereareiam.anvil.api.type.ClientLoader;
 import me.whereareiam.anvil.player.library.mcprotocol.client.ClientBrand;
 import me.whereareiam.anvil.player.library.mcprotocol.client.model.ClientSettings;
 import org.geysermc.mcprotocollib.network.Session;
@@ -28,7 +29,7 @@ class ClientConfigurationTest {
 	private final List<Packet> sent = new ArrayList<>();
 	private final Session session = session();
 	private final ClientConfiguration configuration = new ClientConfiguration(
-			ClientSettings.builder().locale("de_de").viewDistance(6).build());
+			ClientSettings.builder().locale("de_de").viewDistance(6).build(), ClientLoader.VANILLA);
 
 	@Test
 	void sendsTheBrandAndThenTheClientInformationWhenTheConfigurationStarts() {

@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6;
 
 import com.github.steveice10.mc.auth.data.GameProfile;
+import me.whereareiam.anvil.api.type.ClientLoader;
 import me.whereareiam.anvil.player.library.mcprotocol.client.model.ClientCredentials;
 import me.whereareiam.anvil.player.library.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.player.library.mcprotocol.client.model.ClientProfile;
@@ -20,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 final class ClientProtocol extends MinecraftProtocol {
 	private final String minecraftVersion;
 	private final ClientSettings settings;
+	private final ClientLoader loader;
 
 	/**
 	 * Creates the protocol of a player's sessions.
@@ -30,12 +32,13 @@ final class ClientProtocol extends MinecraftProtocol {
 		super(profile(login.getProfile()), accessToken(login.getCredentials()));
 		this.minecraftVersion = login.getMinecraftVersion();
 		this.settings = login.getSettings();
+		this.loader = login.getClient().getLoader();
 	}
 
 	@Override
 	public void newClientSession(Session session, boolean transferring) {
 		super.newClientSession(session, transferring);
-		session.addListener(new ClientConfiguration(settings));
+		session.addListener(new ClientConfiguration(settings, loader));
 		KnownPacksAnswer.install(session, minecraftVersion);
 	}
 

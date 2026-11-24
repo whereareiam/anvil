@@ -14,3 +14,6 @@ type = "required"
 versionRange = "[21.1,)"
 ordering = "NONE"
 side = "SERVER"
+
+[[mixins]]
+config = "anvil_platform_agent.mixins.json"

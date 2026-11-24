@@ -1,6 +1,7 @@
 package me.whereareiam.anvil.player.library.mcprotocol.worker.child;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import me.whereareiam.anvil.api.model.player.PlayerClient;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.edition.java.protocol.JavaProtocol;
@@ -20,6 +21,7 @@ import me.whereareiam.anvil.player.api.worker.WorkerExtension;
 import me.whereareiam.anvil.player.library.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.player.library.mcprotocol.client.model.ClientLogin;
 import me.whereareiam.anvil.player.library.mcprotocol.client.model.ClientProfile;
+import me.whereareiam.anvil.player.library.mcprotocol.model.worker.WorkerClient;
 import me.whereareiam.anvil.player.library.mcprotocol.model.worker.WorkerConnection;
 import me.whereareiam.anvil.player.library.mcprotocol.model.worker.WorkerCredentials;
 import me.whereareiam.anvil.player.library.mcprotocol.model.worker.WorkerEvent;
@@ -290,6 +292,7 @@ class McProtocolPlayerTest {
 				.profile(WorkerProfile.builder().name("Alice").uniqueId(uuid).build())
 				.minecraftVersion("1.20.5")
 				.language("ru_ru")
+				.client(WorkerClient.of(PlayerClient.vanilla()))
 				.credentials(accessToken == null ? null : WorkerCredentials.builder().accessToken(accessToken).build())
 				.connection(WorkerConnection.builder().host("localhost").port(25565)
 						.virtualHost("lobby.example.test").sourceAddress("127.0.0.2").build())

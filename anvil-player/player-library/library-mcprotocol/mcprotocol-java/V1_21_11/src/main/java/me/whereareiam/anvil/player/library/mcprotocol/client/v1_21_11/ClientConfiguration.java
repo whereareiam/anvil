@@ -1,5 +1,6 @@
 package me.whereareiam.anvil.player.library.mcprotocol.client.v1_21_11;
 
+import me.whereareiam.anvil.api.type.ClientLoader;
 import me.whereareiam.anvil.player.library.mcprotocol.client.model.ClientSettings;
 import me.whereareiam.anvil.player.library.mcprotocol.client.v1_20_6.ConfigurationStart;
 import org.geysermc.mcprotocollib.network.packet.Packet;
@@ -21,8 +22,8 @@ import java.util.Arrays;
  * phases itself.
  */
 final class ClientConfiguration extends ConfigurationStart {
-	ClientConfiguration(@NotNull ClientSettings settings) {
-		super(settings);
+	ClientConfiguration(@NotNull ClientSettings settings, @NotNull ClientLoader loader) {
+		super(settings, loader);
 	}
 
 	@Override

@@ -20,6 +20,7 @@ import me.whereareiam.anvil.api.player.account.AccountPool;
 import me.whereareiam.anvil.api.process.RunningProcess;
 import me.whereareiam.anvil.api.process.ScenarioProcesses;
 import me.whereareiam.anvil.api.type.AuthenticationMode;
+import me.whereareiam.anvil.api.type.ClientLoader;
 import me.whereareiam.anvil.player.api.ProtocolPlayer;
 import me.whereareiam.anvil.player.api.ProtocolPlayerComposer;
 import me.whereareiam.anvil.player.api.library.ProtocolLibrary;
@@ -200,6 +201,7 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 		Selection selection = selector.select(options, scenario, version);
 		if (remote == null) validateProcessAuthentication(options, target);
 		validateAccount(options, selection, version);
+		validateClient(options, selection, version);
 		GameConnection gameConnection = remote == null
 				? processConnection(options, processes.get(targetName))
 				: remoteConnection(options, remote);
@@ -215,6 +217,7 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 					.login(options.getLogin())
 					.clientVersion(version)
 					.language(options.getLanguage())
+					.client(options.getClient())
 					.connection(gameConnection)
 					.build());
 			player = playerComposer.compose(
@@ -436,6 +439,17 @@ final class RunningPlayerManager implements PlayerManager, AccountManager {
 		if (!selection.release().getFeatures().contains(ProtocolFeature.ONLINE_AUTHENTICATION))
 			throw new ScenarioValidationException("Protocol library '" + selection.library()
 					+ "' does not support online authentication for client version '" + version + "'");
+	}
+
+	/**
+	 * Refuses a NeoForge client on a release whose client cannot present itself as NeoForge.
+	 */
+	private void validateClient(PlayerOptions options, Selection selection, MinecraftVersion version) {
+		if (options.getClient().getLoader() != ClientLoader.NEOFORGE) return;
+		if (selection.release().getFeatures().contains(ProtocolFeature.NEOFORGE_CLIENT)) return;
+
+		throw new ScenarioValidationException("Player '" + options.getName() + "' declares a NeoForge client, which protocol "
+				+ "library '" + selection.library() + "' does not offer for client version '" + version + "'");
 	}
 
 	private GameConnection processConnection(PlayerOptions options, RunningProcess target) {

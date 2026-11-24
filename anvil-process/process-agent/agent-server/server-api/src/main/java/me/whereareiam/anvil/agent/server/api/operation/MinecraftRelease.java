@@ -1,4 +1,4 @@
-package me.whereareiam.anvil.capability.worlds.agent;
+package me.whereareiam.anvil.agent.server.api.operation;
 
 import org.jetbrains.annotations.NotNull;
 

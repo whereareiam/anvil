@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Resolved login of one worker player, grouped as the client login it becomes: who logs in, as which Minecraft version
- * of the worker's release, in which game language, and where to. The other client settings are the worker's own.
+ * of the worker's release and which client, in which game language, and where to. The other client settings are the worker's own.
  * Credentials travel only through private worker stdin.
  */
 @Value
@@ -19,5 +19,6 @@ public class WorkerPlayerOptions {
 	@Nullable WorkerCredentials credentials;
 	@NotNull String minecraftVersion;
 	@NotNull String language;
+	@NotNull WorkerClient client;
 	@NotNull WorkerConnection connection;
 }

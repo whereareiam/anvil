@@ -2,12 +2,14 @@ package me.whereareiam.anvil.player.library.mcprotocol.worker.child;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import me.whereareiam.anvil.api.model.player.PlayerClient;
 import me.whereareiam.anvil.player.api.model.channel.OperationDescriptor;
 import me.whereareiam.anvil.player.api.worker.OperationRegistry;
 import me.whereareiam.anvil.player.api.worker.PlayerBindingContext;
 import me.whereareiam.anvil.player.api.worker.WorkerBinding;
 import me.whereareiam.anvil.player.api.worker.WorkerExtension;
 import me.whereareiam.anvil.player.library.mcprotocol.client.McProtocolClient;
+import me.whereareiam.anvil.player.library.mcprotocol.model.worker.WorkerClient;
 import me.whereareiam.anvil.player.library.mcprotocol.model.worker.WorkerConnection;
 import me.whereareiam.anvil.player.library.mcprotocol.model.worker.WorkerPlayerCapabilities;
 import me.whereareiam.anvil.player.library.mcprotocol.model.worker.WorkerPlayerOptions;
@@ -46,6 +48,7 @@ class McProtocolWorkerTest {
 				.profile(WorkerProfile.builder().name("Alice").uniqueId(identity).build())
 				.minecraftVersion("1.21.11")
 				.language("en_us")
+				.client(WorkerClient.of(PlayerClient.vanilla()))
 				.connection(WorkerConnection.builder().host("localhost").port(25565).build())
 				.build();
 		var empty = JsonNodeFactory.instance.objectNode();

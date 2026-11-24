@@ -14,6 +14,7 @@ import me.whereareiam.anvil.player.api.model.channel.OperationDescriptor;
 import me.whereareiam.anvil.player.api.model.player.PlayerConnectionEvent;
 import me.whereareiam.anvil.player.library.mcprotocol.client.McProtocolClient;
 import me.whereareiam.anvil.player.library.mcprotocol.model.AuthenticationSession;
+import me.whereareiam.anvil.player.library.mcprotocol.model.worker.WorkerClient;
 import me.whereareiam.anvil.player.library.mcprotocol.model.worker.WorkerConnection;
 import me.whereareiam.anvil.player.library.mcprotocol.model.worker.WorkerCredentials;
 import me.whereareiam.anvil.player.library.mcprotocol.model.worker.WorkerPlayerCapabilities;
@@ -92,6 +93,7 @@ final class RemoteProtocolPlayer implements ProtocolPlayer, ProtocolChannel {
 						.build())
 				.minecraftVersion(request.getClientVersion().toString())
 				.language(request.getLanguage())
+				.client(WorkerClient.of(request.getClient()))
 				.connection(WorkerConnection.builder()
 						.host(connection.getAddress().getHostString())
 						.port(connection.getAddress().getPort())

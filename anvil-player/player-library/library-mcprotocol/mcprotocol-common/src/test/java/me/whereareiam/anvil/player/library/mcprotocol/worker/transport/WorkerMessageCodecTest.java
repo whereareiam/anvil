@@ -3,6 +3,7 @@ package me.whereareiam.anvil.player.library.mcprotocol.worker.transport;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import me.whereareiam.anvil.api.model.player.PlayerClient;
 import me.whereareiam.anvil.api.model.player.PlayerProfile;
 import me.whereareiam.anvil.api.type.DisconnectCause;
 import me.whereareiam.anvil.capability.interaction.model.BlockUse;
@@ -57,6 +58,7 @@ import me.whereareiam.anvil.player.api.model.text.hover.ShowTextHover;
 import me.whereareiam.anvil.player.api.model.text.hover.TextHover;
 import me.whereareiam.anvil.player.api.type.NbtSource;
 import me.whereareiam.anvil.player.api.type.TextDecoration;
+import me.whereareiam.anvil.player.library.mcprotocol.model.worker.WorkerClient;
 import me.whereareiam.anvil.player.library.mcprotocol.model.worker.WorkerConnection;
 import me.whereareiam.anvil.player.library.mcprotocol.model.worker.WorkerCredentials;
 import me.whereareiam.anvil.player.library.mcprotocol.model.worker.WorkerEvent;
@@ -104,6 +106,7 @@ class WorkerMessageCodecTest {
 				.credentials(WorkerCredentials.builder().accessToken("private-token").build())
 				.minecraftVersion("1.21")
 				.language("ru_ru")
+				.client(WorkerClient.of(PlayerClient.vanilla()))
 				.connection(WorkerConnection.builder().host("localhost").port(25565)
 						.virtualHost("lobby.example.test").sourceAddress("127.0.0.2").build())
 				.build();

@@ -3,6 +3,7 @@ package me.whereareiam.anvil.player.api.model;
 import lombok.Builder;
 import lombok.Value;
 import me.whereareiam.anvil.api.model.MinecraftVersion;
+import me.whereareiam.anvil.api.model.player.PlayerClient;
 import me.whereareiam.anvil.api.model.player.PlayerLogin;
 import me.whereareiam.anvil.api.model.player.PlayerOptions;
 import me.whereareiam.anvil.player.api.library.ProtocolLibrary;
@@ -52,6 +53,14 @@ public class PlayerRequest {
 	@NotNull
 	@Builder.Default
 	String language = PlayerOptions.DEFAULT_LANGUAGE;
+
+	/**
+	 * Client the player presents itself as: vanilla, or NeoForge with the payload channels it claims. A library
+	 * refuses a NeoForge client on a release without {@code ProtocolFeature.NEOFORGE_CLIENT}.
+	 */
+	@NotNull
+	@Builder.Default
+	PlayerClient client = PlayerClient.vanilla();
 
 	/**
 	 * Game listener the client connects to, with the host it announces and the address it connects from. A library

@@ -212,6 +212,37 @@ account and a compatible online-mode topology. Follow [authentication](../authen
 for account creation and the `PlayerLogin` factories. Keep real account credentials out of test declarations
 and automated CI suites.
 
+## Present a NeoForge client
+
+A player is a vanilla client unless it declares another. A NeoForge server whose mods need their client counterparts,
+as Create does, refuses a vanilla client. Declare a NeoForge client with the payload channels of the server's mods,
+read from the server's [Network](../../environments/actions/network/index.md) capability, and the player joins as a
+client with the same mods would:
+
+```java
+var channels = anvil.processes().server("server").capability(Network.class).channels();
+var alice = anvil.players().create(PlayerOptions.builder()
+		.name("Alice")
+		.client(PlayerClient.neoforge(channels))
+		.build());
+```
+
+The player announces the brand `neoforge`, claims exactly those channels when the server asks, and answers NeoForge's
+configuration as a NeoForge client does: it takes the server's registries, configuration files, registry data maps,
+extensible enums and feature flags as its own and acknowledges each. For a server Anvil does not run, which has no
+Network capability, declare the channels its mods register; each needs the version the mod registered it at.
+
+A NeoForge client runs no mod code, so it cannot read what only the mods' code can. The payloads the mods send on their
+channels arrive and are left alone. A game packet that carries a value a mod defines, such as a mod's entity data, a
+modded item's data component or a modded particle, cannot be read past that value: the player leaves the packet out,
+writes one warning for each kind of such packet to the worker output, and its capabilities miss what that packet
+said. Blocks of the mods appear in its world as states it does not know. Packets it cannot read while it logs in or
+is configured still end the connection.
+
+The NeoForge client is offered by releases with `NEOFORGE_CLIENT` among their features: Minecraft 1.21.1, the
+NeoForge release Anvil's protocol library speaks NeoForge's configuration for. Creating one for another version is
+refused.
+
 ## Release and replace a player
 
 Destroy a player when you no longer need its resources or want to reuse its name. This independent

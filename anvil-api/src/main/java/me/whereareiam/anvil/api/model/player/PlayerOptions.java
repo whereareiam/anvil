@@ -8,8 +8,9 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Optional overrides used when creating one simulated player in a running scenario: who logs in, with which
- * client and game language, and where to. How the player logs in is grouped in its {@link PlayerLogin}, and where it
- * connects in its {@link PlayerConnection}.
+ * client and game language, and where to. How the player logs in is grouped in its {@link PlayerLogin}, where it
+ * connects in its {@link PlayerConnection}, and the client it presents itself as, vanilla or NeoForge with the
+ * channels of its mods, in its {@link PlayerClient}.
  *
  * <pre>{@code
  * SimulatedPlayer alice = players.create(PlayerOptions.builder()
@@ -67,6 +68,13 @@ public class PlayerOptions {
 	@NotNull
 	@Builder.Default
 	PlayerConnection connection = PlayerConnection.entrypoint();
+
+	/**
+	 * Client the player presents itself as: vanilla by default, or NeoForge with the payload channels of its mods.
+	 */
+	@NotNull
+	@Builder.Default
+	PlayerClient client = PlayerClient.vanilla();
 
 	/**
 	 * Optional labels for tooling; they never replace the player name or its username.
