@@ -4,6 +4,7 @@ import me.whereareiam.anvil.api.type.Platforms;
 import me.whereareiam.anvil.capability.agent.api.model.AgentExtension;
 import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityContext;
 import me.whereareiam.anvil.capability.agent.api.process.AgentProcessCapabilityProvider;
+import me.whereareiam.anvil.capability.api.event.lifecycle.ProcessRestarted;
 import me.whereareiam.anvil.capability.api.event.scenario.ScenarioFinished;
 import me.whereareiam.anvil.capability.api.model.CapabilityDescriptor;
 import me.whereareiam.anvil.capability.ticks.agent.TicksOperations;
@@ -45,9 +46,10 @@ public final class TicksProvider implements AgentProcessCapabilityProvider<Ticks
 
 	@Override
 	public @NotNull Ticks create(@NotNull AgentProcessCapabilityContext context) {
-		AgentTicks ticks = new AgentTicks(context.processName(), context.channel());
-		context.on(ScenarioFinished.class, finished -> ticks.finishScenario());
+		OpenPaces paces = new OpenPaces(context.processName(), context.channel());
+		context.on(ScenarioFinished.class, finished -> paces.closeAll());
+		context.on(ProcessRestarted.class, restarted -> paces.restarted());
 
-		return ticks;
+		return new AgentTicks(context.processName(), context.channel(), paces);
 	}
 }

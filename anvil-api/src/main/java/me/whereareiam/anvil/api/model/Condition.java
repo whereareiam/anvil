@@ -19,7 +19,7 @@ import java.util.function.Supplier;
  * <pre>{@code
  * Condition<Integer> grown = Condition.of("the wheat at 4 64 4 is fully grown",
  *         () -> age(messages, "4 64 4"), age -> age == 7);
- * int age = ticks.sprintUntil(grown, 24_000, Duration.ofSeconds(60));
+ * int age = ticks.until(grown, Duration.ofSeconds(60));
  * }</pre>
  *
  * @param <T> the state the condition looks at

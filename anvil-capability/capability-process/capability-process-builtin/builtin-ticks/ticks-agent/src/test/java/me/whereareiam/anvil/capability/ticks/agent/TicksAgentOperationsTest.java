@@ -7,22 +7,22 @@ import me.whereareiam.anvil.agent.server.api.PlatformAgent;
 import me.whereareiam.anvil.agent.server.api.operation.AgentOperationHandler;
 import me.whereareiam.anvil.agent.server.api.operation.AgentOperationRegistry;
 import me.whereareiam.anvil.capability.ticks.agent.model.AgentTickCount;
+import me.whereareiam.anvil.capability.ticks.agent.model.AgentTickPace;
 import me.whereareiam.anvil.capability.ticks.agent.model.AgentTickWait;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TicksAgentOperationsTest {
+	private static final AgentTickPace NORMAL = AgentTickPace.builder().rate(20).sprinting(false).build();
+
 	private final RecordingPlatform platform = new RecordingPlatform();
 	private final RecordingRegistry registry = new RecordingRegistry();
 	private final RecordingTicks ticks = new RecordingTicks();
@@ -34,7 +34,7 @@ class TicksAgentOperationsTest {
 
 		assertEquals("me.whereareiam.anvil.ticks", new Operations().id());
 		assertEquals(List.of("me.whereareiam.anvil.ticks.count", "me.whereareiam.anvil.ticks.next",
-				"me.whereareiam.anvil.ticks.sprint", "me.whereareiam.anvil.ticks.stop"), List.copyOf(registry.handlers.keySet()));
+				"me.whereareiam.anvil.ticks.pace"), List.copyOf(registry.handlers.keySet()));
 	}
 
 	@Test
@@ -51,15 +51,15 @@ class TicksAgentOperationsTest {
 	}
 
 	@Test
-	void startsAndStopsSprintsOnThePlatformsThread() throws Exception {
+	void setsThePaceOnThePlatformsThreadAndAnswersThePaceItReplaced() throws Exception {
 		install();
-		clock.ticked();
+		AgentTickPace sprinting = AgentTickPace.builder().rate(20).sprinting(true).build();
+		AgentTickPace slow = AgentTickPace.builder().rate(5).sprinting(false).build();
 
-		assertEquals(1, registry.execute(TicksOperations.SPRINT, 600).getTick());
-		assertEquals(List.of(600), ticks.sprints);
-		assertTrue(registry.execute(TicksOperations.STOP, null));
-		assertFalse(registry.execute(TicksOperations.STOP, null));
-		assertEquals(3, platform.calls);
+		assertEquals(NORMAL, registry.execute(TicksOperations.PACE, sprinting));
+		assertEquals(sprinting, registry.execute(TicksOperations.PACE, slow));
+		assertEquals(slow, ticks.pace);
+		assertEquals(2, platform.calls);
 	}
 
 	private void install() {
@@ -75,21 +75,16 @@ class TicksAgentOperationsTest {
 	}
 
 	private static final class RecordingTicks implements ServerTicks {
-		private final List<Integer> sprints = new ArrayList<>();
-		private boolean sprinting;
+		private AgentTickPace pace = NORMAL;
 
 		@Override
-		public void sprint(int ticks) {
-			sprints.add(ticks);
-			sprinting = true;
+		public @NotNull AgentTickPace pace() {
+			return pace;
 		}
 
 		@Override
-		public boolean stopSprinting() {
-			boolean stopped = sprinting;
-			sprinting = false;
-
-			return stopped;
+		public void pace(@NotNull AgentTickPace pace) {
+			this.pace = pace;
 		}
 	}
 

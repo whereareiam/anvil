@@ -1,14 +1,15 @@
 ---
 title: Waiting for ticks
-description: Wait for a server's ticks or until a condition holds instead of sleeping, and have the server sprint through ticks as /tick sprint does.
+description: Wait for a server's ticks or until a condition holds instead of sleeping, and set how fast the server runs them, up to as fast as it can as /tick sprint does.
 ---
 
 Use a server's `Ticks` capability when a test waits for something the server does over time: crops
 growing, water spreading, a machine finishing its work, chunks unloading. Instead of sleeping for a
 guessed number of seconds, the test waits in the server's own ticks, checking its condition after each
 tick the server completes, so it waits exactly as long as the server needs, however busy the machine is.
-A sprint has the server run ticks as fast as it can, as vanilla's `/tick sprint` does, so minutes of game
-time pass in seconds. Retrieve it from the process:
+How fast the server runs its ticks is a separate pace the test sets for as long as it needs it: at the
+fastest pace, as with vanilla's `/tick sprint`, minutes of game time pass in seconds, whatever the test
+waits for or does meanwhile. Retrieve it from the process:
 `anvil.processes().server("server").capability(Ticks.class)`.
 
 `Ticks` works through Minecraft's own tick rate manager on NeoForge, for every release Anvil supports. Its
@@ -61,38 +62,51 @@ message wait above does when no answer arrives; that failure ends the wait.
 
 ## Let the server run ticks
 
-`await(ticks, timeout)` waits until the server has run a number of ticks at its own pace, for a test that
-watches the server do its work for a while, such as checking that no error is logged during 200 ticks of a
-busy farm. `tick()` returns how many ticks the server's process has run.
+`await(ticks, timeout)` waits until the server has run a number of ticks, for a test that watches the
+server do its work for a while, such as checking that no error is logged during 200 ticks of a busy farm.
+`tick()` returns how many ticks the server's process has run.
 
 ```java
 ticks.await(200, Duration.ofSeconds(30));
 ```
 
-## Sprint through ticks
+## Set the pace
 
-`sprint(ticks, timeout)` has the server run the ticks as fast as it can and returns once it has run them.
-`sprintUntil(condition, ticks, timeout)` sprints at most that many ticks, checks the condition after each
-answer the sprinting server gives, and stops the sprint once the condition holds:
+`pace(pace)` has the server run at a pace until the returned `Pacing` is closed, which gives the server
+back the pace it ran at before. The waits count whatever ticks the server runs, so they work the same at
+every pace. This fragment uses the imports above and these:
 
 ```java
-ticks.sprint(1_200, Duration.ofSeconds(30));
+import me.whereareiam.anvil.capability.ticks.Pacing;
+import me.whereareiam.anvil.capability.ticks.type.TickPace;
+```
 
-Condition<Boolean> grown = Condition.of("the wheat at 4 64 4 is fully grown",
-		() -> blockMatches(messages, "4 64 4", "minecraft:wheat[age=7]"));
-ticks.sprintUntil(grown, 24_000, Duration.ofSeconds(60));
+```java
+console.execute("setblock 4 64 4 minecraft:wheat");
+try (Pacing fast = ticks.pace(TickPace.fastest())) {
+	ticks.await(1_200, Duration.ofSeconds(30));
+	ticks.until(Condition.of("the wheat at 4 64 4 is fully grown",
+			() -> blockMatches(messages, "4 64 4", "minecraft:wheat[age=7]")), Duration.ofSeconds(60));
+}
 ```
 
 `blockMatches` stands for the test's own check, such as the `execute if block` command above.
 
-- A sprint already running is replaced by the new one.
-- The server runs a few ticks more while the last check is made and the sprint stopped, so wait with
-  `sprintUntil` only for a condition that stays true once it holds.
-- A sprint that runs its ticks without the condition holding, or does not finish in time, is stopped and the
-  wait fails as `until` does. A sprint the scenario left running is stopped when the scenario finishes, so a
-  server kept for later scenarios runs at its own pace again.
-- Players stay connected while the server sprints, but their clients see the world change in bursts, as with
-  `/tick sprint`. Movement and other client actions are best done before or after a sprint.
+| Pace | The server runs | As vanilla's |
+|---|---|---|
+| `TickPace.normal()` | 20 ticks a second | `/tick rate 20` |
+| `TickPace.rate(ticksPerSecond)` | that many ticks a second, from 1 to 10000 | `/tick rate <rate>` |
+| `TickPace.fastest()` | each tick as soon as the previous one is done | `/tick sprint` |
+
+- Paces nest: a pace set inside another gives the server back the outer one when it closes. Close them in
+  the reverse order they were set, as try-with-resources does; closing an outer pace while an inner one is
+  open fails with `IllegalStateException`.
+- A pace still open when the scenario finishes is closed then, so a server kept for later scenarios runs at
+  its own pace again. A server that restarts runs at the open pace again once it is ready.
+- At the fastest pace the server keeps running fast while the test checks or acts, so a condition checked
+  there can be seen some ticks after it began to hold.
+- Players stay connected at every pace, but at the fastest one their clients see the world change in
+  bursts, as with `/tick sprint`. Movement and other client actions are best done at the normal pace.
 
 A server restarted while a wait runs counts on from the first tick of its new process. A wait on a frozen
 process, see [Freezing processes](../freezes/index.md), gives up at its timeout.

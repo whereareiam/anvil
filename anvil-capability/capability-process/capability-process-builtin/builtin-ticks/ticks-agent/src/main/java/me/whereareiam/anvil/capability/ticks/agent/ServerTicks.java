@@ -1,22 +1,25 @@
 package me.whereareiam.anvil.capability.ticks.agent;
 
+import me.whereareiam.anvil.capability.ticks.agent.model.AgentTickPace;
+import org.jetbrains.annotations.NotNull;
+
 /**
- * One platform's control of its server's tick rate, which its platform side implements over the platform's own API.
- * The operations call it on the thread the platform requires, through
+ * One platform's control of how fast its server runs its ticks, which its platform side implements over the
+ * platform's own API. The operations call it on the thread the platform requires, through
  * {@link me.whereareiam.anvil.agent.server.api.PlatformAgent#call}.
  */
 public interface ServerTicks {
 	/**
-	 * Has the server run a number of ticks as fast as it can, replacing a sprint already running.
+	 * Tells how fast the server runs its ticks now.
 	 *
-	 * @param ticks positive number of ticks to sprint
+	 * @return the pace
 	 */
-	void sprint(int ticks);
+	@NotNull AgentTickPace pace();
 
 	/**
-	 * Stops a sprint.
+	 * Has the server run its ticks at a pace: at its rate, or sprinting until another pace is set.
 	 *
-	 * @return whether a sprint was running
+	 * @param pace the pace
 	 */
-	boolean stopSprinting();
+	void pace(@NotNull AgentTickPace pace);
 }
