@@ -77,6 +77,7 @@ Choose the operation your test needs to perform against an existing server or pr
 - [Interacting through agents](./agents/index.md) explains typed capabilities and native work inside a server or proxy.
 - [Watching players on a process](./players/index.md) waits until a player is on a server and reads what a server or proxy knows about it.
 - [Moving players between worlds](./worlds/index.md) lists a server's worlds, creates, loads, unloads and deletes worlds on Paper and Spigot, waits for the server to load one, finds the world a player is in, moves it to another one and waits for the server to report the move.
+- [Waiting for ticks](./ticks/index.md) waits for a server's ticks or until a condition holds instead of sleeping, and sets how fast the server runs them, up to as fast as it can as `/tick sprint` does.
 - [Restarting processes](./restarts/index.md) covers workspace preservation and explicit player reconnection.
 - [Killing processes](./kills/index.md) ends a server or proxy as if it had crashed, without its shutdown.
 - [Cleanup diagnostics](../../../help/troubleshooting/cleanup/index.md) explains lifecycle failures and retention.
